@@ -1,3 +1,4 @@
+
 body {
   width: 100%;
 }
@@ -292,6 +293,8 @@ html, body, #fullpage{
 #middlecontent.sidebar-false #sidebar{
   display: none;
 }
+
+
 .widget-box {
   margin-bottom: 50px;
   position: relative;
