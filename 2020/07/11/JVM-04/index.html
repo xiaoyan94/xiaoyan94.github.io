@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>JVM 04 运行时数据区之堆 (Heap) | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="description" content="1 堆的核心概述 ● 一个 JVM 实例只存在一个堆内存，堆也是 Java 内存管理的核心区域。 ● Java 堆区在 JVM 启动的时候即被创建，其空间大小也就确定了。是 JVM 管理的最大一块内存空间。 ➢ 堆内存的大小是可以调节的。   ● 《Java 虚拟机规范》规定，堆可以处于物理上不连续的内存空间中，但在逻辑上它应该被视为连续的。 ● 所有的线程共享 Java 堆，在这里还可以划分线程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM 04 运行时数据区之堆 (Heap)">
+<meta property="og:url" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="1 堆的核心概述 ● 一个 JVM 实例只存在一个堆内存，堆也是 Java 内存管理的核心区域。 ● Java 堆区在 JVM 启动的时候即被创建，其空间大小也就确定了。是 JVM 管理的最大一块内存空间。 ➢ 堆内存的大小是可以调节的。   ● 《Java 虚拟机规范》规定，堆可以处于物理上不连续的内存空间中，但在逻辑上它应该被视为连续的。 ● 所有的线程共享 Java 堆，在这里还可以划分线程">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/%E5%A0%86%E7%A9%BA%E9%97%B4%E5%86%85%E9%83%A8%E7%BB%93%E6%9E%84.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/%E6%B0%B8%E4%B9%85%E4%BB%A3%E5%92%8C%E5%85%83%E7%A9%BA%E9%97%B4.jpeg">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/HeapDemo0.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/HeapDemo.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/HeapDemo1.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/SimpleHeap.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/VisualVM.gif">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/VisualVMSampler.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/HeapMemoryDivision.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/Survivor.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/%E6%96%B0%E7%94%9F%E4%BB%A3%E5%AF%B9%E8%B1%A1%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E4%B8%8E%E5%9B%9E%E6%94%B6%E8%BF%87%E7%A8%8B.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/%E5%AF%B9%E8%B1%A1%E5%88%86%E9%85%8D%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/VisualVMVisualGC.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/TLAB.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/StackAllocation1.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/StackAllocation2.png">
+<meta property="article:published_time" content="2020-07-11T09:02:59.000Z">
+<meta property="article:modified_time" content="2022-08-17T01:59:07.579Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="JVM">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/%E5%A0%86%E7%A9%BA%E9%97%B4%E5%86%85%E9%83%A8%E7%BB%93%E6%9E%84.png">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-JVM-04" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      JVM 04 运行时数据区之堆 (Heap)
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2020-07-11T09:02:59.000Z" itemprop="datePublished">2020-07-11</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <h2 id="1-堆的核心概述"><a href="#1-堆的核心概述" class="headerlink" title="1 堆的核心概述"></a>1 堆的核心概述</h2><ul>
+<li>● 一个 JVM 实例只存在一个堆内存，堆也是 Java 内存管理的核心区域。</li>
+<li>● Java 堆区在 JVM 启动的时候即被创建，其空间大小也就确定了。是 JVM 管理的最大一块内存空间。<ul>
+<li>➢ 堆内存的大小是可以调节的。</li>
+</ul>
+</li>
+<li>● 《Java 虚拟机规范》规定，堆可以处于物理上不连续的内存空间中，但在逻辑上它应该被视为连续的。</li>
+<li>● 所有的线程共享 Java 堆，在这里还可以划分线程私有的缓冲区 (ThreadLocal Allocation Buffer， TLAB)</li>
+</ul>
+<p>一个 JVM 实例对应一个进程，方法区和堆是一个进程一份，而程序计数器、本地方法栈、虚拟机栈是一个线程对应一份，一个进程中的所有线程共享方法区和堆（并不是完整的堆都一定是共享的，比如 TLAB）。</p>
+<a id="more"></a>
+
+<ul>
+<li><a href="#1-堆的核心概述">1 堆的核心概述</a><ul>
+<li><a href="#内存细分">内存细分</a></li>
+</ul>
+</li>
+<li><a href="#2-设置堆内存大小与-OOM">2 设置堆内存大小与 OOM</a><ul>
+<li><a href="#堆空间大小的设置">堆空间大小的设置</a></li>
+<li><a href="#OutOfMemoryError-的说明与举例"><code>OutOfMemoryError</code> 的说明与举例</a></li>
+</ul>
+</li>
+<li><a href="#3-年轻代与老年代">3 年轻代与老年代</a></li>
+<li><a href="#4-图解对象分配过程">4 图解对象分配过程</a></li>
+<li><a href="#5-Minor-GC-和-Major-GC-和-Full-GC">5 Minor GC 和 Major GC 和 Full GC</a><ul>
+<li><a href="#最简单的分代式GC策略的触发条件">最简单的分代式GC策略的触发条件</a></li>
+<li><a href="#GC举例与日志分析">GC举例与日志分析</a></li>
+</ul>
+</li>
+<li><a href="#6-堆空间分代思想">6 堆空间分代思想</a></li>
+<li><a href="#7-内存分配策略">7 内存分配策略</a></li>
+<li><a href="#8-为对象分配内存TLAB">8 为对象分配内存：TLAB</a></li>
+<li><a href="#9-小结堆空间的参数设置">9 小结堆空间的参数设置</a></li>
+<li><a href="#X-堆是分配对象的唯一选择吗">X 堆是分配对象的唯一选择吗</a><ul>
+<li><a href="#逃逸分析概述">逃逸分析概述</a></li>
+<li><a href="#逃逸分析之代码优化">逃逸分析之代码优化</a><ul>
+<li><a href="#代码优化之栈上分配">代码优化之栈上分配</a></li>
+<li><a href="#代码优化之同步省略消除">代码优化之同步省略（消除）</a></li>
+<li><a href="#-代码优化之标量替换">🌿 代码优化之标量替换</a></li>
+<li><a href="#逃逸分析小结">逃逸分析小结</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#本章小结">本章小结</a></li>
+</ul>
+<h3 id="内存细分"><a href="#内存细分" class="headerlink" title="内存细分"></a>内存细分</h3><p>现代垃圾收集器大部分都基于分代收集理论设计，堆空间细分为：</p>
+<p>Java 7 及之前堆内存逻辑上分为三部分：新生区 + 养老区 +<strong>永久区</strong></p>
+<ul>
+<li>➢ Young Generation Space 新生区 Young/New  <ul>
+<li>又被划分为 Eden 区和 Survivor 区</li>
+</ul>
+</li>
+<li>➢ Tenure generation space 养老区 0ld/Tenure</li>
+<li>➢ Permanent Space 永久区 Perm</li>
+</ul>
+<p>Java 8 及之后堆内存逻辑上分为三部分：新生区 + 养老区 +<strong>元空间</strong></p>
+<ul>
+<li>➢ Young Generation Space 新生区 Young/New<ul>
+<li>又被划分为 Eden 区和 Survivor 区</li>
+</ul>
+</li>
+<li>➢ Tenure generation space 养老区 0ld/Tenure</li>
+<li>➢ Meta Space 元空间 Meta</li>
+</ul>
+<p>约定：新生区 / 新生代 / 年轻代、养老区 / 老年区 / 老年代、永久区 / 永久代</p>
+<p><img src="/2020/07/11/JVM-04/%E5%A0%86%E7%A9%BA%E9%97%B4%E5%86%85%E9%83%A8%E7%BB%93%E6%9E%84.png" alt="堆空间内部结构"></p>
+<p><img src="/2020/07/11/JVM-04/%E6%B0%B8%E4%B9%85%E4%BB%A3%E5%92%8C%E5%85%83%E7%A9%BA%E9%97%B4.jpeg" alt="永久代和元空间"></p>
+<p>演示 JVM 实例：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * -Xms10m -Xmx10m</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  16:41</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HeapDemo</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span> <span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">        System.out.println (<span class="string">"start..."</span>);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Thread.sleep (<span class="number">1000000</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace ();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        System.out.println (<span class="string">"end..."</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<hr>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * -Xms20m -Xmx20m</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  16:42</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HeapDemo1</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span> <span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">        System.out.println (<span class="string">"start..."</span>);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Thread.sleep (<span class="number">1000000</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace ();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        System.out.println (<span class="string">"end..."</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>在 Idea 中，依次点击 <code>Run</code> - <code>Edit Configurations</code> 在 <code>VM options</code> 中输入参数 <code>-Xms20m -Xmx20m</code>。然后打开 <a href="https://visualvm.github.io/" target="_blank" rel="noopener">Visual VM</a>，这个软件在 JDK 1.8 以后就不再内置，需要 <a href="https://visualvm.github.io/download.html" target="_blank" rel="noopener">手动下载</a>， 在 <code>Tools</code> - <code>Plugins</code> 中安装 <code>Visual GC</code> 插件。</p>
+<p><img src="/2020/07/11/JVM-04/HeapDemo0.png" alt="HeapDemo Overview"></p>
+<p>从上图中可以看到设置的 JVM 内存参数。</p>
+<p><img src="/2020/07/11/JVM-04/HeapDemo.png" alt="HeapDemo"></p>
+<p><img src="/2020/07/11/JVM-04/HeapDemo1.png" alt="HeapDemo1"></p>
+<p>从以上图中可以看到，（JDK1.8 下运行时）伊甸园区、<strong>两个幸存者区</strong>、老年区加起来正好是我们设置的总内存大小 20M。（实测JDK1.7 下运行时，伊甸园区、<em>一个幸存者区</em>、老年区加起来是 20M）</p>
+<hr>
+<ul>
+<li>《Java 虚拟机规范》中对 Java 堆的描述是：所有的对象实例以及数组都应当在运行时分配在堆上。(The heap is the run-time data area from which memory for all class instances and arrays is allocated )<ul>
+<li>➢ 我要说的是：“几乎” 所有的对象实例都在这里分配内存。—— 从实际使用角度看的。</li>
+</ul>
+</li>
+<li>数组和对象可能永远不会存储在栈上，因为栈帧中保存引用，这个引用指向对象或者数组在堆中的位置。</li>
+<li>在方法结束后，堆中的对象不会马上被移除，仅仅在垃圾收集的时候才会被移除。</li>
+<li>堆，是 GC ( Garbage Collection, 垃圾收集器）执行垃圾回收的重点区域。</li>
+</ul>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  17:28</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SimpleHeap</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> id;<span class="comment">// 属性、成员变量</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SimpleHeap</span> <span class="params">(<span class="keyword">int</span> id)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.id = id;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">show</span> <span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println (<span class="string">"My ID is"</span> + id);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span> <span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">        SimpleHeap sl = <span class="keyword">new</span> SimpleHeap (<span class="number">1</span>);</span><br><span class="line">        SimpleHeap s2 = <span class="keyword">new</span> SimpleHeap (<span class="number">2</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">int</span> [] arr = <span class="keyword">new</span> <span class="keyword">int</span> [<span class="number">10</span>];</span><br><span class="line"></span><br><span class="line">        Object [] arr1 = <span class="keyword">new</span> Object [<span class="number">10</span>];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>设置 VM 参数：<code>-Xms10m -Xmx10m -XX:+PrintGCDetails</code> , 在 JDK1.8 下运行 SimpleHeap</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">2560</span>K, used <span class="number">1406</span>K [<span class="number">0x00000007bfd00000</span>, <span class="number">0x00000007c0000000</span>, <span class="number">0x00000007c0000000</span>)</span><br><span class="line">  eden space <span class="number">2048</span>K, <span class="number">68</span>% used [<span class="number">0x00000007bfd00000</span>,<span class="number">0x00000007bfe5fbe8</span>,<span class="number">0x00000007bff00000</span>)</span><br><span class="line">  from space <span class="number">512</span>K, <span class="number">0</span>% used [<span class="number">0x00000007bff80000</span>,<span class="number">0x00000007bff80000</span>,<span class="number">0x00000007c0000000</span>)</span><br><span class="line">  to   space <span class="number">512</span>K, <span class="number">0</span>% used [<span class="number">0x00000007bff00000</span>,<span class="number">0x00000007bff00000</span>,<span class="number">0x00000007bff80000</span>)</span><br><span class="line"> ParOldGen       total <span class="number">7168</span>K, used <span class="number">0</span>K [<span class="number">0x00000007bf600000</span>, <span class="number">0x00000007bfd00000</span>, <span class="number">0x00000007bfd00000</span>)</span><br><span class="line">  object space <span class="number">7168</span>K, <span class="number">0</span>% used [<span class="number">0x00000007bf600000</span>,<span class="number">0x00000007bf600000</span>,<span class="number">0x00000007bfd00000</span>)</span><br><span class="line"> Metaspace       used <span class="number">2950</span>K, capacity <span class="number">4496</span>K, committed <span class="number">4864</span>K, reserved <span class="number">1056768</span>K</span><br><span class="line">  <span class="class"><span class="keyword">class</span> <span class="title">space</span>    <span class="title">used</span> 320<span class="title">K</span>, <span class="title">capacity</span> 388<span class="title">K</span>, <span class="title">committed</span> 512<span class="title">K</span>, <span class="title">reserved</span> 1048576<span class="title">K</span></span></span><br></pre></td></tr></table></figure></div>
+
+<p>在 JDK1.7 下运行：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">3072</span>K, used <span class="number">1176</span>K [<span class="number">0x00000007ffc80000</span>, <span class="number">0x0000000800000000</span>, <span class="number">0x0000000800000000</span>)</span><br><span class="line">  eden space <span class="number">2560</span>K, <span class="number">45</span>% used [<span class="number">0x00000007ffc80000</span>,<span class="number">0x00000007ffda6258</span>,<span class="number">0x00000007fff00000</span>)</span><br><span class="line">  from space <span class="number">512</span>K, <span class="number">0</span>% used [<span class="number">0x00000007fff80000</span>,<span class="number">0x00000007fff80000</span>,<span class="number">0x0000000800000000</span>)</span><br><span class="line">  to   space <span class="number">512</span>K, <span class="number">0</span>% used [<span class="number">0x00000007fff00000</span>,<span class="number">0x00000007fff00000</span>,<span class="number">0x00000007fff80000</span>)</span><br><span class="line"> ParOldGen       total <span class="number">7168</span>K, used <span class="number">0</span>K [<span class="number">0x00000007ff580000</span>, <span class="number">0x00000007ffc80000</span>, <span class="number">0x00000007ffc80000</span>)</span><br><span class="line">  object space <span class="number">7168</span>K, <span class="number">0</span>% used [<span class="number">0x00000007ff580000</span>,<span class="number">0x00000007ff580000</span>,<span class="number">0x00000007ffc80000</span>)</span><br><span class="line"> PSPermGen       total <span class="number">21504</span>K, used <span class="number">2859</span>K [<span class="number">0x00000007fa380000</span>, <span class="number">0x00000007fb880000</span>, <span class="number">0x00000007ff580000</span>)</span><br><span class="line">  object space <span class="number">21504</span>K, <span class="number">13</span>% used [<span class="number">0x00000007fa380000</span>,<span class="number">0x00000007fa64af68</span>,<span class="number">0x00000007fb880000</span>)</span><br><span class="line"></span><br><span class="line">Process finished with exit code <span class="number">0</span></span><br></pre></td></tr></table></figure></div>
+
+<p>可以看到，JDK1.8 以后就是元空间了。</p>
+<p><img src="/2020/07/11/JVM-04/SimpleHeap.png" alt="局部变量表、堆、方法区"></p>
+<p>对象、数组在堆中创建，局部变量表中只保留对他们的引用。</p>
+<hr>
+<h2 id="2-设置堆内存大小与-OOM"><a href="#2-设置堆内存大小与-OOM" class="headerlink" title="2 设置堆内存大小与 OOM"></a>2 设置堆内存大小与 OOM</h2><h3 id="堆空间大小的设置"><a href="#堆空间大小的设置" class="headerlink" title="堆空间大小的设置"></a>堆空间大小的设置</h3><ul>
+<li>Java 堆区用于存储 Java 对象实例，那么堆的大小在 JVM 启动时就已经设定好了，大家可以通过选项 “<code>-Xmx</code>“ 和”<code>-Xms</code>“ 来进行设置。<ul>
+<li>➢“<code>-Xms</code>“ 用于表示堆区的起始内存，等价于 <code>-XX: InitialHeapSize</code></li>
+<li>➢“<code>-Xmx</code>“ 则用于表示堆区的最大内存，等价于 <code>-XX :MaxHeapSize</code></li>
+</ul>
+</li>
+<li>一旦堆区中的内存大小超过 “<code>-Xmx</code>“ 所指定的最大内存时，将会抛出 <code>OutOfMemoryError</code> 异常。</li>
+<li>通常会将 <code>-Xms</code> 和 <code>-Xmx</code> 两个参数配置相同的值，其目的是为了能够在 java 垃圾回收机制清理完堆区后不需要重新分隔计算堆区的大小，从而提高性能。</li>
+<li>默认情况下，初始内存大小：物理电脑内存大小 / 64</li>
+<li>最大内存大小：物理电脑内存大小 / 4</li>
+</ul>
+<p><code>-X</code> 参数用法：<a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html" target="_blank" rel="noopener">https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html</a></p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 1. 设置堆空间大小的参数</span></span><br><span class="line"><span class="comment"> * -Xms 用来设置堆空间（年轻代 + 老年代）的初始内存大小</span></span><br><span class="line"><span class="comment"> *      -X 是 jvm 的运行参数</span></span><br><span class="line"><span class="comment"> *      ms 是 memory start</span></span><br><span class="line"><span class="comment"> * -Xmx 用来设置堆空间（年轻代 + 老年代）的最大内存大小</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 2. 默认堆空间的大小</span></span><br><span class="line"><span class="comment"> *    初始内存大小：物理电脑内存大小 / 64</span></span><br><span class="line"><span class="comment"> *             最大内存大小：物理电脑内存大小 / 4</span></span><br><span class="line"><span class="comment"> * 3. 手动设置：-Xms600m -Xmx600m</span></span><br><span class="line"><span class="comment"> *     开发中建议将初始堆内存和最大的堆内存设置成相同的值。</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 4. 查看设置的参数：方式一： jps   /  jstat -gc 进程 id</span></span><br><span class="line"><span class="comment"> *                  方式二：-XX:+PrintGCDetails</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  20:15</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HeapSpaceInitial</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span> <span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 返回 Java 虚拟机中的堆内存总量</span></span><br><span class="line">        <span class="keyword">long</span> initialMemory = Runtime.getRuntime ().totalMemory () / <span class="number">1024</span> / <span class="number">1024</span>;</span><br><span class="line">        <span class="comment">// 返回 Java 虚拟机试图使用的最大堆内存量</span></span><br><span class="line">        <span class="keyword">long</span> maxMemory = Runtime.getRuntime ().maxMemory () / <span class="number">1024</span> / <span class="number">1024</span>;</span><br><span class="line"></span><br><span class="line">        System.out.println (<span class="string">"-Xms :"</span> + initialMemory + <span class="string">"M"</span>);</span><br><span class="line">        System.out.println (<span class="string">"-Xmx :"</span> + maxMemory + <span class="string">"M"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 默认设置时，即不设置虚拟机参数使用默认分配内存大小</span></span><br><span class="line"><span class="comment">//        System.out.println ("系统内存大小为：" + initialMemory * 64.0 / 1024 + "G");</span></span><br><span class="line"><span class="comment">//        System.out.println ("系统内存大小为：" + maxMemory * 4.0 / 1024 + "G");</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Thread.sleep (<span class="number">1000000</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace ();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>程序输出：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-Xms : <span class="number">575</span>M</span><br><span class="line">-Xmx : <span class="number">575</span>M</span><br></pre></td></tr></table></figure></div>
+
+<p>为什么输出结果不是设置的 600M？</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">  jps</span><br><span class="line">32736</span><br><span class="line">49124 Launcher</span><br><span class="line">49125 HeapSpaceInitial</span><br><span class="line">49161 Jps</span><br><span class="line">34013 Main</span><br><span class="line">  jstat -gc 49125</span><br><span class="line"> S0C    S1C    S0U    S1U      EC       EU        OC         OU       MC     MU    CCSC   CCSU   YGC     YGCT    FGC    FGCT    CGC    CGCT     GCT</span><br><span class="line">25600.0 25600.0  0.0    0.0   153600.0 15360.5   409600.0     0.0     4480.0 780.7  384.0   76.6       0    0.000   0      0.000   -          -    0.000</span><br></pre></td></tr></table></figure></div>
+
+<p>通过下面两个柿子：</p>
+<ol>
+<li>25600 (S0C) + 25600 (S1C) + 153600 (EC) + 409600 (OC) = 614400, 614400 ÷ 1024 = 600</li>
+<li>25600 (S0C/S1C) + 153600 (EC) + 409600 (OC) = 588800, 588800 ÷ 1024 = 575</li>
+</ol>
+<p>可知，575 为两个幸存者区其中一个幸存者区 + 伊甸园区 + 老年区的大小总和。</p>
+<p>也可以使用 <code>-XX:+PrintGCDetails</code> 查看：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">-Xms : <span class="number">575</span>M</span><br><span class="line">-Xmx : <span class="number">575</span>M</span><br><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">179200</span>K, used <span class="number">9216</span>K [<span class="number">0x00000007b3800000</span>, <span class="number">0x00000007c0000000</span>, <span class="number">0x00000007c0000000</span>)</span><br><span class="line">  eden space <span class="number">153600</span>K, <span class="number">6</span>% used [<span class="number">0x00000007b3800000</span>,<span class="number">0x00000007b41001a0</span>,<span class="number">0x00000007bce00000</span>)</span><br><span class="line">  from space <span class="number">25600</span>K, <span class="number">0</span>% used [<span class="number">0x00000007be700000</span>,<span class="number">0x00000007be700000</span>,<span class="number">0x00000007c0000000</span>)</span><br><span class="line">  to   space <span class="number">25600</span>K, <span class="number">0</span>% used [<span class="number">0x00000007bce00000</span>,<span class="number">0x00000007bce00000</span>,<span class="number">0x00000007be700000</span>)</span><br><span class="line"> ParOldGen       total <span class="number">409600</span>K, used <span class="number">0</span>K [<span class="number">0x000000079a800000</span>, <span class="number">0x00000007b3800000</span>, <span class="number">0x00000007b3800000</span>)</span><br><span class="line">  object space <span class="number">409600</span>K, <span class="number">0</span>% used [<span class="number">0x000000079a800000</span>,<span class="number">0x000000079a800000</span>,<span class="number">0x00000007b3800000</span>)</span><br><span class="line"> Metaspace       used <span class="number">2953</span>K, capacity <span class="number">4496</span>K, committed <span class="number">4864</span>K, reserved <span class="number">1056768</span>K</span><br><span class="line">  <span class="class"><span class="keyword">class</span> <span class="title">space</span>    <span class="title">used</span> 321<span class="title">K</span>, <span class="title">capacity</span> 388<span class="title">K</span>, <span class="title">committed</span> 512<span class="title">K</span>, <span class="title">reserved</span> 1048576<span class="title">K</span></span></span><br></pre></td></tr></table></figure></div>
+
+<p>179200K = 153600K + 25600K ，年轻代总大小为伊甸园区 + 一个幸存者 (from 或 to) 区的大小。</p>
+<h3 id="OutOfMemoryError-的说明与举例"><a href="#OutOfMemoryError-的说明与举例" class="headerlink" title="OutOfMemoryError 的说明与举例"></a><code>OutOfMemoryError</code> 的说明与举例</h3><p>演示程序：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"><span class="keyword">import</span> java.util.Random;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * -Xms600m -Xmx600m</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  21:12</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">OOMTest</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span> <span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">        ArrayList&lt;Picture&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">        <span class="keyword">while</span> (<span class="keyword">true</span>)&#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                Thread.sleep (<span class="number">20</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace ();</span><br><span class="line">            &#125;</span><br><span class="line">            list.add (<span class="keyword">new</span> Picture (<span class="keyword">new</span> Random ().nextInt (<span class="number">1024</span> * <span class="number">1024</span>)));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Picture</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">byte</span> [] pixels;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Picture</span> <span class="params">(<span class="keyword">int</span> length)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.pixels = <span class="keyword">new</span> <span class="keyword">byte</span> [length];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>程序最终肯定会输出异常信息：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Exception in thread <span class="string">"main"</span> java.lang.OutOfMemoryError: Java heap space</span><br><span class="line">  at com.atguigu.java.Picture.&lt;init&gt;(OOMTest.java:<span class="number">29</span>)</span><br><span class="line">  at com.atguigu.java.OOMTest.main (OOMTest.java:<span class="number">20</span>)</span><br></pre></td></tr></table></figure></div>
+
+<p>在 Visual VM 中，通过 Visual GC 可以动态监控堆内存变化情况，通过 Sampler - Memory 还可以分析是什么原因导致堆内存溢出异常。</p>
+<p><img src="/2020/07/11/JVM-04/VisualVM.gif" alt="VisualVM - Visual GC"><br><img src="/2020/07/11/JVM-04/VisualVMSampler.png" alt="VisualVM - Sampler - Memory"></p>
+<hr>
+<h2 id="3-年轻代与老年代"><a href="#3-年轻代与老年代" class="headerlink" title="3 年轻代与老年代"></a>3 年轻代与老年代</h2><ul>
+<li>存储在 JVM 中的 Java 对象可以被划分为两类：<ul>
+<li>➢ 一类是生命周期较短的瞬时对象，这类对象的创建和消亡都非常迅速</li>
+<li>➢ 另外一类对象的生命周期却非常长，在某些极端的情况下还能够与 JVM 的生命周期保持一致。</li>
+</ul>
+</li>
+<li>Java 堆区进一步细分的话，可以划分为年轻代 (YoungGen) 和老年代 (OldGen)</li>
+<li>其中年轻代又可以划分为 Eden 空间、Survivor0 空间和 Survivor1 空间（有时也叫做 from 区、to 区）。</li>
+</ul>
+<p><img src="/2020/07/11/JVM-04/HeapMemoryDivision.png" alt="堆空间内部结构划分"></p>
+<p>下面这参数开发中一般不会调：</p>
+<p>配置新生代与老年代在堆结构的占比。</p>
+<ul>
+<li>➢ 默认 <code>-XX:NewRatio=2</code>，表示新生代占 1，老年代占 2，新生代占整个堆的 1/3</li>
+<li>➢ 可以修改 <code>-XX:NewRatio=4</code>，表示新生代占 1，老年代占 4，新生代占整个堆的 1/5</li>
+</ul>
+<p>测试：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java1;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * -Xms600m -Xmx600m</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * -XX:NewRatio ： 设置新生代与老年代的比例。默认值是 2.</span></span><br><span class="line"><span class="comment"> * -XX:SurvivorRatio ：设置新生代中 Eden 区与 Survivor 区的比例。默认值是 8</span></span><br><span class="line"><span class="comment"> * -XX:-UseAdaptiveSizePolicy ：关闭自适应的内存分配策略  （暂时用不到）</span></span><br><span class="line"><span class="comment"> * -Xmn: 设置新生代的空间的大小。 （一般不设置）</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  17:23</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">EdenSurvivorTest</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span> <span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">        System.out.println (<span class="string">"我只是来打个酱油～"</span>);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Thread.sleep (<span class="number">1000000</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace ();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>设置 VM Option 参数：<code>-Xms600m -Xmx600m</code> ，可以使用 <code>jinfo</code> 命令查看 <code>NewRatio</code> 参数：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"> ✘  yan  ~  jps <span class="comment">#jps</span></span><br><span class="line">32736</span><br><span class="line">34013 Main</span><br><span class="line">53645 Launcher</span><br><span class="line">54110 Jps</span><br><span class="line">53646 EdenSurvivorTest</span><br><span class="line">  yan  ~  jinfo -flag NewRatio 53646 <span class="comment">#jinfo</span></span><br><span class="line">-XX:NewRatio=2</span><br><span class="line">  yan  ~  jinfo -flag SurvivorRatio 53646</span><br><span class="line">-XX:SurvivorRatio=8</span><br></pre></td></tr></table></figure></div>
+
+<p>使用不同的参数运行程序进行测试，得到下表：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>Eden Space</th>
+<th>Survivor 0</th>
+<th>Survivor 1</th>
+<th>Old Gen</th>
+<th>SurvivorRatio</th>
+<th>NewRatio</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>-Xms600m -Xmx600m</code></td>
+<td>150</td>
+<td>25</td>
+<td>25</td>
+<td>400</td>
+<td>6</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>-Xms600m -Xmx600m -XX:-UseAdaptiveSizePolicy</code></td>
+<td>150</td>
+<td>25</td>
+<td>25</td>
+<td>400</td>
+<td>6</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>-Xms600m -Xmx600m -XX:SurvivorRatio=8</code></td>
+<td>160</td>
+<td>20</td>
+<td>20</td>
+<td>400</td>
+<td>8</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>-Xms600m -Xmx600m -XX:SurvivorRatio=8 -XX:NewRatio=3</code></td>
+<td>120</td>
+<td>15</td>
+<td>15</td>
+<td>450</td>
+<td>8</td>
+<td>3</td>
+</tr>
+</tbody></table>
+<p>虽然默认的 <code>SurvivorRatio</code> 是 8，官方文档也是 8，但是实际运行中伊甸园区和幸存者区的比例是 150:25 = 6:1，即使使用 <code>-XX:-UseAdaptiveSizePolicy</code> ：关闭自适应的内存分配策略，也还是 6:1。除非显式地使用 <code>-XX:SurvivorRatio=8</code> 显式指定比例为 8:1</p>
+<ul>
+<li>在 HotSpot 中，Eden 空间和另外两个 Survivor 空间缺省所占的比例是 8:1:1</li>
+<li>当然开发人员可以通过选项 “<code>-XX:SurvivorRatio</code>“ 调整这个空间比例。比如 <code>-XX:SurvivorRatio=8</code></li>
+<li><strong>几乎所有</strong> 的 Java 对象都是在 Eden 区被 new 出来的。</li>
+<li>绝大部分的 Java 对象的销毁都在新生代进行了。<ul>
+<li>➢ IBM 公司的专门研究表明，新生代中 80% 的对象都是 “朝生夕死” 的。</li>
+</ul>
+</li>
+<li>可以使用选项 “<code>-Xmn</code>“ 设置新生代最大内存大小</li>
+<li>➢这个参数一般使用默认值就可以了。</li>
+</ul>
+<p><img src="/2020/07/11/JVM-04/Survivor.png" alt="年轻代与老年代的关系"></p>
+<p><a href="Plumbr%20Handbook%20Java%20Garbage%20Collection.pdf">参考文档：Plumbr Handbook Java Garbage Collection.pdf</a></p>
+<hr>
+<h2 id="4-图解对象分配过程"><a href="#4-图解对象分配过程" class="headerlink" title="4 图解对象分配过程"></a>4 图解对象分配过程</h2><p>为新对象分配内存是一件非常严谨和复杂的任务，JVM 的设计者们不仅需要考虑内存如何分配、在哪里分配等问题，并且由于内存分配算法与内存回收算法密切相关，所以还需要考虑 GC 执行完内存回收后是否会在内存空间中产生内存碎片。</p>
+<ol>
+<li>new 的对象先放伊甸园区。此区有大小限制。</li>
+<li>当伊甸园的空间填满时，程序又需要创建对象，JVM 的垃圾回收器将对伊甸园区进行垃圾回收 (Minor GC)，将伊甸园区中的不再被其他对象所引用的对象进行销毁。再加载新的对象放到伊甸园区。</li>
+<li>然后将伊甸园区中的剩余对象移动到幸存者 0 区。</li>
+<li>如果再次触发垃圾回收，此时上次幸存下来的放到幸存者 0 区的，如果没有回收，就会放到幸存者 1 区。</li>
+<li>如果再次经历垃圾回收，此时会重新放回幸存者 0 区，接着再去幸存者 1 区。</li>
+<li>啥时候能去养老区呢？可以设置次数。默认是 15 次。<ul>
+<li>可以设置参数: <code>-XX:MaxTenuringThreshold=&lt;N&gt;</code> 进行设置。</li>
+</ul>
+</li>
+</ol>
+<p><img src="/2020/07/11/JVM-04/%E6%96%B0%E7%94%9F%E4%BB%A3%E5%AF%B9%E8%B1%A1%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E4%B8%8E%E5%9B%9E%E6%94%B6%E8%BF%87%E7%A8%8B.png" alt="新生代对象内存分配与回收过程"></p>
+<p>当伊甸园区满的时候，会触发 YGC/MinorGC，会将伊甸园区和幸存者区 (from 区) 一起回收。但是幸存者区满的时候不会触发 YGC/MinorGC。</p>
+<p>总结：</p>
+<p><strong>针对幸存者 s0，s1 区的总结：复制之后有交换，谁空谁是 to</strong>。</p>
+<p><strong>关于垃圾回收：频繁在新生区收集，很少在养老区收集，几乎不在永久区 / 元空间收集</strong>。</p>
+<p>对象分配特殊情况：</p>
+<p><img src="/2020/07/11/JVM-04/%E5%AF%B9%E8%B1%A1%E5%88%86%E9%85%8D%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5.png" alt="对象分配特殊情况"></p>
+<p>代码举例与 JVisualVM 演示对象的分配过程：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java1;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"><span class="keyword">import</span> java.util.Random;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * -Xms600m -Xmx600m</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  17:51</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HeapInstanceTest</span> </span>&#123;</span><br><span class="line">    <span class="keyword">byte</span> [] buffer = <span class="keyword">new</span> <span class="keyword">byte</span> [<span class="keyword">new</span> Random ().nextInt (<span class="number">1024</span> * <span class="number">200</span>)];</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span> <span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">        ArrayList&lt;HeapInstanceTest&gt; list = <span class="keyword">new</span> ArrayList&lt;HeapInstanceTest&gt;();</span><br><span class="line">        <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">            list.add (<span class="keyword">new</span> HeapInstanceTest ());</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                Thread.sleep (<span class="number">10</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace ();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>VisualVM - Visual GC：</p>
+<p><img src="/2020/07/11/JVM-04/VisualVMVisualGC.png" alt="查看年轻区、老年区各时间段内存占用对应的图像走势"></p>
+<p>最后，堆空间中老年区满，没有可用空间来为对象继续分配内存，程序会异常终止：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Exception in thread <span class="string">"main"</span> java.lang.OutOfMemoryError: Java heap space</span><br><span class="line"> at com.atguigu.java1.HeapInstanceTest.&lt;init&gt;(HeapInstanceTest.java:<span class="number">12</span>)</span><br><span class="line"> at com.atguigu.java1.HeapInstanceTest.main (HeapInstanceTest.java:<span class="number">17</span>)</span><br></pre></td></tr></table></figure></div>
+
+<p>常用调优工具：</p>
+<ul>
+<li>JDK 命令行：<code>jmap</code>, <code>jinfo</code>, <code>jstat</code>,<code>javap</code> 等</li>
+<li>Eclipse : Memory Analyzer Tool</li>
+<li>Jconsole</li>
+<li>VisualVM</li>
+<li>Jprofiler</li>
+<li>Java Flight Recorder</li>
+<li>GCViewer</li>
+<li>GC Easy</li>
+</ul>
+<p><a href="https://blog.csdn.net/wytocsdn/article/details/79258247" target="_blank" rel="noopener">在 <code>Idea</code> 中配置 <code>JProfiler</code></a>：</p>
+<ol>
+<li>安装 JProfiler：官网下载安装 <a href="https://www.ej-technologies.com/download/jprofiler/files" target="_blank" rel="noopener">https://www.ej-technologies.com/download/jprofiler/files</a></li>
+<li>安装 JProfiler Idea 插件：在 <code>Idea</code> 插件市场搜索 JProfiler 安装，在插件设置中设置 JProfiler 目录。</li>
+<li>点击 <code>Run</code> 旁边的 JProfiler 图标运行。</li>
+</ol>
+<hr>
+<h2 id="5-Minor-GC-和-Major-GC-和-Full-GC"><a href="#5-Minor-GC-和-Major-GC-和-Full-GC" class="headerlink" title="5 Minor GC 和 Major GC 和 Full GC"></a>5 Minor GC 和 Major GC 和 Full GC</h2><p>JVM 在进行 GC 时，并非每次都对上面三个内存区域（新生代、老年代、方法区）一起回收的，大部分时候回收的都是指新生代。</p>
+<p>针对 HotSpot VM 的实现，它里面的 GC 按照回收区域又分为两大种类型：一种是部分收集 (Partial GC)，一种是整堆收集 (Full GC)</p>
+<ul>
+<li>部分收集：不是完整收集整个 Java 堆的垃圾收集。其中又分为:<ul>
+<li>➢ 新生代收集 (Minor GC / Young GC) : 只是新生代（Eden、s0、s1）的垃圾收集</li>
+<li>➢ 老年代收集 (Major GC / Old GC) : 只是老年代的垃圾收集。<ul>
+<li>目前，只有 CMS GC 会有单独收集老年代的行为。<ul>
+<li><em>注意，很多时候 Major GC 会和 Full GC 混淆使用，需要具体分辨是老年代回收还是整堆回收</em>。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>➢ 混合收集 (Mixed GC): 收集整个新生代以及部分老年代的垃圾收集。<ul>
+<li>目前，只有 G1 GC 会有这种行为</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>整堆收集 (Full GC): 收集整个 java 堆和方法区的垃圾收集。</li>
+</ul>
+<hr>
+<h3 id="最简单的分代式GC策略的触发条件"><a href="#最简单的分代式GC策略的触发条件" class="headerlink" title="最简单的分代式GC策略的触发条件"></a>最简单的分代式GC策略的触发条件</h3><ul>
+<li><p>● <strong>年轻代 GC (Minor GC ) 触发机制</strong>:</p>
+<ul>
+<li>➢ 当年轻代空间不足时，就会触发 Minor GC，这里的年轻代满指的是 Eden 代满，Survivor 满不会引发 GC。(每次 Minor GC 会清理年轻代的内存。)</li>
+<li>➢ 因为 Java<strong>对象大多都具备朝生夕灭的特性</strong>，所以 MinorGC 非常频繁，一般回收速度也比较快。这一定义既清晰又易于理解。</li>
+<li>➢ Minor GC 会引发 STW， 暂停其它用户的线程，等垃圾回收结束，用户线程才恢复运行。</li>
+</ul>
+</li>
+<li><p>● <strong>老年代 GC (Major GC/Full GC) 触发机制</strong>:</p>
+<ul>
+<li>➢ 指发生在老年代的 GC，对象从老年代消失时，我们说 “Major GC” 或 “Full GC” 发生了。</li>
+<li>➢ 出现了 Major GC， 经常会伴随至少一次的 Minor GC (但非绝对的，在 Parallel Scavenge 收集器的收集策略里就有直接进行 Major GC 的策略选择过程)。<ul>
+<li>也就是在老年代空间不足时，会先尝试触发 Minor GC。如果之后空间还不足，则触发 Major GC</li>
+</ul>
+</li>
+<li>➢ Major GC 的速度一般会比 Minor GC 慢 10 倍以上，STW 的时间更长。</li>
+<li>➢ 如果 Major GC 后，内存还不足，就报 <code>OOM</code> 了。</li>
+</ul>
+</li>
+<li><p>● <strong>Full GC 触发机制: (后面细讲)</strong><br>触发 Full GC 执行的情况有如下五种:  </p>
+<ul>
+<li>(1) 调用 <code>System.gc()</code> 时，系统建议执行 <strong>Full GC</strong>，但是不必然执行</li>
+<li>(2) 老年代空间不足</li>
+<li>(3) 方法区空间不足</li>
+<li>(4) 通过 Minor GC 后进入老年代的平均大小大于老年代的可用内存</li>
+<li>(5) 由 Eden 区、survivor space0 (From Space) 区向 survivor space1 (To Space) 区复制时，对象大小大于 To Space 可用内存，则把该对象转存到老年代，且老年代的可用内存小于该对象大小</li>
+</ul>
+<p>说明: <strong>Full GC 是开发或调优中尽量要避免的。这样暂时时间会短一些</strong>。</p>
+</li>
+</ul>
+<h3 id="GC举例与日志分析"><a href="#GC举例与日志分析" class="headerlink" title="GC举例与日志分析"></a>GC举例与日志分析</h3><p>测试代码：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java1;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"><span class="keyword">import</span> java.util.List;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 测试MinorGC 、 MajorGC、FullGC</span></span><br><span class="line"><span class="comment"> * -Xms9m -Xmx9m -XX:+PrintGCDetails</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  14:19</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">GCTest</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> i = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            List&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">            String a = <span class="string">"atguigu.com"</span>;</span><br><span class="line">            <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">                list.add(a);</span><br><span class="line">                a = a + a;</span><br><span class="line">                i++;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">            t.printStackTrace();</span><br><span class="line">            System.out.println(<span class="string">"遍历次数为："</span> + i);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>设置 VM options，运行：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">[GC (Allocation Failure) [PSYoungGen: <span class="number">2036</span>K-&gt;<span class="number">496</span>K(<span class="number">2560</span>K)] <span class="number">2036</span>K-&gt;<span class="number">871</span>K(<span class="number">9728</span>K), <span class="number">0.0062912</span> secs] [Times: user=<span class="number">0.01</span> sys=<span class="number">0.01</span>, real=<span class="number">0.00</span> secs]</span><br><span class="line">[GC (Allocation Failure) [PSYoungGen: <span class="number">1964</span>K-&gt;<span class="number">480</span>K(<span class="number">2560</span>K)] <span class="number">2340</span>K-&gt;<span class="number">1682</span>K(<span class="number">9728</span>K), <span class="number">0.0017672</span> secs] [Times: user=<span class="number">0.01</span> sys=<span class="number">0.00</span>, real=<span class="number">0.00</span> secs]</span><br><span class="line">[GC (Allocation Failure) [PSYoungGen: <span class="number">1941</span>K-&gt;<span class="number">160</span>K(<span class="number">2560</span>K)] <span class="number">3144</span>K-&gt;<span class="number">2770</span>K(<span class="number">9728</span>K), <span class="number">0.0017537</span> secs] [Times: user=<span class="number">0.00</span> sys=<span class="number">0.00</span>, real=<span class="number">0.01</span> secs]</span><br><span class="line">[<span class="function">Full <span class="title">GC</span> <span class="params">(Ergonomics)</span> [PSYoungGen: 1008K-&gt;0<span class="title">K</span><span class="params">(<span class="number">2560</span>K)</span>] [ParOldGen: 6834K-&gt;4588<span class="title">K</span><span class="params">(<span class="number">7168</span>K)</span>] 7843K-&gt;4588<span class="title">K</span><span class="params">(<span class="number">9728</span>K)</span>, [Metaspace: 3012K-&gt;3012<span class="title">K</span><span class="params">(<span class="number">1056768</span>K)</span>], 0.0051738 secs] [Times: user</span>=<span class="number">0.02</span> sys=<span class="number">0.00</span>, real=<span class="number">0.00</span> secs]</span><br><span class="line">[GC (Allocation Failure) [PSYoungGen: <span class="number">0</span>K-&gt;<span class="number">0</span>K(<span class="number">2560</span>K)] <span class="number">4588</span>K-&gt;<span class="number">4588</span>K(<span class="number">9728</span>K), <span class="number">0.0009531</span> secs] [Times: user=<span class="number">0.00</span> sys=<span class="number">0.00</span>, real=<span class="number">0.01</span> secs]</span><br><span class="line">[<span class="function">Full <span class="title">GC</span> <span class="params">(Allocation Failure)</span> [PSYoungGen: 0K-&gt;0<span class="title">K</span><span class="params">(<span class="number">2560</span>K)</span>] [ParOldGen: 4588K-&gt;4570<span class="title">K</span><span class="params">(<span class="number">7168</span>K)</span>] 4588K-&gt;4570<span class="title">K</span><span class="params">(<span class="number">9728</span>K)</span>, [Metaspace: 3012K-&gt;3012<span class="title">K</span><span class="params">(<span class="number">1056768</span>K)</span>], 0.0038536 secs] [Times: user</span>=<span class="number">0.02</span> sys=<span class="number">0.00</span>, real=<span class="number">0.00</span> secs]</span><br><span class="line">遍历次数为：<span class="number">16</span></span><br><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">2560</span>K, used <span class="number">136</span>K [<span class="number">0x00000007bfd00000</span>, <span class="number">0x00000007c0000000</span>, <span class="number">0x00000007c0000000</span>)</span><br><span class="line">  eden space <span class="number">2048</span>K, <span class="number">6</span>% used [<span class="number">0x00000007bfd00000</span>,<span class="number">0x00000007bfd22300</span>,<span class="number">0x00000007bff00000</span>)</span><br><span class="line">  from space <span class="number">512</span>K, <span class="number">0</span>% used [<span class="number">0x00000007bff80000</span>,<span class="number">0x00000007bff80000</span>,<span class="number">0x00000007c0000000</span>)</span><br><span class="line">  to   space <span class="number">512</span>K, <span class="number">0</span>% used [<span class="number">0x00000007bff00000</span>,<span class="number">0x00000007bff00000</span>,<span class="number">0x00000007bff80000</span>)</span><br><span class="line"> ParOldGen       total <span class="number">7168</span>K, used <span class="number">4570</span>K [<span class="number">0x00000007bf600000</span>, <span class="number">0x00000007bfd00000</span>, <span class="number">0x00000007bfd00000</span>)</span><br><span class="line">  object space <span class="number">7168</span>K, <span class="number">63</span>% used [<span class="number">0x00000007bf600000</span>,<span class="number">0x00000007bfa76938</span>,<span class="number">0x00000007bfd00000</span>)</span><br><span class="line"> Metaspace       used <span class="number">3086</span>K, capacity <span class="number">4496</span>K, committed <span class="number">4864</span>K, reserved <span class="number">1056768</span>K</span><br><span class="line">  <span class="class"><span class="keyword">class</span> <span class="title">space</span>    <span class="title">used</span> 337<span class="title">K</span>, <span class="title">capacity</span> 388<span class="title">K</span>, <span class="title">committed</span> 512<span class="title">K</span>, <span class="title">reserved</span> 1048576<span class="title">K</span></span></span><br><span class="line">java.lang.OutOfMemoryError: Java heap space</span><br><span class="line"> at java.util.Arrays.copyOf(Arrays.java:<span class="number">3332</span>)</span><br><span class="line"> at java.lang.AbstractStringBuilder.ensureCapacityInternal(AbstractStringBuilder.java:<span class="number">124</span>)</span><br><span class="line"> at java.lang.AbstractStringBuilder.append(AbstractStringBuilder.java:<span class="number">448</span>)</span><br><span class="line"> at java.lang.StringBuilder.append(StringBuilder.java:<span class="number">136</span>)</span><br><span class="line"> at com.atguigu.java1.GCTest.main(GCTest.java:<span class="number">20</span>)</span><br><span class="line"></span><br><span class="line">Process finished with exit code <span class="number">0</span></span><br></pre></td></tr></table></figure></div>
+
+<p><em>分析</em>：</p>
+<p><code>[GC (Allocation Failure) [PSYoungGen: 2036K-&gt;496K(2560K)] 2036K-&gt;871K(9728K), 0.0062912 secs] [Times: user=0.01 sys=0.01, real=0.00 secs]</code></p>
+<p>年轻代GC：GC前年轻代 2036K，GC后年轻代496K (年轻代总大小2560K, 2.5M)；GC前堆2036K，GC后堆871K（堆总大小9728K, 9.5M 包括老年代）</p>
+<p>GC后年轻代大小没有变成 0K，因为有一部分对象保存在幸存者区没有被垃圾回收。</p>
+<p><code>[Full GC (Ergonomics) [PSYoungGen: 1008K-&gt;0K(2560K)] [ParOldGen: 6834K-&gt;4588K(7168K)] 7843K-&gt;4588K(9728K), [Metaspace: 3012K-&gt;3012K(1056768K)], 0.0051738 secs] [Times: user=0.02 sys=0.00, real=0.00 secs]</code></p>
+<p>Full GC：GC前年轻代1008K，GC后年轻代0K （年轻代总大小2560K，2.5M）；GC前老年代6834K，GC后老年代4588K （老年代总大小7168K，7M）；GC前堆7834K，GC后堆4588K （堆总大小 9728K, 9.5M ）</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Heap</span><br><span class="line"> PSYoungGen      total 2560K, used 136K [0x00000007bfd00000, 0x00000007c0000000, 0x00000007c0000000)</span><br><span class="line">  eden space 2048K, 6% used [0x00000007bfd00000,0x00000007bfd22300,0x00000007bff00000)</span><br><span class="line">  from space 512K, 0% used [0x00000007bff80000,0x00000007bff80000,0x00000007c0000000)</span><br><span class="line">  to   space 512K, 0% used [0x00000007bff00000,0x00000007bff00000,0x00000007bff80000)</span><br><span class="line"> ParOldGen       total 7168K, used 4570K [0x00000007bf600000, 0x00000007bfd00000, 0x00000007bfd00000)</span><br><span class="line">  object space 7168K, 63% used [0x00000007bf600000,0x00000007bfa76938,0x00000007bfd00000)</span><br><span class="line"> Metaspace       used 3086K, capacity 4496K, committed 4864K, reserved 1056768K</span><br><span class="line">  class space    used 337K, capacity 388K, committed 512K, reserved 1048576K</span><br></pre></td></tr></table></figure></div>
+
+<p>年轻代2560K，2.5M ；伊甸园区2M，from、to各0.5M<br>老年代7168K，7 M  </p>
+<p>🤔🤔从上面日志可以看出，堆空间实际上大于设置的参数9M❓</p>
+<hr>
+<iframe width="1015" height="549" src="https://www.youtube.com/embed/vY-gi_7M_Mc?list=PLtGk8Nqe2ZcK0xUtbQjHeX2gqgoOdKJnX" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+<hr>
+<h2 id="6-堆空间分代思想"><a href="#6-堆空间分代思想" class="headerlink" title="6 堆空间分代思想"></a>6 堆空间分代思想</h2><p>为什么需要对 Java 堆进行分代？不分代就不能正常工作了吗？</p>
+<ul>
+<li>经研究，不同对象的生命周期不同。70%-99% 的对象是临时对象。<ul>
+<li>➢ 新生代：有 Eden、两块大小相同的 Survivor (又称为 from/to， s0/s1) 构成，to 总为空。</li>
+<li>➢ 老年代：存放新生代中经历多次 GC 仍然存活的对象。</li>
+</ul>
+</li>
+<li>其实不分代完全可以，分代的唯一理由就是优化 Gc 性能。如果没有分代，那所有的对象都在一块，就如同把一个学校的人都关在一个教室。GC 的时候要找到哪些对象没用，这样就会对堆的所有区域进行扫描。而很多对象都是朝生夕死的，如果分代的话，把新创建的对象放到某一地方， 当 GC 的时候先把这块存储 “朝生夕死” 对象的区域进行回收，这样就会腾出很大的空间出来。</li>
+</ul>
+<hr>
+<h2 id="7-内存分配策略"><a href="#7-内存分配策略" class="headerlink" title="7 内存分配策略"></a>7 内存分配策略</h2><p>如果对象在 Eden 出生并经过第次 MinorGC 后仍然存活，并且能被 Survivor 容纳的话，将被移动到 survivor 空间中，并将对象年龄设为 1。对象在 Survivor 区中每熬过一次 MinorGC，年龄就增加 1 岁，当它的年龄增加到一定<br>程度 (默认为 15 岁，其实每个 JVM、每个 GC 都有所不同) 时，就会被晋升到老年代中。</p>
+<p>对象晋升老年代的年龄阈值，可以通过选项 <code>-XX:MaxTenuringThreshold</code> 来设置</p>
+<p>针对不同年龄段的对象分配原则如下所示:</p>
+<ul>
+<li>● 优先分配到 Eden</li>
+<li>● 大对象直接分配到老年代<ul>
+<li>尽量避免程序中出现过多的大对象</li>
+</ul>
+</li>
+<li>● 长期存活的对象分配到老年代</li>
+<li>● 动态对象年龄判断<ul>
+<li>如果 Survivor 区中相同年龄的所有对象大小的总和大于 Survivor 空间的一半，<strong>年龄大于或等于</strong>该年龄的对象可以直接进入老年代，无须等到 <code>MaxTenuringThreshold</code> 中要求的年龄。</li>
+</ul>
+</li>
+<li>● 空间分配担保<ul>
+<li><code>-XX:HandlePromotionFailure</code></li>
+</ul>
+</li>
+</ul>
+<p>测试：大对象直接分配到老年代</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java1;</span><br><span class="line"></span><br><span class="line"><span class="comment">/** 测试：大对象直接进入老年代</span></span><br><span class="line"><span class="comment"> * -Xms60m -Xmx60m -XX:NewRatio=2 -XX:SurvivorRatio=8 -XX:+PrintGCDetails</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  21:48</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">YoungOldAreaTest</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">byte</span>[] buffer = <span class="keyword">new</span> <span class="keyword">byte</span>[<span class="number">1024</span> * <span class="number">1024</span> * <span class="number">20</span>];<span class="comment">//20m</span></span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>设置 VM options 为 <code>-Xms60m -Xmx60m -XX:NewRatio=2 -XX:SurvivorRatio=8 -XX:+PrintGCDetails</code> ，在 Java 8 下运行：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">18432</span>K, used <span class="number">2308</span>K [<span class="number">0x00000007bec00000</span>, <span class="number">0x00000007c0000000</span>, <span class="number">0x00000007c0000000</span>)</span><br><span class="line">  eden space <span class="number">16384</span>K, <span class="number">14</span>% used [<span class="number">0x00000007bec00000</span>,<span class="number">0x00000007bee41048</span>,<span class="number">0x00000007bfc00000</span>)</span><br><span class="line">  from space <span class="number">2048</span>K, <span class="number">0</span>% used [<span class="number">0x00000007bfe00000</span>,<span class="number">0x00000007bfe00000</span>,<span class="number">0x00000007c0000000</span>)</span><br><span class="line">  to   space <span class="number">2048</span>K, <span class="number">0</span>% used [<span class="number">0x00000007bfc00000</span>,<span class="number">0x00000007bfc00000</span>,<span class="number">0x00000007bfe00000</span>)</span><br><span class="line"> ParOldGen       total <span class="number">40960</span>K, used <span class="number">20480</span>K [<span class="number">0x00000007bc400000</span>, <span class="number">0x00000007bec00000</span>, <span class="number">0x00000007bec00000</span>)</span><br><span class="line">  object space <span class="number">40960</span>K, <span class="number">50</span>% used [<span class="number">0x00000007bc400000</span>,<span class="number">0x00000007bd800010</span>,<span class="number">0x00000007bec00000</span>)</span><br><span class="line"> Metaspace       used <span class="number">3080</span>K, capacity <span class="number">4496</span>K, committed <span class="number">4864</span>K, reserved <span class="number">1056768</span>K</span><br><span class="line">  <span class="class"><span class="keyword">class</span> <span class="title">space</span>    <span class="title">used</span> 337<span class="title">K</span>, <span class="title">capacity</span> 388<span class="title">K</span>, <span class="title">committed</span> 512<span class="title">K</span>, <span class="title">reserved</span> 1048576<span class="title">K</span></span></span><br></pre></td></tr></table></figure></div>
+
+<p>在 JDK1.7 下运行结果如下：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">18432</span>K, used <span class="number">1967</span>K [<span class="number">0x00000007fec00000</span>, <span class="number">0x0000000800000000</span>, <span class="number">0x0000000800000000</span>)</span><br><span class="line">  eden space <span class="number">16384</span>K, <span class="number">12</span>% used [<span class="number">0x00000007fec00000</span>,<span class="number">0x00000007fedebc28</span>,<span class="number">0x00000007ffc00000</span>)</span><br><span class="line">  from space <span class="number">2048</span>K, <span class="number">0</span>% used [<span class="number">0x00000007ffe00000</span>,<span class="number">0x00000007ffe00000</span>,<span class="number">0x0000000800000000</span>)</span><br><span class="line">  to   space <span class="number">2048</span>K, <span class="number">0</span>% used [<span class="number">0x00000007ffc00000</span>,<span class="number">0x00000007ffc00000</span>,<span class="number">0x00000007ffe00000</span>)</span><br><span class="line"> ParOldGen       total <span class="number">40960</span>K, used <span class="number">20480</span>K [<span class="number">0x00000007fc400000</span>, <span class="number">0x00000007fec00000</span>, <span class="number">0x00000007fec00000</span>)</span><br><span class="line">  object space <span class="number">40960</span>K, <span class="number">50</span>% used [<span class="number">0x00000007fc400000</span>,<span class="number">0x00000007fd800010</span>,<span class="number">0x00000007fec00000</span>)</span><br><span class="line"> PSPermGen       total <span class="number">21504</span>K, used <span class="number">2986</span>K [<span class="number">0x00000007f7200000</span>, <span class="number">0x00000007f8700000</span>, <span class="number">0x00000007fc400000</span>)</span><br><span class="line">  object space <span class="number">21504</span>K, <span class="number">13</span>% used [<span class="number">0x00000007f7200000</span>,<span class="number">0x00000007f74eab58</span>,<span class="number">0x00000007f8700000</span>)</span><br></pre></td></tr></table></figure></div>
+
+<p>设置了堆空间最小 / 大为 60M，新生代与老年代之间的比例为 2:1，伊甸园区与幸存者区之间的比例为 8:1:1，打印 GC 日志详情。新生代（伊甸园区 16M + 两个幸存者区 2M*2）20M，老年代 40M，老年代已用空间 20M，由此可见，伊甸园区容纳不下 20M 的数组，分配的一个 20M 的数组直接进入了老年代。</p>
+<hr>
+<h2 id="8-为对象分配内存：TLAB"><a href="#8-为对象分配内存：TLAB" class="headerlink" title="8 为对象分配内存：TLAB"></a>8 为对象分配内存：TLAB</h2><p><strong>为什么有 TLAB ( Thread Local Allocation Buffer )</strong> ?</p>
+<ul>
+<li>● 堆区是线程共享区域，任何线程都可以访问到堆区中的共享数据</li>
+<li>● 由于对象实例的创建在 JVM 中非常频繁，因此在并发环境下从堆区中划分内存空间是线程不安全的</li>
+<li>● 为避免多个线程操作同一地址，需要使用加锁等机制，进而影响分配速度。</li>
+</ul>
+<p><strong>什么是 TLAB</strong> ?</p>
+<ul>
+<li>从内存模型而不是垃圾收集的角度，对 Eden 区域继续进行划分，JVM <strong>为每个线程分配了一个私有缓存区域</strong>，它包含在 Eden 空间内。</li>
+<li>多线程同时分配内存时，使用 TLAB 可以避免一系列的<del>非</del>线程安全问题，同时还能够提升内存分配的吞吐量，因此我们可以将这种内存分配方式称之为<strong>快速分配</strong>策略。</li>
+<li>据我所知所有 OpenJDK 衍生出来的 JVM 都提供了 TLAB 的设计。</li>
+</ul>
+<p><strong>TLAB 的再说明</strong>:</p>
+<ul>
+<li>尽管不是所有的对象实例都能够在 TLAB 中成功分配内存 (因为空间很小)，但 <strong>JVM 确实是将 TLAB 作为内存分配的首选</strong> （使用命令 <code>jinfo -flag UseTLAB pid</code> 查看 TLAB 是否开启，默认是开启的）。</li>
+<li>在程序中，开发人员可以通过选项 “<code>-XX:UseTLAB</code>“ 设置是否开启 TLAB 空间。</li>
+<li>默认情况下，TLAB 空间的内存非常小，<strong>仅占有整个 Eden 空间的 1%</strong>，可以使用命令 <code>jinfo -flag TLABWasteTargetPercent pid</code> 查看 TLAB 占伊甸园区的百分比，当然我们可以通过选项 <a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html" target="_blank" rel="noopener">“<code>-XX:TLABWasteTargetPercent</code>“</a> 设置 TLAB 空间所占用 Eden 空间的百分比大小。</li>
+<li>一旦对象在 TLAB 空间分配内存失败时，JVM 就会尝试着 <strong>通过使用加锁机制</strong> 确保数据操作的原子性，从而直接在 Eden 空间中分配内存。</li>
+</ul>
+<p><img src="/2020/07/11/JVM-04/TLAB.png" alt="对象分配过程：TLAB"></p>
+<hr>
+<h2 id="9-小结堆空间的参数设置"><a href="#9-小结堆空间的参数设置" class="headerlink" title="9 小结堆空间的参数设置"></a>9 小结堆空间的参数设置</h2><p>堆空间的参数设置</p>
+<p>官网说明：<a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html" target="_blank" rel="noopener">https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html</a></p>
+<ul>
+<li><code>-XX:+PrintFlagsInitial</code> : 查看所有的参数的默认初始值</li>
+<li><code>-XX:+PrintFlagsFinal</code> : 查看所有的参数的最终值 (可能会存在修改，不再是初始值)</li>
+<li><code>-Xms</code> : 初始堆空间内存 ( 默认为物理内存的 1/64)</li>
+<li><code>-Xmx</code> : 最大堆空间内存 ( 默认为物理内存的 1/4)</li>
+<li><code>-Xmn</code> : 设置新生代的大小。(初始值及最大值)</li>
+<li><code>-XX:NewRatio</code> : 配置新生代与老年代在堆结构的占比</li>
+<li><code>-XX:SurvivorRatio</code> : 设置新生代中 Eden 和 S0/S1 空间的比例</li>
+<li><code>-XX:MaxTenuringThreshold</code> : 设置新生代垃圾的最大年龄</li>
+<li><code>-XX:+PrintGCDetails</code> : 输出详细的 GC 处理日志<ul>
+<li>➢ 打印 GC 简要信息: ① <code>-XX:+PrintGC</code> ② <code>-verbose:gc</code></li>
+</ul>
+</li>
+<li><code>-XX:HandlePromotionFailure</code> : 是否设置空间分配担保</li>
+</ul>
+<p><strong>关于参数</strong> <code>-XX:SurvivorRatio</code></p>
+<p>年轻代中，若伊甸园区设置过大，幸存者区较小，则容易导致在 YGC / Minor GC 时，伊甸园区中剩余的对象直接晋升老年代，则分代的意义就不大了。</p>
+<p>若伊甸园区设置过小，幸存者区过大，则容易导致 YGC / Minor GC 的频率增加，更加频繁的垃圾回收会增加 STW 的总体时间，影响程序的性能。</p>
+<p>从性能调优的角度，都应该降低 GC 的频率。</p>
+<p><strong>关于参数</strong> <code>-XX:HandlePromotionFailure</code></p>
+<p>在发生 Minor GC 之前，虚拟机会<strong>检查老年代最大可用的连续空间是否大于新生代所有对象的总空间</strong>。</p>
+<ul>
+<li>如果大于，则此次 Minor GC 是安全的</li>
+<li>如果小于，则虚拟机会查看 <code>-XX:HandlePromotionFailure</code> 设置值是否允许担保失败。<ul>
+<li>如果 <code>HandlePromotionFailure</code>=true， 那么会继续<strong>检查老年代最大可用连续空间是否大于历次晋升到老年代的对象的平均大小</strong>。<ul>
+<li>如果大于，则尝试进行一次 Minor GC，但这次 Minor GC 依然是有风险的；</li>
+<li>如果小于，则改为进行一次 Full GC。</li>
+</ul>
+</li>
+<li>如果 <code>HandlePromotionFailure</code>=false， 则改为进行一次 Full GC。</li>
+</ul>
+</li>
+</ul>
+<p>在 JDK6 Update24 之后，HandlePromotionFailure 参数不会再影响到虛拟机的空间分配担保策略，观察 OpenJDK 中的源码变化，虽然源码中还定义了 HandlePromotionFailure 参数，但是在代码中已经不会再使用它。JDK6 Update24 之后的规则变为<strong>只要老年代的连续空间大于新生代对象总大小或者历次晋升的平均大小就会进行 Minor GC， 否则将进行 Full GC</strong>。</p>
+<hr>
+<h2 id="X-堆是分配对象的唯一选择吗"><a href="#X-堆是分配对象的唯一选择吗" class="headerlink" title="X 堆是分配对象的唯一选择吗"></a>X 堆是分配对象的唯一选择吗</h2><p><strong>堆是分配对象的唯一选择吗</strong> ？</p>
+<p>在《深入理解 Java 虚拟机》中关于 Java 堆内存有这样一段描述:</p>
+<p>随着 JIT 编译期的发展与<strong>逃逸分析技术</strong>逐渐成熟，<strong>栈上分配、标量替换优化技术</strong>将会导致一些微妙的变化，所有的对象都分配到堆上也渐渐变得不那么 “绝对” 了。</p>
+<p>在 Java 虚拟机中，对象是在 Java 堆中分配内存的，这是一个普遍的常识。但是，有一种特殊情况，那就是如果经过<strong>逃逸分析 (Escape Analysis) 后发现，一个对象并没有逃逸出方法的话，那么就可能被优化成栈上分配</strong>。这样就无需在堆上分配内存，也无须进行垃圾回收了。这也是最常见的堆外存储技术。</p>
+<p>此外，前面提到的基于 OpenJDK 深度定制的 TaoBaoVM, 其中创新的 GCIH (GC invisible heap) 技术实现 off-heap, 将生命周期较长的 Java 对象从 heap 中移至 heap 外，并且 GC 不能管理 GCIH 内部的 Java 对象，以此达到降低 GC 的回收频率和提升 GC 的回收效率的目的。</p>
+<h3 id="逃逸分析概述"><a href="#逃逸分析概述" class="headerlink" title="逃逸分析概述"></a>逃逸分析概述</h3><ul>
+<li>如何将堆上的对象分配到栈，需要使用逃逸分析手段。</li>
+<li>这是一种可以有效减少Java程序中同步负载和内存堆分配压力的跨函数全局数据流分析算法。</li>
+<li>通过逃逸分析，Java Hotspot编译器能够分析出一个新的对象的引用的使用范围从而决定是否要将这个对象分配到堆上。</li>
+<li>逃逸分析的基本行为就是分析对象动态作用域:;<ul>
+<li>➢ 当一个对象在方法中被定义后，对象只在方法内部使用，则认为没有发生逃逸。</li>
+<li>➢ 当一个对象在方法中被定义后，它被外部方法所引用，则认为发生逃逸。例如作为调用参数传递到其他地方中。</li>
+</ul>
+</li>
+</ul>
+<p>例如：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">my_method</span><span class="params">()</span></span>&#123;</span><br><span class="line">    V v = <span class="keyword">new</span> V();</span><br><span class="line">    <span class="comment">// use v</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    v = <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>没有发生逃逸的现象，则可以分配到栈上，随着方法执行的结束，栈空间就被移除。</p>
+<p>由例如，</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> StringBuffer <span class="title">createStringBuffer</span><span class="params">(String s2, String s2)</span></span>&#123;</span><br><span class="line">    StringBuffer sb = <span class="keyword">new</span> StringBuffer();</span><br><span class="line">    sb.append(s1);</span><br><span class="line">    sb.append(s2);</span><br><span class="line">    <span class="keyword">return</span> sb;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>上述代码中，如果想要 StringBuffer sb 不逃出方法，可以这样写：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">createStringBuffer</span><span class="params">(String s2, String s2)</span></span>&#123;</span><br><span class="line">    StringBuffer sb = <span class="keyword">new</span> StringBuffer();</span><br><span class="line">    sb.append(s1);</span><br><span class="line">    sb.append(s2);</span><br><span class="line">    <span class="keyword">return</span> sb.toString();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>逃逸分析的各种情况：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java2;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 逃逸分析</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *  如何快速的判断是否发生了逃逸分析，大家就看new的对象实体是否有可能在方法外被调用。</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020 下午 4:00</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">EscapeAnalysis</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> EscapeAnalysis obj;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">    方法返回EscapeAnalysis对象，发生逃逸</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> EscapeAnalysis <span class="title">getInstance</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">return</span> obj == <span class="keyword">null</span>? <span class="keyword">new</span> EscapeAnalysis() : obj;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">    为成员属性赋值，发生逃逸</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setObj</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.obj = <span class="keyword">new</span> EscapeAnalysis();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//思考：如果当前的obj引用声明为static的？仍然会发生逃逸。</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">    对象的作用域仅在当前方法中有效，没有发生逃逸</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">useEscapeAnalysis</span><span class="params">()</span></span>&#123;</span><br><span class="line">        EscapeAnalysis e = <span class="keyword">new</span> EscapeAnalysis();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">    引用成员变量的值，发生逃逸</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">useEscapeAnalysis1</span><span class="params">()</span></span>&#123;</span><br><span class="line">        EscapeAnalysis e = getInstance();</span><br><span class="line">        <span class="comment">//getInstance().xxx()同样会发生逃逸</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>参数设置:</p>
+<ul>
+<li>● 在 JDK 6u23 版本之后，HotSpot 中默认就已经开启了逃逸分析。</li>
+<li>● 如果使用的是较早的版本，开发人员则可以通过:<ul>
+<li>➢ 选项 “<code>-XX:+DoEscapeAnalysis</code>“ 显式开启逃逸分析</li>
+<li>➢ 通过选项 “<code>-XX:+PrintEscapeAnalysis</code>“ 查看逃逸分析的筛选结果。<ul>
+<li>（实测这个参数不被识别，报错 <code>Unrecognized VM option &#39;PrintEscapeAnalysis&#39;</code> 创建 JVM 失败，需要使用带 debug 的 JDK，例如第三方编译的 <code>java-1.8.0-openjdk-fastdebug-1.8.0.111-1.b15.ojdkbuild.windows.x86_64.zip</code> ）</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>结论：<strong>开发中能使用局部变量的，就不要使用在方法外定义。</strong></p>
+<h3 id="逃逸分析之代码优化"><a href="#逃逸分析之代码优化" class="headerlink" title="逃逸分析之代码优化"></a>逃逸分析之代码优化</h3><p>使用逃逸分析，编译器可以对代码做如下优化:</p>
+<ul>
+<li>一、<strong>栈上分配</strong>。将堆分配转化为栈分配。如果-一个对象在子程序中被分配, 要使指向该对象的指针永远不会逃逸，对象可能是栈分配的候选，而不是堆分配。</li>
+<li>二、<strong>同步省略</strong>。如果一个对象被发现只能从一个线程被访问到，那么对于这个对象的操作可以不考虑同步。</li>
+<li>三、<strong>分离对象或标量替换</strong>。有的对象可能不需要作为一个连续的内存结构存在也可以被访问到，那么对象的部分(或全部)可以不存储在内存，而是存储在 CPU 寄存器中。</li>
+</ul>
+<h4 id="代码优化之栈上分配"><a href="#代码优化之栈上分配" class="headerlink" title="代码优化之栈上分配"></a>代码优化之栈上分配</h4><ul>
+<li>JIT 编译器在编译期间根据逃逸分析的结果，发现如果一个对象并没有逃逸出方法的话，就可能被优化成栈上分配。分配完成后，继续在调用栈内执行，最后线程结束，栈空间被回收，局部变量对象也被回收。这样就无须进行垃圾回收了。</li>
+<li>常见的栈上分配的场景<ul>
+<li>➢ 在逃逸分析中，已经说明了。逃逸出方法：分别是给成员变量赋值、方法返回值、实例引用传递。</li>
+</ul>
+</li>
+</ul>
+<p>代码演示：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java2;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 栈上分配测试</span></span><br><span class="line"><span class="comment"> * -Xmx1G -Xms1G -XX:-DoEscapeAnalysis -XX:+PrintGCDetails</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  10:31</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">StackAllocation</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000000</span>; i++) &#123;</span><br><span class="line">            alloc();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 查看执行时间</span></span><br><span class="line">        <span class="keyword">long</span> end = System.currentTimeMillis();</span><br><span class="line">        System.out.println(<span class="string">"花费的时间为： "</span> + (end - start) + <span class="string">" ms"</span>);</span><br><span class="line">        <span class="comment">// 为了方便查看堆内存中对象个数，线程sleep</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Thread.sleep(<span class="number">1000000</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e1) &#123;</span><br><span class="line">            e1.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">alloc</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        User user = <span class="keyword">new</span> User();<span class="comment">//未发生逃逸</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">User</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>两种情况下运行，使用 VisualVM Sampler 查看 Memory 情况。</p>
+<p>设置 VM options 为 <code>-Xmx1G -Xms1G -XX:-DoEscapeAnalysis -XX:+PrintGCDetails</code>, 运行;</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">花费的时间为： <span class="number">97</span> ms</span><br><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">305664</span>K, used <span class="number">188744</span>K [<span class="number">0x00000007aab00000</span>, <span class="number">0x00000007c0000000</span>, <span class="number">0x00000007c0000000</span>)</span><br><span class="line">  eden space <span class="number">262144</span>K, <span class="number">72</span>% used [<span class="number">0x00000007aab00000</span>,<span class="number">0x00000007b63521c8</span>,<span class="number">0x00000007bab00000</span>)</span><br><span class="line">  from space <span class="number">43520</span>K, <span class="number">0</span>% used [<span class="number">0x00000007bd580000</span>,<span class="number">0x00000007bd580000</span>,<span class="number">0x00000007c0000000</span>)</span><br><span class="line">  to   space <span class="number">43520</span>K, <span class="number">0</span>% used [<span class="number">0x00000007bab00000</span>,<span class="number">0x00000007bab00000</span>,<span class="number">0x00000007bd580000</span>)</span><br><span class="line"> ParOldGen       total <span class="number">699392</span>K, used <span class="number">0</span>K [<span class="number">0x0000000780000000</span>, <span class="number">0x00000007aab00000</span>, <span class="number">0x00000007aab00000</span>)</span><br><span class="line">  object space <span class="number">699392</span>K, <span class="number">0</span>% used [<span class="number">0x0000000780000000</span>,<span class="number">0x0000000780000000</span>,<span class="number">0x00000007aab00000</span>)</span><br><span class="line"> Metaspace       used <span class="number">3608</span>K, capacity <span class="number">4540</span>K, committed <span class="number">4864</span>K, reserved <span class="number">1056768</span>K</span><br><span class="line">  <span class="class"><span class="keyword">class</span> <span class="title">space</span>    <span class="title">used</span> 399<span class="title">K</span>, <span class="title">capacity</span> 428<span class="title">K</span>, <span class="title">committed</span> 512<span class="title">K</span>, <span class="title">reserved</span> 1048576<span class="title">K</span></span></span><br></pre></td></tr></table></figure></div>
+
+<p><img src="/2020/07/11/JVM-04/StackAllocation1.png" alt="关闭逃逸分析"></p>
+<p>对比 VM options 为 <code>-Xmx1G -Xms1G -XX:+DoEscapeAnalysis -XX:+PrintGCDetails</code>, 运行。</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">花费的时间为： <span class="number">4</span> ms</span><br><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">305664</span>K, used <span class="number">78643</span>K [<span class="number">0x00000007aab00000</span>, <span class="number">0x00000007c0000000</span>, <span class="number">0x00000007c0000000</span>)</span><br><span class="line">  eden space <span class="number">262144</span>K, <span class="number">30</span>% used [<span class="number">0x00000007aab00000</span>,<span class="number">0x00000007af7ccfd8</span>,<span class="number">0x00000007bab00000</span>)</span><br><span class="line">  from space <span class="number">43520</span>K, <span class="number">0</span>% used [<span class="number">0x00000007bd580000</span>,<span class="number">0x00000007bd580000</span>,<span class="number">0x00000007c0000000</span>)</span><br><span class="line">  to   space <span class="number">43520</span>K, <span class="number">0</span>% used [<span class="number">0x00000007bab00000</span>,<span class="number">0x00000007bab00000</span>,<span class="number">0x00000007bd580000</span>)</span><br><span class="line"> ParOldGen       total <span class="number">699392</span>K, used <span class="number">0</span>K [<span class="number">0x0000000780000000</span>, <span class="number">0x00000007aab00000</span>, <span class="number">0x00000007aab00000</span>)</span><br><span class="line">  object space <span class="number">699392</span>K, <span class="number">0</span>% used [<span class="number">0x0000000780000000</span>,<span class="number">0x0000000780000000</span>,<span class="number">0x00000007aab00000</span>)</span><br><span class="line"> Metaspace       used <span class="number">8857</span>K, capacity <span class="number">9194</span>K, committed <span class="number">9344</span>K, reserved <span class="number">1056768</span>K</span><br><span class="line">  <span class="class"><span class="keyword">class</span> <span class="title">space</span>    <span class="title">used</span> 1037<span class="title">K</span>, <span class="title">capacity</span> 1132<span class="title">K</span>, <span class="title">committed</span> 1152<span class="title">K</span>, <span class="title">reserved</span> 1048576<span class="title">K</span></span></span><br></pre></td></tr></table></figure></div>
+
+<p><img src="/2020/07/11/JVM-04/StackAllocation2.png" alt="开启逃逸分析"></p>
+<p>从上面可以看出是否开启逃逸分析时的内存占用情况，开启了逃逸分析内存占用明显降低，由于使用了栈上分配，不用维护 1000 万个 User 对象了，而且创建 1000 万个 User 对象所用时间也明显降低。</p>
+<p>在 Windows (使用的是上面提到的 fastdebug JDK，否则 <code>+PrintEscapeAnalysis</code> 不可用) 中运行上述程序，打印逃逸分析日志：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="POWERSHELL"><figure class="iseeu highlight /powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">PS C:\Users\yan\java&gt; java <span class="literal">-Xmx1G</span> <span class="literal">-Xms1G</span> <span class="literal">-XX</span>:+DoEscapeAnalysis <span class="literal">-XX</span>:+PrintGCDetails <span class="literal">-XX</span>:+PrintEscapeAnalysis <span class="string">'StackAllocation'</span></span><br><span class="line"></span><br><span class="line">======== Connection graph <span class="keyword">for</span>  StackAllocation::alloc</span><br><span class="line">JavaObject NoEscape(NoEscape) [ [ <span class="number">36</span> ]]   <span class="number">24</span>    Allocate        ===  <span class="number">5</span>  <span class="number">6</span>  <span class="number">7</span>  <span class="number">8</span>  <span class="number">1</span> ( <span class="number">22</span>  <span class="number">20</span>  <span class="number">21</span>  <span class="number">1</span>  <span class="number">1</span> ) [[ <span class="number">25</span>  <span class="number">26</span>  <span class="number">27</span>  <span class="number">34</span>  <span class="number">35</span>  <span class="number">36</span> ]]  rawptr:NotNull ( int:&gt;=<span class="number">0</span>, java/lang/Object:NotNull *, bool, top ) StackAllocation::alloc <span class="selector-tag">@</span> bci:<span class="number">0</span> !jvms: StackAllocation::alloc <span class="selector-tag">@</span> bci:<span class="number">0</span></span><br><span class="line">LocalVar [ <span class="number">24</span><span class="type">P</span> [ ]]   <span class="number">36</span>        Proj    ===  <span class="number">24</span>  [[ <span class="number">37</span> ]] <span class="comment">#5 !jvms: StackAllocation::alloc @ bci:0</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">======== Connection graph <span class="keyword">for</span>  StackAllocation::main</span><br><span class="line">JavaObject NoEscape(NoEscape) [ [ <span class="number">119</span> ]]   <span class="number">107</span>  Allocate        ===  <span class="number">86</span>  <span class="number">76</span>  <span class="number">103</span>  <span class="number">8</span>  <span class="number">1</span> ( <span class="number">32</span>  <span class="number">105</span>  <span class="number">20</span>  <span class="number">1</span>  <span class="number">1</span>  <span class="number">29</span>  <span class="number">1</span>  <span class="number">79</span>  <span class="number">1</span>  <span class="number">1</span>  <span class="number">1</span> ) [[ <span class="number">108</span>  <span class="number">109</span>  <span class="number">110</span>  <span class="number">117</span>  <span class="number">118</span>  <span class="number">119</span> ]]  rawptr:NotNull ( int:&gt;=<span class="number">0</span>, java/lang/Object:NotNull *, bool, top ) StackAllocation::alloc <span class="selector-tag">@</span> bci:<span class="number">0</span> StackAllocation::main <span class="selector-tag">@</span> bci:<span class="number">12</span> !jvms: StackAllocation::alloc <span class="selector-tag">@</span> bci:<span class="number">0</span> StackAllocation::main <span class="selector-tag">@</span> bci:<span class="number">12</span></span><br><span class="line">LocalVar [ <span class="number">107</span><span class="type">P</span> [ ]]   <span class="number">119</span>      Proj    ===  <span class="number">107</span>  [[ <span class="number">120</span> ]] <span class="comment">#5 !jvms: StackAllocation::alloc @ bci:0 StackAllocation::main @ bci:12</span></span><br><span class="line"></span><br><span class="line">花费的时间为： <span class="number">15</span> ms</span><br><span class="line"></span><br><span class="line">======== Connection graph <span class="keyword">for</span>  StackAllocation::main</span><br><span class="line">JavaObject NoEscape(NoEscape) [ [ <span class="number">98</span> ]]   <span class="number">86</span>    Allocate        ===  <span class="number">366</span>  <span class="number">68</span>  <span class="number">358</span>  <span class="number">8</span>  <span class="number">1</span> ( <span class="number">84</span>  <span class="number">83</span>  <span class="number">26</span>  <span class="number">1</span>  <span class="number">1</span>  <span class="number">24</span>  <span class="number">1</span>  <span class="number">70</span>  <span class="number">1</span>  <span class="number">1</span>  <span class="number">1</span> ) [[ <span class="number">87</span>  <span class="number">88</span>  <span class="number">89</span>  <span class="number">96</span>  <span class="number">97</span>  <span class="number">98</span> ]]  rawptr:NotNull ( int:&gt;=<span class="number">0</span>, java/lang/Object:NotNull *, bool, top ) StackAllocation::alloc <span class="selector-tag">@</span> bci:<span class="number">0</span> StackAllocation::main <span class="selector-tag">@</span> bci:<span class="number">12</span> !jvms: StackAllocation::alloc <span class="selector-tag">@</span> bci:<span class="number">0</span> StackAllocation::main <span class="selector-tag">@</span> bci:<span class="number">12</span></span><br><span class="line">LocalVar [ <span class="number">86</span><span class="type">P</span> [ ]]   <span class="number">98</span>        Proj    ===  <span class="number">86</span>  [[ <span class="number">99</span> ]] <span class="comment">#5 !jvms: StackAllocation::alloc @ bci:0 StackAllocation::main @ bci:12</span></span><br><span class="line"></span><br><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">305664</span>K, used <span class="number">36700</span>K [<span class="number">0</span><span class="type">x00000000eab00000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">eden</span> <span class="type">space</span> <span class="number">262144</span><span class="type">K</span>, <span class="number">14</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000eab00000</span>,<span class="number">0</span><span class="type">x00000000eced7188</span>,<span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line">  <span class="type">from</span> <span class="type">space</span> <span class="number">43520</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000fd580000</span>,<span class="number">0</span><span class="type">x00000000fd580000</span>,<span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">to</span>   <span class="type">space</span> <span class="number">43520</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000fab00000</span>,<span class="number">0</span><span class="type">x00000000fab00000</span>,<span class="number">0</span><span class="type">x00000000fd580000</span>)</span><br><span class="line"> <span class="type">ParOldGen</span>       <span class="type">total</span> <span class="number">699392</span><span class="type">K</span>, <span class="type">used</span> <span class="number">0</span><span class="type">K</span> [<span class="number">0</span><span class="type">x00000000c0000000</span>, <span class="number">0</span><span class="type">x00000000eab00000</span>, <span class="number">0</span><span class="type">x00000000eab00000</span>)</span><br><span class="line">  <span class="type">object</span> <span class="type">space</span> <span class="number">699392</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000c0000000</span>,<span class="number">0</span><span class="type">x00000000c0000000</span>,<span class="number">0</span><span class="type">x00000000eab00000</span>)</span><br><span class="line"> <span class="type">Metaspace</span>       <span class="type">used</span> <span class="number">2885</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">4486</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">4864</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1056768</span><span class="type">K</span></span><br><span class="line">  <span class="type">class</span> <span class="type">space</span>    <span class="type">used</span> <span class="number">273</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">386</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">512</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1048576</span><span class="type">K</span></span><br><span class="line"></span><br><span class="line"><span class="type">PS</span> <span class="type">C</span>:\<span class="type">Users</span>\<span class="type">yan</span>\<span class="type">java</span>&gt; <span class="type">java</span> -<span class="type">Xmx1G</span> -<span class="type">Xms1G</span> -<span class="type">XX</span>:-<span class="type">DoEscapeAnalysis</span> -<span class="type">XX</span>:+<span class="type">PrintGCDetails</span> -<span class="type">XX</span>:+<span class="type">PrintEscapeAnalysis</span> <span class="string">'StackAllocation'</span></span><br><span class="line">花费的时间为： <span class="number">47</span> <span class="type">ms</span></span><br><span class="line"><span class="type">Heap</span></span><br><span class="line"> <span class="type">PSYoungGen</span>      <span class="type">total</span> <span class="number">305664</span><span class="type">K</span>, <span class="type">used</span> <span class="number">167772</span><span class="type">K</span> [<span class="number">0</span><span class="type">x00000000eab00000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">eden</span> <span class="type">space</span> <span class="number">262144</span><span class="type">K</span>, <span class="number">64</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000eab00000</span>,<span class="number">0</span><span class="type">x00000000f4ed72c8</span>,<span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line">  <span class="type">from</span> <span class="type">space</span> <span class="number">43520</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000fd580000</span>,<span class="number">0</span><span class="type">x00000000fd580000</span>,<span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">to</span>   <span class="type">space</span> <span class="number">43520</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000fab00000</span>,<span class="number">0</span><span class="type">x00000000fab00000</span>,<span class="number">0</span><span class="type">x00000000fd580000</span>)</span><br><span class="line"> <span class="type">ParOld</span></span><br></pre></td></tr></table></figure></div>
+
+<p>如果将 heap 的大小设置为 256M , 并且不使用逃逸分析，可以看到发生了 GC：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="POWERSHELL"><figure class="iseeu highlight /powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">PS C:\Users\yan\java&gt; java <span class="literal">-Xmx256M</span> <span class="literal">-Xms256M</span> <span class="literal">-XX</span>:<span class="literal">-DoEscapeAnalysis</span> <span class="literal">-XX</span>:+PrintGCDetails <span class="literal">-XX</span>:+PrintEscapeAnalysis <span class="string">'StackAllocation'</span></span><br><span class="line">[<span class="type">GC</span> (<span class="type">Allocation</span> <span class="type">Failure</span>) [<span class="type">PSYoungGen</span>: <span class="number">65536</span><span class="type">K</span>-&gt;<span class="number">760</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] <span class="number">65536</span><span class="type">K</span>-&gt;<span class="number">768</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), <span class="number">0.0093114</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.00</span> <span class="type">sys</span>=<span class="number">0.00</span>, <span class="type">real</span>=<span class="number">0.00</span> <span class="type">secs</span>]</span><br><span class="line">[<span class="type">GC</span> (<span class="type">Allocation</span> <span class="type">Failure</span>) [<span class="type">PSYoungGen</span>: <span class="number">66296</span><span class="type">K</span>-&gt;<span class="number">688</span><span class="type">K</span>(<span class="number">76288</span><span class="type">K</span>)] <span class="number">66304</span><span class="type">K</span>-&gt;<span class="number">696</span><span class="type">K</span>(<span class="number">251392</span><span class="type">K</span>), <span class="number">0.0071857</span> <span class="type">secs</span>] [<span class="type">Times</span>: <span class="type">user</span>=<span class="number">0.02</span> <span class="type">sys</span>=<span class="number">0.00</span>, <span class="type">real</span>=<span class="number">0.02</span> <span class="type">secs</span>]</span><br><span class="line">花费的时间为： <span class="number">63</span> ms</span><br><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">76288</span>K, used <span class="number">29524</span>K [<span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">eden</span> <span class="type">space</span> <span class="number">65536</span><span class="type">K</span>, <span class="number">44</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000fab00000</span>,<span class="number">0</span><span class="type">x00000000fc729048</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>)</span><br><span class="line">  <span class="type">from</span> <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">6</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000ff580000</span>,<span class="number">0</span><span class="type">x00000000ff62c040</span>,<span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">to</span>   <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000ff580000</span>)</span><br><span class="line"> <span class="type">ParOldGen</span>       <span class="type">total</span> <span class="number">175104</span><span class="type">K</span>, <span class="type">used</span> <span class="number">8</span><span class="type">K</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line">  <span class="type">object</span> <span class="type">space</span> <span class="number">175104</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>,<span class="number">0</span><span class="type">x00000000f0002000</span>,<span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line"> <span class="type">Metaspace</span>       <span class="type">used</span> <span class="number">2885</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">4486</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">4864</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1056768</span><span class="type">K</span></span><br><span class="line">  <span class="type">class</span> <span class="type">space</span>    <span class="type">used</span> <span class="number">273</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">386</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">512</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1048576</span><span class="type">K</span></span><br></pre></td></tr></table></figure></div>
+
+<p>如果将 heap 的大小设置为 256M , 开启使用逃逸分析，可以看到没有发生 GC ：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="POWERSHELL"><figure class="iseeu highlight /powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">PS C:\Users\yan\java&gt; java <span class="literal">-Xmx256M</span> <span class="literal">-Xms256M</span> <span class="literal">-XX</span>:+DoEscapeAnalysis <span class="literal">-XX</span>:+PrintGCDetails <span class="literal">-XX</span>:+PrintEscapeAnalysis <span class="string">'StackAllocation'</span></span><br><span class="line"></span><br><span class="line">======== Connection graph <span class="keyword">for</span>  StackAllocation::alloc</span><br><span class="line">JavaObject NoEscape(NoEscape) [ [ <span class="number">36</span> ]]   <span class="number">24</span>    Allocate        ===  <span class="number">5</span>  <span class="number">6</span>  <span class="number">7</span>  <span class="number">8</span>  <span class="number">1</span> ( <span class="number">22</span>  <span class="number">20</span>  <span class="number">21</span>  <span class="number">1</span>  <span class="number">1</span> ) [[ <span class="number">25</span>  <span class="number">26</span>  <span class="number">27</span>  <span class="number">34</span>  <span class="number">35</span>  <span class="number">36</span> ]]  rawptr:NotNull ( int:&gt;=<span class="number">0</span>, java/lang/Object:NotNull *, bool, top ) StackAllocation::alloc <span class="selector-tag">@</span> bci:<span class="number">0</span> !jvms: StackAllocation::alloc <span class="selector-tag">@</span> bci:<span class="number">0</span></span><br><span class="line">LocalVar [ <span class="number">24</span><span class="type">P</span> [ ]]   <span class="number">36</span>        Proj    ===  <span class="number">24</span>  [[ <span class="number">37</span> ]] <span class="comment">#5 !jvms: StackAllocation::alloc @ bci:0</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">======== Connection graph <span class="keyword">for</span>  StackAllocation::main</span><br><span class="line">JavaObject NoEscape(NoEscape) [ [ <span class="number">119</span> ]]   <span class="number">107</span>  Allocate        ===  <span class="number">86</span>  <span class="number">76</span>  <span class="number">103</span>  <span class="number">8</span>  <span class="number">1</span> ( <span class="number">32</span>  <span class="number">105</span>  <span class="number">20</span>  <span class="number">1</span>  <span class="number">1</span>  <span class="number">29</span>  <span class="number">1</span>  <span class="number">79</span>  <span class="number">1</span>  <span class="number">1</span>  <span class="number">1</span> ) [[ <span class="number">108</span>  <span class="number">109</span>  <span class="number">110</span>  <span class="number">117</span>  <span class="number">118</span>  <span class="number">119</span> ]]  rawptr:NotNull ( int:&gt;=<span class="number">0</span>, java/lang/Object:NotNull *, bool, top ) StackAllocation::alloc <span class="selector-tag">@</span> bci:<span class="number">0</span> StackAllocation::main <span class="selector-tag">@</span> bci:<span class="number">12</span> !jvms: StackAllocation::alloc <span class="selector-tag">@</span> bci:<span class="number">0</span> StackAllocation::main <span class="selector-tag">@</span> bci:<span class="number">12</span></span><br><span class="line">LocalVar [ <span class="number">107</span><span class="type">P</span> [ ]]   <span class="number">119</span>      Proj    ===  <span class="number">107</span>  [[ <span class="number">120</span> ]] <span class="comment">#5 !jvms: StackAllocation::alloc @ bci:0 StackAllocation::main @ bci:12</span></span><br><span class="line"></span><br><span class="line">花费的时间为： <span class="number">31</span> ms</span><br><span class="line">======== Connection graph <span class="keyword">for</span></span><br><span class="line"> StackAllocation::main</span><br><span class="line">JavaObject NoEscape(NoEscape) [ [ <span class="number">98</span> ]]   <span class="number">86</span>    Allocate        ===  <span class="number">366</span>  <span class="number">68</span>  <span class="number">358</span>  <span class="number">8</span>  <span class="number">1</span> ( <span class="number">84</span>  <span class="number">83</span>  <span class="number">26</span>  <span class="number">1</span>  <span class="number">1</span>  <span class="number">24</span>  <span class="number">1</span>  <span class="number">70</span>  <span class="number">1</span>  <span class="number">1</span>  <span class="number">1</span> ) [[ <span class="number">87</span>  <span class="number">88</span>  <span class="number">89</span>  <span class="number">96</span>  <span class="number">97</span>  <span class="number">98</span> ]]  rawptr:NotNull ( int:&gt;=<span class="number">0</span>, java/lang/Object:NotNull *, bool, top ) StackAllocation::alloc <span class="selector-tag">@</span> bci:<span class="number">0</span> StackAllocation::main <span class="selector-tag">@</span> bci:<span class="number">12</span> !jvms: StackAllocation::alloc <span class="selector-tag">@</span> bci:<span class="number">0</span> StackAllocation::main <span class="selector-tag">@</span> bci:<span class="number">12</span></span><br><span class="line">LocalVar [ <span class="number">86</span><span class="type">P</span> [ ]]   <span class="number">98</span>        Proj    ===  <span class="number">86</span>  [[ <span class="number">99</span> ]] <span class="comment">#5 !jvms: StackAllocation::alloc @ bci:0 StackAllocation::main @ bci:12</span></span><br><span class="line"></span><br><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">76288</span>K, used <span class="number">26214</span>K [<span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>, <span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">eden</span> <span class="type">space</span> <span class="number">65536</span><span class="type">K</span>, <span class="number">40</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000fab00000</span>,<span class="number">0</span><span class="type">x00000000fc499a88</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>)</span><br><span class="line">  <span class="type">from</span> <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000ff580000</span>,<span class="number">0</span><span class="type">x00000000ff580000</span>,<span class="number">0</span><span class="type">x0000000100000000</span>)</span><br><span class="line">  <span class="type">to</span>   <span class="type">space</span> <span class="number">10752</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000feb00000</span>,<span class="number">0</span><span class="type">x00000000ff580000</span>)</span><br><span class="line"> <span class="type">ParOldGen</span>       <span class="type">total</span> <span class="number">175104</span><span class="type">K</span>, <span class="type">used</span> <span class="number">0</span><span class="type">K</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>, <span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line">  <span class="type">object</span> <span class="type">space</span> <span class="number">175104</span><span class="type">K</span>, <span class="number">0</span>% <span class="type">used</span> [<span class="number">0</span><span class="type">x00000000f0000000</span>,<span class="number">0</span><span class="type">x00000000f0000000</span>,<span class="number">0</span><span class="type">x00000000fab00000</span>)</span><br><span class="line"> <span class="type">Metaspace</span>       <span class="type">used</span> <span class="number">2885</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">4486</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">4864</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1056768</span><span class="type">K</span></span><br><span class="line">  <span class="type">class</span> <span class="type">space</span>    <span class="type">used</span> <span class="number">273</span><span class="type">K</span>, <span class="type">capacity</span> <span class="number">386</span><span class="type">K</span>, <span class="type">committed</span> <span class="number">512</span><span class="type">K</span>, <span class="type">reserved</span> <span class="number">1048576</span><span class="type">K</span></span><br><span class="line"><span class="type">PS</span> <span class="type">C</span>:\<span class="type">Users</span>\<span class="type">yan</span>\<span class="type">java</span>&gt;</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="代码优化之同步省略（消除）"><a href="#代码优化之同步省略（消除）" class="headerlink" title="代码优化之同步省略（消除）"></a>代码优化之同步省略（消除）</h4><ul>
+<li>线程同步的代价是相当高的，同步的后果是降低并发性和性能。</li>
+<li>在动态编译同步块的时候，JIT 编译器可以借助逃逸分析来<strong>判断同步块所使用的锁对象是否只能够被一个线程访问而没有被发布到其他线程</strong>。如果（是上述情况、）没有（被发布到其他线程），那么 JIT 编译器在编译这个同步块的时候就会取消对这部分代码的同步。这样就能大大提高并发性和性能。这个取消同步的过程就叫同步省略，也叫<strong>锁消除</strong>。</li>
+</ul>
+<p>如以下代码:</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">f</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Object hollis = <span class="keyword">new</span> Object();</span><br><span class="line">    <span class="keyword">synchronized</span>(hollis)&#123;</span><br><span class="line">        System.out.println(hollis);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>代码中对 hollis 这个对象进行加锁，但是 hollis 对象的生命周期只在 f() 方法中，并不会被其他线程所访问到，所以在 JIT 编译阶段就会被优化掉。优化成:</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">f</span><span class="params">()</span></span>&#123;</span><br><span class="line">    Object hollis = <span class="keyword">new</span> Object();</span><br><span class="line">    System.out.println(hollis);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>实际上，上面这么写也起不到同步作用，因为使用本地局部变量当作锁对象，每个进程调用这个方法都会 new 一个新的锁对象，从而每个线程所使用的对象监视器都是不同的，起不到同步的作用。<br>而且，上面那种写法 javac 编译阶段生成的字节码中还是会有同步的字节码指令生成 （ <code>monitorenter</code> 和 <code>monitorexit</code> ）。f() 对应字节码指令如下：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"> 0 new #2 &lt;java/lang/Object&gt;</span><br><span class="line"> <span class="number">3</span> dup</span><br><span class="line"> 4 invokespecial #1 &lt;java/lang/Object.&lt;init&gt;&gt;</span><br><span class="line"> <span class="number">7</span> astore_1</span><br><span class="line"> <span class="number">8</span> aload_1</span><br><span class="line"> <span class="number">9</span> dup</span><br><span class="line"><span class="number">10</span> astore_2</span><br><span class="line"><span class="number">11</span> monitorenter</span><br><span class="line">12 getstatic #3 &lt;java/lang/System.out&gt;</span><br><span class="line"><span class="number">15</span> aload_1</span><br><span class="line">16 invokevirtual #4 &lt;java/io/PrintStream.println&gt;</span><br><span class="line"><span class="number">19</span> aload_2</span><br><span class="line"><span class="number">20</span> monitorexit</span><br><span class="line"><span class="number">21</span> goto <span class="number">29</span> (+<span class="number">8</span>)</span><br><span class="line"><span class="number">24</span> astore_3</span><br><span class="line"><span class="number">25</span> aload_2</span><br><span class="line"><span class="number">26</span> monitorexit</span><br><span class="line"><span class="number">27</span> aload_3</span><br><span class="line"><span class="number">28</span> athrow</span><br><span class="line"><span class="number">29</span> <span class="keyword">return</span></span><br></pre></td></tr></table></figure></div>
+
+<h4 id="🌿-代码优化之标量替换"><a href="#🌿-代码优化之标量替换" class="headerlink" title="🌿 代码优化之标量替换"></a>🌿 代码优化之标量替换</h4><p><strong>标量 (Scalar)</strong> 是指一个无法再分解成更小的数据的数据。Java 中的原始数据类型就是标量。</p>
+<p>相对的，那些还可以分解的数据叫做<strong>聚合量 (Aggregate)</strong> ，Java 中的对象就是聚合量，因为他可以分解成其他聚合量和标量。</p>
+<p>在 JIT 阶段，如果经过逃逸分析，发现一个对象不会被外界访问的话，那么经过 JIT 优化，就会把这个对象拆解成若千个其中包含的若干个成员变量来代替。这个过程就是<strong>标量替换</strong>。</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    alloc();</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">alloc</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    Point point = <span class="keyword">new</span> Point(<span class="number">1</span>,<span class="number">2</span>);</span><br><span class="line">    System.out.println(<span class="string">"point.x="</span> + point.x + <span class="string">"; point.y="</span> + point.y);</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Point</span></span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> x;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> y;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>以上代码，经过标量替换后，就会变成:</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">alloc</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> x = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">int</span> y = <span class="number">2</span>;</span><br><span class="line">    System.out.println(<span class="string">"point.x="</span> + x + <span class="string">"; point.y="</span> + y);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>可以看到，Point 这个聚合量经过逃逸分析后，发现他并没有逃逸，就被替换成两个聚合量了。那么标量替换有什么好处呢？就是可以大大减少堆内存的占用。因为一旦不需要创建对象了，那么就不再需要分配堆内存了。</p>
+<p>标量替换为栈上分配提供了很好的基础。</p>
+<p><strong>标量替换参数设置</strong>:</p>
+<p>参数 <code>-XX:+EliminateAllocations</code> : 开启了标量替换(默认打开)，允许将对象打散分配在栈上。</p>
+<p>测试：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java2;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 标量替换测试</span></span><br><span class="line"><span class="comment"> *  -Xmx100m -Xms100m -XX:+DoEscapeAnalysis -XX:+PrintGC -XX:-EliminateAllocations</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  12:01</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ScalarReplace</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">User</span> </span>&#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">int</span> id;</span><br><span class="line">        <span class="keyword">public</span> String name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">alloc</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        User u = <span class="keyword">new</span> User();<span class="comment">//未发生逃逸</span></span><br><span class="line">        u.id = <span class="number">5</span>;</span><br><span class="line">        u.name = <span class="string">"www.atguigu.com"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000000</span>; i++) &#123;</span><br><span class="line">            alloc();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">long</span> end = System.currentTimeMillis();</span><br><span class="line">        System.out.println(<span class="string">"花费的时间为： "</span> + (end - start) + <span class="string">" ms"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">class Customer&#123;</span></span><br><span class="line"><span class="comment">    String name;</span></span><br><span class="line"><span class="comment">    int id;</span></span><br><span class="line"><span class="comment">    Account acct;</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">&#125;</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">class Account&#123;</span></span><br><span class="line"><span class="comment">    double balance;</span></span><br><span class="line"><span class="comment">&#125;</span></span><br><span class="line"><span class="comment"> */</span></span><br></pre></td></tr></table></figure></div>
+
+<p>上述代码在主函数中进行了 10000000 次 alloc() 。 调用进行对象创建，由于 User 对象实例需要占据约 16 字节的空间，因此累计分配空间达到将近 152 MB。如果堆空间小于这个值，就必然会发生 GC。 使用如下参数运行上述代码:  </p>
+<p><code>-server -Xmx100m -Xms100m -XX:+DoEscapeAnalysis -XX:+PrintGC -XX:+EliminateAllocations +PrintEliminateAllocations</code>  </p>
+<p>这里使用参数如下:  </p>
+<ul>
+<li>● 参数 <code>-server</code>: 启动 server 模式， 因为在 Server 模式下，才可以启用逃逸分析 (不用手动写这个参数是因为使用 <code>java -version</code> 可以查看到 JDK 版本默认就是 Server VM)。  </li>
+<li>● 参数 <code>-XX:+DoEscapeAnalysis</code> : 启用逃逸分析  </li>
+<li>● 参数 <code>-Xmx10m</code> : 指定了堆空间最大为 10MB  </li>
+<li>● 参数 <code>-XX:+PrintGC</code> : 将打印 GC 日志。  </li>
+<li>● 参数 <code>-XX:+EliminateAllocations</code> : 开启了标量替换 (默认打开)，允许将对象打散分配在栈上，比如对 象拥有 id 和name两个字段，那么这两个字段将会被视为两个独立的局部变量进行分配。  </li>
+<li><code>+PrintEliminateAllocations</code> : 打印标量替换信息，Non-product builds: Print out when allocations are eliminated，非产品版本，需要使用 debug JDK 运行。</li>
+</ul>
+<p>设置 VM options 为 <code>-Xmx100m -Xms100m -XX:+DoEscapeAnalysis -XX:+PrintGC -XX:-EliminateAllocations</code>，先不使用标量替换 <code>-XX:-EliminateAllocations</code>，运行上述程序：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">[GC (Allocation Failure)  <span class="number">25600</span>K-&gt;<span class="number">584</span>K(<span class="number">98304</span>K), <span class="number">0.0015866</span> secs]</span><br><span class="line">[GC (Allocation Failure)  <span class="number">26184</span>K-&gt;<span class="number">616</span>K(<span class="number">98304</span>K), <span class="number">0.0014574</span> secs]</span><br><span class="line">[GC (Allocation Failure)  <span class="number">26216</span>K-&gt;<span class="number">520</span>K(<span class="number">98304</span>K), <span class="number">0.0013473</span> secs]</span><br><span class="line">[GC (Allocation Failure)  <span class="number">26120</span>K-&gt;<span class="number">536</span>K(<span class="number">98304</span>K), <span class="number">0.0012746</span> secs]</span><br><span class="line">[GC (Allocation Failure)  <span class="number">26136</span>K-&gt;<span class="number">456</span>K(<span class="number">98304</span>K), <span class="number">0.0013713</span> secs]</span><br><span class="line">[GC (Allocation Failure)  <span class="number">26056</span>K-&gt;<span class="number">480</span>K(<span class="number">101376</span>K), <span class="number">0.0016144</span> secs]</span><br><span class="line">[GC (Allocation Failure)  <span class="number">32224</span>K-&gt;<span class="number">440</span>K(<span class="number">101376</span>K), <span class="number">0.0015301</span> secs]</span><br><span class="line">[GC (Allocation Failure)  <span class="number">32184</span>K-&gt;<span class="number">440</span>K(<span class="number">101376</span>K), <span class="number">0.0011484</span> secs]</span><br><span class="line">花费的时间为： <span class="number">82</span> ms</span><br><span class="line"></span><br><span class="line">Process finished with exit code <span class="number">0</span></span><br></pre></td></tr></table></figure></div>
+
+<p>设置 VM options 为 <code>-Xmx100m -Xms100m -XX:+DoEscapeAnalysis -XX:+PrintGC -XX:+EliminateAllocations</code>，使用标量替换 <code>-XX:+EliminateAllocations</code>，再次运行上述程序：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">花费的时间为： <span class="number">4</span> ms</span><br><span class="line"></span><br><span class="line">Process finished with exit code</span><br></pre></td></tr></table></figure></div>
+
+<p>从程序的运行结果对比来看，开启标量替换时，没有发生垃圾回收，而且执行 <code>alloc()</code> 方法创建对象 1000 万次的时间很明显降低了。</p>
+<h4 id="逃逸分析小结"><a href="#逃逸分析小结" class="headerlink" title="逃逸分析小结"></a>逃逸分析小结</h4><p>逃逸分析小结:逃逸分析并不成熟</p>
+<ul>
+<li>关于逃逸分析的论文在 1999 年就已经发表了，但直到 JDK 1.6 才有实现，而且这项技术到如今也并不是十分成熟的。</li>
+<li>其根本原因就是 <strong>无法保证逃逸分析的性能消耗一定能高于他的消耗。虽然经过逃逸分析可以做标量替换、栈上分配、和锁消除。但是逃逸分析自身也是需要进行一系列复杂的分析的，这其实也是一个相对耗时的过程</strong>。</li>
+<li>一个极端的例子，就是经过逃逸分析之后，发现没有一个对象是不逃逸的。那这个逃逸分析的过程就白白浪费掉了。</li>
+<li>虽然这项技术并不十分成熟，但是它也<strong>是即时编译器优化技术中一个十分重要的手段</strong>。</li>
+<li>注意到有一些观点，认为通过逃逸分析，JVM 会在栈上分配那些不会逃逸的对象，这在理论上是可行的，但是取决于 JVM 设计者的选择。据我所知，Oracle Hotspot JVM 中并未这么做，这一点在逃逸分析相关的文档里已经说明，所以可以明确所有的对象实例都是创建在堆上。<ul>
+<li>前面演示的程序之所以会有栈上分配的那种效果，可以理解为：逃逸分析 + 标量替换 =&gt; 栈上分配；基于逃逸分析和标量替换，某种程度上可以说是达到了栈上分配的效果。</li>
+</ul>
+</li>
+<li>目前很多书籍还是基于 JDK 7 以前的版本，JDK 已经发生了很大变化，intern 字符串的缓存和静态变量曾经都被分配在永久代上，而永久代已经被元数据区取代。但是，intern 字符串缓存和静态变量并不是被转移到元数据区，而是直接在堆上分配，所以这一点同样符合前面一点的结论：对象实例都是分配在堆上。</li>
+</ul>
+<h2 id="本章小结"><a href="#本章小结" class="headerlink" title="本章小结"></a>本章小结</h2><ul>
+<li>年轻代是对象的诞生、成长、消亡的区域，一个对象在这里产生、应用，最后被垃圾回收器收集、结束生命。</li>
+<li>老年代放置长生命周期的对象，通常都是从 Survivor 区域筛选拷贝过来的 Java 对象。当然，也有特殊情况，我们知道普通的对象会被分配在 TLAB 上；如果对象较大，JVM 会试图直接分配在 Eden 其他位置上；如果对象太大，完全无法在新生代找到足够长的连续空闲空间，JVM 就会直接分配到老年代。</li>
+<li>当 GC 只发生在年轻代中，回收年轻代对象的行为被称为 Minor GC。当 GC 发生在老年代时则被称为 Major GC 或者 Full GC。一般的，Minor GC 的发生频率要比 MajorGC 高很多，即老年代中垃圾回收发生的频率将大大低于年轻代。</li>
+</ul>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../../17/JVM-05/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            JVM 05 运行时数据区之方法区 (MethodArea)
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../../05/JVM-03/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">JVM 03 运行时数据区之虚拟机栈 (Stack)</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%8B%B1%E8%AF%AD/" rel="tag">英语</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/Git-Bash/" style="font-size: 10px;">Git Bash</a> <a href="../../../../tags/Github/" style="font-size: 12px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/Hadoop/" style="font-size: 18px;">Hadoop</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/JVM/" style="font-size: 18px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/Linux/" style="font-size: 16px;">Linux</a> <a href="../../../../tags/MapReduce/" style="font-size: 12px;">MapReduce</a> <a href="../../../../tags/Maven/" style="font-size: 14px;">Maven</a> <a href="../../../../tags/Shell/" style="font-size: 12px;">Shell</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/hexo/" style="font-size: 12px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 10px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 12px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12px;">竹云</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 10px;">终端</a> <a href="../../../../tags/%E8%8B%B1%E8%AF%AD/" style="font-size: 10px;">英语</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../../../2022/08/16/2022%E6%B5%8B%E8%AF%95/">2022测试</a>
+          </li>
+        
+          <li>
+            <a href="../../../08/23/%E5%BA%94%E7%94%A8%E7%B3%BB%E7%BB%9F%E9%9B%86%E6%88%90%E2%80%94%E2%80%94%E8%AE%BF%E9%97%AE%E6%8E%A7%E5%88%B6/">应用系统集成——访问控制</a>
+          </li>
+        
+          <li>
+            <a href="../../../08/23/%E5%BA%94%E7%94%A8%E7%B3%BB%E7%BB%9F%E9%9B%86%E6%88%90%E2%80%94%E2%80%94%E8%BA%AB%E4%BB%BD%E7%AE%A1%E7%90%86/">应用系统集成 —— 身份管理</a>
+          </li>
+        
+          <li>
+            <a href="../../../08/23/%E5%AF%BC%E5%87%BAjar%E5%8C%85%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/">导出 jar 包的几种方式（命令行、Idea、Eclipse）</a>
+          </li>
+        
+          <li>
+            <a href="../../../08/08/JVM-07/">JVM 07 对象的实例化内存布局与访问定位</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2022 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>

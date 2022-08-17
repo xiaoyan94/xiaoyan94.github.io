@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>Hadoop：分布式资源调度YARN | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="description" content="YARN全称：Yet Another Resource Negotiator。 一个Cluster Resource Management">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hadoop：分布式资源调度YARN">
+<meta property="og:url" content="https://xiaoyan94.github.io/2020/06/18/%E5%88%86%E5%B8%83%E5%BC%8F%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6YARN/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="YARN全称：Yet Another Resource Negotiator。 一个Cluster Resource Management">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/06/18/%E5%88%86%E5%B8%83%E5%BC%8F%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6YARN/yarn_architecture.gif">
+<meta property="article:published_time" content="2020-06-18T06:48:12.000Z">
+<meta property="article:modified_time" content="2022-08-17T01:59:07.536Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="Hadoop">
+<meta property="article:tag" content="YARN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://xiaoyan94.github.io/2020/06/18/%E5%88%86%E5%B8%83%E5%BC%8F%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6YARN/yarn_architecture.gif">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-分布式资源调度YARN" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      Hadoop：分布式资源调度YARN
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2020-06-18T06:48:12.000Z" itemprop="datePublished">2020-06-18</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <p><strong>YARN</strong>全称：Yet Another Resource Negotiator。</p>
+<p>一个Cluster Resource Management</p>
+<a id="more"></a>
+
+<h2 id="YARN产生背景"><a href="#YARN产生背景" class="headerlink" title="YARN产生背景"></a>YARN产生背景</h2><p>MapReduce1.x存在的问题：</p>
+<ul>
+<li>单点故障&amp;节点压力大不易扩展</li>
+<li>资源利用率低&amp;运维成本高</li>
+</ul>
+<p>Hadoop1.x时:  </p>
+<p>MapReduce: Master/Slave架构， 1个JobTracker带多个TaskTracker<br>JobTracker: 负责资源管理和作业调度<br>TaskTracker: 定期向JT汇报本节点的健康状况、资源使用情况、作业执行情况;<br>接收来自JT的命令:启动任务/杀死任务</p>
+<p><strong>YARN</strong>:</p>
+<p>不同计算框架可以共享同一个HDFS集群上的数据，享受整体的资源调度<br>XXX on YARN的好处:<br>与其他计算框架共享集群资源，按资源需要分配，进而提高集群资源的利用率<br>XXX: Spark/MapReduce/Storm/Flink</p>
+<h2 id="基本思想"><a href="#基本思想" class="headerlink" title="基本思想"></a>基本思想</h2><p>MapReduce v2版本的<strong>基本思想</strong>是将JobTracker的两个主要功能（<strong>资源管理和作业计划/监视</strong>）拆分为单独的守护程序。 想法是拥有一个全局<strong>ResourceManager</strong>（RM）和每个应用程序的<strong>ApplicationMaster</strong>（AM）。 一个应用程序（Application）要么是传统意义上的Map-Reduce作业中的单个作业，要么是作业的DAG（有向无环图）。</p>
+<hr>
+<h2 id="主要组件"><a href="#主要组件" class="headerlink" title="主要组件"></a>主要组件</h2><p><img src="/2020/06/18/%E5%88%86%E5%B8%83%E5%BC%8F%E8%B5%84%E6%BA%90%E8%B0%83%E5%BA%A6YARN/yarn_architecture.gif" alt="Yarn架构和主要组件"></p>
+<p>ResourceManager和每个节点的从属节点NodeManager（NM）构成了数据计算框架。 ResourceManager是在系统中所有应用程序之间仲裁资源的最终权限。</p>
+<p>每个应用程序的ApplicationMaster实际上是一个框架特定库，其任务是协商来自ResourceManager的资源，并与NodeManager一起执行和监视任务。</p>
+<p>ResourceManager具有两个主要组件：Scheduler和ApplicationsManager。  </p>
+<p>Scheduler负责将资源分配给各种正在运行的应用程序，这些应用程序受到常见的能力、队列等约束。<br>Scheduler是纯调度器，因为它不监视或跟踪应用程序的状态。此外，它不能保证重新启动<em>由于应用程序失败或硬件失败而失败的</em>任务。<br>Scheduler基于应用程序的资源要求执行其调度功能；它基于资源容器的抽象概念来执行此功能，资源容器合并了内存、CPU、磁盘、网络等元素。在第一个版本中，仅支持内存。<br>Scheduler有一个可插拔的策略插件，负责在各种队列、应用程序等之间划分集群资源。Map-Reduce调度器(如CapacityScheduler和FairScheduler)就是该插件的一些示例。<br>CapacityScheduler支持分层队列（<em>hierarchical queues</em>），以使群集资源的共享更加可预测。</p>
+<p>ApplicationsManager负责接受作业提交，协商用于执行特定于应用程序的ApplicationMaster的第一个容器，并提供在失败时重新启动ApplicationMaster容器的服务。</p>
+<p>Container： 封装了CPU、Memory等资源的容器。</p>
+<p>NodeManager是每台机器的框架代理，负责容器，监视其资源使用情况（cpu，内存，磁盘，网络），并将其报告给ResourceManager / Scheduler。</p>
+<p>每个应用程序的ApplicationMaster负责从Scheduler协商适当的资源容器，跟踪它们的状态并监视进度。</p>
+<p>MRV2与以前的稳定版本（hadoop-1.x）保持API兼容性。这意味着，所有Map Reduce作业都应该在MRv2的基础上以不变的方式运行，只需重新编译。</p>
+<hr>
+<h2 id="YARN环境搭建"><a href="#YARN环境搭建" class="headerlink" title="YARN环境搭建"></a>YARN环境搭建</h2><p>Hadoop版本：hadoop-2.6.0-cdh5.7.0</p>
+<h3 id="服务器配置"><a href="#服务器配置" class="headerlink" title="服务器配置"></a>服务器配置</h3><p>依然是在伪分布式环境：<br>Hadoop也可以以伪分布式模式在单节点上运行，其中每个Hadoop守护程序都在单独的Java进程中运行。<br>通过设置一些参数并运行ResourceManager守护进程和NodeManager守护进程，可以在伪分布式模式下在YAR上运行MapReduce作业。</p>
+<p>打开以下配置文件：Hadoop安装目录/etc/hadoop/mapred-site.xml:</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>mapreduce.framework.name<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>yarn<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+<p>Hadoop安装目录/etc/hadoop/yarn-site.xml:</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.nodemanager.aux-services<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>mapreduce_shuffle<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+<h3 id="启动与停止YARN服务"><a href="#启动与停止YARN服务" class="headerlink" title="启动与停止YARN服务"></a>启动与停止YARN服务</h3><p>启动ResourceManager守护程序和NodeManager守护程序：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="variable">$HADOOP_HOME</span>/sbin/start-yarn.sh</span><br><span class="line">$</span><br></pre></td></tr></table></figure></div>
+
+<p><code>jps</code>命令查看RM和NM进程是否启动成功<br>ResourceManager Web管理界面： <a href="http://server-ip:8088/" target="_blank" rel="noopener">http://server-ip:8088/</a></p>
+<p>运行MapReduce作业：<br>使用<code>hadoop jar</code>命令提交MapReduce作业到yarn运行。</p>
+<p>停止YARN守护进程：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="variable">$HADOOP_HOME</span>/sbin/stop-yarn.sh</span><br><span class="line">$</span><br></pre></td></tr></table></figure></div>
+
+<hr>
+<p><a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/hadoop-project-dist/hadoop-common/ClusterSetup.html" target="_blank" rel="noopener">真·分布式集群配置</a></p>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../../21/Linux-macOS%E7%BB%88%E7%AB%AF%E5%91%BD%E4%BB%A4%E4%B9%8B%E2%80%94%E2%80%94find/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            Linux/macOS终端命令之——find
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../Hadoop-HDFS-JAVA-API%E6%93%8D%E4%BD%9C/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">Hadoop HDFS JAVA API操作</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%8B%B1%E8%AF%AD/" rel="tag">英语</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/Git-Bash/" style="font-size: 10px;">Git Bash</a> <a href="../../../../tags/Github/" style="font-size: 12px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/Hadoop/" style="font-size: 18px;">Hadoop</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/JVM/" style="font-size: 18px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/Linux/" style="font-size: 16px;">Linux</a> <a href="../../../../tags/MapReduce/" style="font-size: 12px;">MapReduce</a> <a href="../../../../tags/Maven/" style="font-size: 14px;">Maven</a> <a href="../../../../tags/Shell/" style="font-size: 12px;">Shell</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/hexo/" style="font-size: 12px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 10px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 12px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12px;">竹云</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 10px;">终端</a> <a href="../../../../tags/%E8%8B%B1%E8%AF%AD/" style="font-size: 10px;">英语</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../../../2022/08/16/2022%E6%B5%8B%E8%AF%95/">2022测试</a>
+          </li>
+        
+          <li>
+            <a href="../../../08/23/%E5%BA%94%E7%94%A8%E7%B3%BB%E7%BB%9F%E9%9B%86%E6%88%90%E2%80%94%E2%80%94%E8%AE%BF%E9%97%AE%E6%8E%A7%E5%88%B6/">应用系统集成——访问控制</a>
+          </li>
+        
+          <li>
+            <a href="../../../08/23/%E5%BA%94%E7%94%A8%E7%B3%BB%E7%BB%9F%E9%9B%86%E6%88%90%E2%80%94%E2%80%94%E8%BA%AB%E4%BB%BD%E7%AE%A1%E7%90%86/">应用系统集成 —— 身份管理</a>
+          </li>
+        
+          <li>
+            <a href="../../../08/23/%E5%AF%BC%E5%87%BAjar%E5%8C%85%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/">导出 jar 包的几种方式（命令行、Idea、Eclipse）</a>
+          </li>
+        
+          <li>
+            <a href="../../../08/08/JVM-07/">JVM 07 对象的实例化内存布局与访问定位</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2022 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>

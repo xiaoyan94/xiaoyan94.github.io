@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>JVM 03 运行时数据区之虚拟机栈 (Stack) | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="description" content="1 虚拟机栈概述 2 栈的存储单位 3 局部变量表 4 操作数栈 5 代码追踪 6 栈顶缓存技术 7 动态链接 8 方法的调用:解析与分派 9 方法返回地址 10 一些附加信息 11 栈的相关面试题">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM 03 运行时数据区之虚拟机栈 (Stack)">
+<meta property="og:url" content="https://xiaoyan94.github.io/2020/07/05/JVM-03/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="1 虚拟机栈概述 2 栈的存储单位 3 局部变量表 4 操作数栈 5 代码追踪 6 栈顶缓存技术 7 动态链接 8 方法的调用:解析与分派 9 方法返回地址 10 一些附加信息 11 栈的相关面试题">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/05/JVM-03/%E6%A0%88%E5%B8%A71.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/05/JVM-03/%E5%8F%98%E9%87%8F%E6%A7%BDSlot1.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/05/JVM-03/%E6%A0%88%E5%B8%A71.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/05/JVM-03/%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A51.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/05/JVM-03/%E6%A0%88%E5%B8%A71.png">
+<meta property="og:image" content="https://xiaoyan94.github.io/2020/07/05/JVM-03/%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%A0%881.png">
+<meta property="article:published_time" content="2020-07-05T08:06:02.000Z">
+<meta property="article:modified_time" content="2022-08-17T01:59:07.574Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="JVM">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://xiaoyan94.github.io/2020/07/05/JVM-03/%E6%A0%88%E5%B8%A71.png">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-JVM-03" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      JVM 03 运行时数据区之虚拟机栈 (Stack)
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2020-07-05T08:06:02.000Z" itemprop="datePublished">2020-07-05</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <ul>
+<li>1 虚拟机栈概述</li>
+<li>2 栈的存储单位</li>
+<li>3 局部变量表</li>
+<li>4 操作数栈</li>
+<li>5 代码追踪</li>
+<li>6 栈顶缓存技术</li>
+<li>7 动态链接</li>
+<li>8 方法的调用:解析与分派</li>
+<li>9 方法返回地址</li>
+<li>10 一些附加信息</li>
+<li>11 栈的相关面试题</li>
+</ul>
+<a id="more"></a>
+
+<h2 id="1-虚拟机栈概述"><a href="#1-虚拟机栈概述" class="headerlink" title="1 虚拟机栈概述"></a>1 虚拟机栈概述</h2><p>由于跨平台性的设计，Java的指令都是根据栈来设计的。不同平台CPU架构不同，所以不能设计为基于寄存器的。</p>
+<p><strong>优点是跨平台，指令集小，编译器容易实现，缺点是性能下降，实现同样的功能需要更多的指令。</strong></p>
+<p>有不少Java开发人员一提到Java内存结构，就会非常粗粒度地将JVM中的内存区理解为仅有Java堆(heap)和Java栈(stack)?为什么?</p>
+<p><em>不全面。也许堆和栈太重要。</em></p>
+<p>内存中的栈与堆</p>
+<p><strong>栈是运行时的单位，而堆是存储的单位。</strong></p>
+<p>即: 栈解决程序的运行问题，即程序如何执行，或者说如何处理数据。  堆解决的是数据存储的问题，即数据怎么放、放在哪儿。</p>
+<hr>
+<h3 id="虚拟机栈基本内容"><a href="#虚拟机栈基本内容" class="headerlink" title="虚拟机栈基本内容"></a>虚拟机栈基本内容</h3><p>● <strong>Java虚拟机栈是什么</strong>?</p>
+<p>Java虚拟机栈(Java Virtual Machine Stack) ，早期也叫Java栈。每个线程在创建时都会创建一个虚拟机栈，其内部保存一个个的栈帧(Stack Frame) ，对应着一次次的Java方法调用。<br>➢ 是线程私有的</p>
+<p>● <strong>生命周期</strong></p>
+<p>生命周期和线程一致。</p>
+<p>● <strong>作用</strong></p>
+<p>主管Java程序的运行，它保存方法的局部变量（八种基本数据类型、对象的引用地址）、部分结果，并参与方法的调用和返回。<br>➢ 局部变量 vs 成员变量(或属性)<br>➢ 基本数据变量 VS 引用类型变量(类、数组、接口)</p>
+<hr>
+<p>栈的特点(优点)</p>
+<ul>
+<li>● 栈是一种快速有效的分配存储方式，访问速度仅次于程序计数器。</li>
+<li>● JVM直接 对Java栈的操作只有两个:  <ul>
+<li>➢ 每个方法执行，伴随着进栈(入栈、压栈)  </li>
+<li>➢ 执行结束后的出栈工作</li>
+</ul>
+</li>
+<li>● 对于栈来说不存在垃圾回收问题</li>
+</ul>
+<hr>
+<p>面试题: 开发中遇到的异常有哪些?</p>
+<p>栈中可能出现的异常<br>● Java虚拟机规范<strong>允许Java栈的大小是动态的或者是固定不变的</strong>。<br>➢ 如果采用固定大小的Java虚拟机栈，那每一个线程的Java虚拟机栈容量可以在线程创建的时候独立选定。如果线程请求分配的栈容量超过Java虚拟机栈允许的最大容量，Java 虚拟机将会抛出一个 <code>StackOverflowError</code> 异常。<br>➢ 如果Java虛拟机栈可以动态扩展，并且在尝试扩展的时候无法申请到足够的内存，或者在创建新的线程时没有足够的内存去创建对应的虚拟机栈，那Java虚拟机将会抛出一个 <code>OutOfMemoryError</code> 异常。</p>
+<hr>
+<p>设置栈内存大小</p>
+<p>我们可以使用参数 <code>-Xss</code> 选项来设置线程的最大栈空间，栈的大小直接决定了函数调用的最大可达深度。</p>
+<p>IntelliJ IDEA 设置栈大小的方法：点击 <code>Run</code> - <code>Edit Configurations</code> - <code>VM options</code> ，输入 <code>-Xss256K</code> 或 <code>-Xss256k</code> ，设置栈的大小为256k （k、m、g或K、M、G是单位，大小写均可）。</p>
+<p>以下运行环境：Java8、macOS。下面的程序输出视运行环境不同（系统不同、JDK版本不同均有影响）而有不同的结果。</p>
+<p>StackDeepTest.java</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">StackDeepTest</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> count = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">recursion</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        count++;</span><br><span class="line">        recursion();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String args[])</span> </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            recursion();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable e) &#123;</span><br><span class="line">            System.out.println(<span class="string">"deep of calling = "</span> + count);</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>使用默认设置栈的大小时，程序输出：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">deep of calling = <span class="number">22387</span></span><br><span class="line">java.lang.StackOverflowError</span><br><span class="line"> at com.atguigu.java.StackDeepTest.recursion(StackDeepTest.java:<span class="number">8</span>)</span><br><span class="line"> at com.atguigu.java.StackDeepTest.recursion(StackDeepTest.java:<span class="number">8</span>)</span><br><span class="line">...</span><br></pre></td></tr></table></figure></div>
+
+<p>指定栈的大小为256K时，程序输出：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">deep of calling = <span class="number">2712</span></span><br><span class="line">java.lang.StackOverflowError</span><br><span class="line"> at com.atguigu.java.StackDeepTest.recursion(StackDeepTest.java:<span class="number">8</span>)</span><br><span class="line"> at com.atguigu.java.StackDeepTest.recursion(StackDeepTest.java:<span class="number">8</span>)</span><br><span class="line">...</span><br></pre></td></tr></table></figure></div>
+
+<hr>
+<p>StackErrorTest.java</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 演示栈中的异常:StackOverflowError</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020 下午 9:08</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *  默认情况下：count : 11420</span></span><br><span class="line"><span class="comment"> *  设置栈的大小： -Xss256k : count : 2465</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">StackErrorTest</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> count = <span class="number">1</span>;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        System.out.println(count);</span><br><span class="line">        count++;</span><br><span class="line">        main(args);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<hr>
+<h2 id="2-栈的存储单位"><a href="#2-栈的存储单位" class="headerlink" title="2 栈的存储单位"></a>2 栈的存储单位</h2><h3 id="栈中存储什么"><a href="#栈中存储什么" class="headerlink" title="栈中存储什么"></a>栈中存储什么</h3><ul>
+<li>每个线程都有自己的栈，栈中的数据都是以 <strong>栈帧(Stack Frame) 的格式存在</strong>。</li>
+<li>在这个线程上正在执行的每个方法都各自对应一个栈帧(Stack Frame )。</li>
+<li>栈帧是一个内存区块，是一个数据集，维系着方法执行过程中的各种数据信息。</li>
+</ul>
+<h3 id="栈运行原理"><a href="#栈运行原理" class="headerlink" title="栈运行原理"></a>栈运行原理</h3><ul>
+<li>JVM直接对Java栈的操作只有两个，就是对栈帧的<strong>压栈</strong>和<strong>出栈</strong>，遵循“先进后出”/“后进先出”原则。</li>
+<li>在一条活动线程中，一个时间点上，只会有一个活动的栈帧。即只有当前正在执行的方法的栈帧(栈顶栈帧)是有效的，这个栈帧被称为<strong>当前栈帧(Current Frame)</strong>，与当前栈帧相对应的方法就是<strong>当前方法(CurrentMethod)</strong>，定义这个方法的类就是<strong>当前类(Current Class)</strong>。</li>
+<li>执行引擎运行的所有字节码指令只针对当前栈帧进行操作。</li>
+<li>如果在该方法中调用了其他方法，对应的新的栈帧会被创建出来，放在栈的顶端，成为新的当前帧。</li>
+<li>不同线程中所包含的栈帧是不允许存在相互引用的，即不可能在一个栈帧之中引用另外一个线程的栈帧。</li>
+<li>如果当前方法调用了其他方法，方法返回之际，当前栈帧会传回此方法的执行结果给前一个栈帧，接着，虚拟机会丢弃当前栈帧，使得前一个栈帧重新成为当前栈帧。</li>
+<li>Java方法有两种返回函数的方式，一种是正常的函数返回，使用return指令;另外一种是抛出异常（没有处理的异常）。不管使用哪种方式，都会导致栈帧被弹出。</li>
+</ul>
+<p>StackFrameTest.java</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java1;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020 下午 4:11</span></span><br><span class="line"><span class="comment"> * &lt;p&gt;</span></span><br><span class="line"><span class="comment"> * 方法的结束方式分为两种：① 正常结束，以return为代表  ② 方法执行中出现未捕获处理的异常，以抛出异常的方式结束</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">StackFrameTest</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            StackFrameTest test = <span class="keyword">new</span> StackFrameTest();</span><br><span class="line">            test.method1();</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">"main()正常结束"</span>);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">method1</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"method1()开始执行..."</span>);</span><br><span class="line">        method2();</span><br><span class="line">        System.out.println(<span class="string">"method1()执行结束..."</span>);</span><br><span class="line">        <span class="comment">//        System.out.println(10 / 0);</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">//        return ;//可以省略</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">method2</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"method2()开始执行..."</span>);</span><br><span class="line">        <span class="keyword">int</span> i = <span class="number">10</span>;</span><br><span class="line">        <span class="keyword">int</span> m = (<span class="keyword">int</span>) method3();</span><br><span class="line">        System.out.println(<span class="string">"method2()即将结束..."</span>);</span><br><span class="line">        <span class="keyword">return</span> i + m;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">double</span> <span class="title">method3</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"method3()开始执行..."</span>);</span><br><span class="line">        <span class="keyword">double</span> j = <span class="number">20.0</span>;</span><br><span class="line">        System.out.println(<span class="string">"method3()即将结束..."</span>);</span><br><span class="line">        <span class="keyword">return</span> j;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>反编译StackFrameTest.class</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br></pre></td><td class="code"><pre><span class="line">$ javap StackFrameTest<span class="class">.<span class="keyword">class</span></span></span><br><span class="line">Compiled from "StackFrameTest.java"</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">com</span>.<span class="title">atguigu</span>.<span class="title">java1</span>.<span class="title">StackFrameTest</span> </span>&#123;</span><br><span class="line">  <span class="keyword">public</span> com.atguigu.java1.StackFrameTest();</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(java.lang.String[])</span></span>;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">method1</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">method2</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">double</span> <span class="title">method3</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$ javap -v StackFrameTest<span class="class">.<span class="keyword">class</span></span></span><br><span class="line"><span class="class"><span class="title">Classfile</span> /<span class="title">Users</span>/<span class="title">yan</span>/<span class="title">Documents</span>/<span class="title">JVMDemo</span>/<span class="title">out</span>/<span class="title">production</span>/<span class="title">chapter05</span>/<span class="title">com</span>/<span class="title">atguigu</span>/<span class="title">java1</span>/<span class="title">StackFrameTest</span>.<span class="title">class</span></span></span><br><span class="line"><span class="class">  <span class="title">Last</span> <span class="title">modified</span> 2020年7月5日</span>; size <span class="number">1373</span> bytes</span><br><span class="line">  SHA-<span class="number">256</span> checksum c61db00f51e8ffb48977aa8245b58fb7b3e49f4678d4e147dffdd989f0a43478</span><br><span class="line">  Compiled from <span class="string">"StackFrameTest.java"</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">com</span>.<span class="title">atguigu</span>.<span class="title">java1</span>.<span class="title">StackFrameTest</span></span></span><br><span class="line">  minor version: 0</span><br><span class="line">  major version: <span class="number">52</span></span><br><span class="line">  flags: (<span class="number">0x0021</span>) ACC_PUBLIC, ACC_SUPER</span><br><span class="line">  this_class: #2                          // com/atguigu/java1/StackFrameTest</span><br><span class="line">  super_class: #20                        // java/lang/Object</span><br><span class="line">  interfaces: <span class="number">0</span>, fields: <span class="number">0</span>, methods: <span class="number">5</span>, attributes: <span class="number">1</span></span><br><span class="line">Constant pool:</span><br><span class="line">   #1 = Methodref          #20.#49        // java/lang/Object."&lt;init&gt;":()V</span><br><span class="line">   #2 = Class              #50            // com/atguigu/java1/StackFrameTest</span><br><span class="line">   #3 = Methodref          #2.#49         // com/atguigu/java1/StackFrameTest."&lt;init&gt;":()V</span><br><span class="line">   #4 = Methodref          #2.#51         // com/atguigu/java1/StackFrameTest.method1:()V</span><br><span class="line">   #5 = Class              #52            // java/lang/Exception</span><br><span class="line">   #6 = Methodref          #5.#53         // java/lang/Exception.printStackTrace:()V</span><br><span class="line">   #7 = Fieldref           #54.#55        // java/lang/System.out:Ljava/io/PrintStream;</span><br><span class="line">   #8 = String             #56            // main()正常结束</span><br><span class="line">   #9 = Methodref          #57.#58        // java/io/PrintStream.println:(Ljava/lang/String;)V</span><br><span class="line">  #10 = String             #59            // method1()开始执行...</span><br><span class="line">  #11 = Methodref          #2.#60         // com/atguigu/java1/StackFrameTest.method2:()I</span><br><span class="line">  #12 = String             #61            // method1()执行结束...</span><br><span class="line">  #13 = String             #62            // method2()开始执行...</span><br><span class="line">  #14 = Methodref          #2.#63         // com/atguigu/java1/StackFrameTest.method3:()D</span><br><span class="line">  #15 = String             #64            // method2()即将结束...</span><br><span class="line">  #16 = String             #65            // method3()开始执行...</span><br><span class="line">  #17 = Double             20.0d</span><br><span class="line">  #19 = String             #66            // method3()即将结束...</span><br><span class="line">  #20 = Class              #67            // java/lang/Object</span><br><span class="line">  #21 = Utf8               &lt;init&gt;</span><br><span class="line">  #22 = Utf8               ()V</span><br><span class="line">  #23 = Utf8               Code</span><br><span class="line">  #24 = Utf8               LineNumberTable</span><br><span class="line">  #25 = Utf8               LocalVariableTable</span><br><span class="line">  #26 = Utf8               this</span><br><span class="line">  #27 = Utf8               Lcom/atguigu/java1/StackFrameTest;</span><br><span class="line">  #28 = Utf8               main</span><br><span class="line">  #29 = Utf8               ([Ljava/lang/String;)V</span><br><span class="line">  #30 = Utf8               test</span><br><span class="line">  #31 = Utf8               e</span><br><span class="line">  #32 = Utf8               Ljava/lang/Exception;</span><br><span class="line">  #33 = Utf8               args</span><br><span class="line">  #34 = Utf8               [Ljava/lang/String;</span><br><span class="line">  #35 = Utf8               StackMapTable</span><br><span class="line">  #36 = Class              #52            // java/lang/Exception</span><br><span class="line">  #37 = Utf8               method1</span><br><span class="line">  #38 = Utf8               method2</span><br><span class="line">  #39 = Utf8               ()I</span><br><span class="line">  #40 = Utf8               i</span><br><span class="line">  #41 = Utf8               I</span><br><span class="line">  #42 = Utf8               m</span><br><span class="line">  #43 = Utf8               method3</span><br><span class="line">  #44 = Utf8               ()D</span><br><span class="line">  #45 = Utf8               j</span><br><span class="line">  #46 = Utf8               D</span><br><span class="line">  #47 = Utf8               SourceFile</span><br><span class="line">  #48 = Utf8               StackFrameTest.java</span><br><span class="line">  #49 = NameAndType        #21:#22        // "&lt;init&gt;":()V</span><br><span class="line">  #50 = Utf8               com/atguigu/java1/StackFrameTest</span><br><span class="line">  #51 = NameAndType        #37:#22        // method1:()V</span><br><span class="line">  #52 = Utf8               java/lang/Exception</span><br><span class="line">  #53 = NameAndType        #68:#22        // printStackTrace:()V</span><br><span class="line">  #54 = Class              #69            // java/lang/System</span><br><span class="line">  #55 = NameAndType        #70:#71        // out:Ljava/io/PrintStream;</span><br><span class="line">  #56 = Utf8               main()正常结束</span><br><span class="line">  #57 = Class              #72            // java/io/PrintStream</span><br><span class="line">  #58 = NameAndType        #73:#74        // println:(Ljava/lang/String;)V</span><br><span class="line">  #59 = Utf8               method1()开始执行...</span><br><span class="line">  #60 = NameAndType        #38:#39        // method2:()I</span><br><span class="line">  #61 = Utf8               method1()执行结束...</span><br><span class="line">  #62 = Utf8               method2()开始执行...</span><br><span class="line">  #63 = NameAndType        #43:#44        // method3:()D</span><br><span class="line">  #64 = Utf8               method2()即将结束...</span><br><span class="line">  #65 = Utf8               method3()开始执行...</span><br><span class="line">  #66 = Utf8               method3()即将结束...</span><br><span class="line">  #67 = Utf8               java/lang/Object</span><br><span class="line">  #68 = Utf8               printStackTrace</span><br><span class="line">  #69 = Utf8               java/lang/System</span><br><span class="line">  #70 = Utf8               out</span><br><span class="line">  #71 = Utf8               Ljava/io/PrintStream;</span><br><span class="line">  #72 = Utf8               java/io/PrintStream</span><br><span class="line">  #73 = Utf8               println</span><br><span class="line">  #74 = Utf8               (Ljava/lang/String;)V</span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">public</span> com.atguigu.java1.StackFrameTest();</span><br><span class="line">    descriptor: ()V</span><br><span class="line">    flags: (<span class="number">0x0001</span>) ACC_PUBLIC</span><br><span class="line">    Code:</span><br><span class="line">      stack=<span class="number">1</span>, locals=<span class="number">1</span>, args_size=<span class="number">1</span></span><br><span class="line">         <span class="number">0</span>: aload_0</span><br><span class="line">         1: invokespecial #1                  // Method java/lang/Object."&lt;init&gt;":()V</span><br><span class="line">         <span class="number">4</span>: <span class="keyword">return</span></span><br><span class="line">      LineNumberTable:</span><br><span class="line">        line <span class="number">9</span>: <span class="number">0</span></span><br><span class="line">      LocalVariableTable:</span><br><span class="line">        Start  Length  Slot  Name   Signature</span><br><span class="line">            <span class="number">0</span>       <span class="number">5</span>     <span class="number">0</span>  <span class="keyword">this</span>   Lcom/atguigu/java1/StackFrameTest;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(java.lang.String[])</span></span>;</span><br><span class="line">    descriptor: ([Ljava/lang/String;)V</span><br><span class="line">    flags: (<span class="number">0x0009</span>) ACC_PUBLIC, ACC_STATIC</span><br><span class="line">    Code:</span><br><span class="line">      stack=<span class="number">2</span>, locals=<span class="number">2</span>, args_size=<span class="number">1</span></span><br><span class="line">         0: new           #2                  // class com/atguigu/java1/StackFrameTest</span><br><span class="line">         <span class="number">3</span>: dup</span><br><span class="line">         4: invokespecial #3                  // Method "&lt;init&gt;":()V</span><br><span class="line">         <span class="number">7</span>: astore_1</span><br><span class="line">         <span class="number">8</span>: aload_1</span><br><span class="line">         9: invokevirtual #4                  // Method method1:()V</span><br><span class="line">        <span class="number">12</span>: goto          <span class="number">20</span></span><br><span class="line">        <span class="number">15</span>: astore_1</span><br><span class="line">        <span class="number">16</span>: aload_1</span><br><span class="line">        17: invokevirtual #6                  // Method java/lang/Exception.printStackTrace:()V</span><br><span class="line">        20: getstatic     #7                  // Field java/lang/System.out:Ljava/io/PrintStream;</span><br><span class="line">        23: ldc           #8                  // String main()正常结束</span><br><span class="line">        25: invokevirtual #9                  // Method java/io/PrintStream.println:(Ljava/lang/String;)V</span><br><span class="line">        <span class="number">28</span>: <span class="keyword">return</span></span><br><span class="line">      Exception table:</span><br><span class="line">         from    to  target type</span><br><span class="line">             <span class="number">0</span>    <span class="number">12</span>    <span class="number">15</span>   Class java/lang/Exception</span><br><span class="line">      LineNumberTable:</span><br><span class="line">        line <span class="number">12</span>: <span class="number">0</span></span><br><span class="line">        line <span class="number">13</span>: <span class="number">8</span></span><br><span class="line">        line <span class="number">17</span>: <span class="number">12</span></span><br><span class="line">        line <span class="number">15</span>: <span class="number">15</span></span><br><span class="line">        line <span class="number">16</span>: <span class="number">16</span></span><br><span class="line">        line <span class="number">19</span>: <span class="number">20</span></span><br><span class="line">        line <span class="number">21</span>: <span class="number">28</span></span><br><span class="line">      LocalVariableTable:</span><br><span class="line">        Start  Length  Slot  Name   Signature</span><br><span class="line">            <span class="number">8</span>       <span class="number">4</span>     <span class="number">1</span>  test   Lcom/atguigu/java1/StackFrameTest;</span><br><span class="line">           <span class="number">16</span>       <span class="number">4</span>     <span class="number">1</span>     e   Ljava/lang/Exception;</span><br><span class="line">            <span class="number">0</span>      <span class="number">29</span>     <span class="number">0</span>  args   [Ljava/lang/String;</span><br><span class="line">      StackMapTable: number_of_entries = <span class="number">2</span></span><br><span class="line">        frame_type = <span class="number">79</span> <span class="comment">/* same_locals_1_stack_item */</span></span><br><span class="line">          stack = [ class java/lang/Exception ]</span><br><span class="line">        frame_type = <span class="number">4</span> <span class="comment">/* same */</span></span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">method1</span><span class="params">()</span></span>;</span><br><span class="line">    descriptor: ()V</span><br><span class="line">    flags: (<span class="number">0x0001</span>) ACC_PUBLIC</span><br><span class="line">    Code:</span><br><span class="line">      stack=<span class="number">2</span>, locals=<span class="number">1</span>, args_size=<span class="number">1</span></span><br><span class="line">         0: getstatic     #7                  // Field java/lang/System.out:Ljava/io/PrintStream;</span><br><span class="line">         3: ldc           #10                 // String method1()开始执行...</span><br><span class="line">         5: invokevirtual #9                  // Method java/io/PrintStream.println:(Ljava/lang/String;)V</span><br><span class="line">         <span class="number">8</span>: aload_0</span><br><span class="line">         9: invokevirtual #11                 // Method method2:()I</span><br><span class="line">        <span class="number">12</span>: pop</span><br><span class="line">        13: getstatic     #7                  // Field java/lang/System.out:Ljava/io/PrintStream;</span><br><span class="line">        16: ldc           #12                 // String method1()执行结束...</span><br><span class="line">        18: invokevirtual #9                  // Method java/io/PrintStream.println:(Ljava/lang/String;)V</span><br><span class="line">        <span class="number">21</span>: <span class="keyword">return</span></span><br><span class="line">      LineNumberTable:</span><br><span class="line">        line <span class="number">24</span>: <span class="number">0</span></span><br><span class="line">        line <span class="number">25</span>: <span class="number">8</span></span><br><span class="line">        line <span class="number">26</span>: <span class="number">13</span></span><br><span class="line">        line <span class="number">30</span>: <span class="number">21</span></span><br><span class="line">      LocalVariableTable:</span><br><span class="line">        Start  Length  Slot  Name   Signature</span><br><span class="line">            <span class="number">0</span>      <span class="number">22</span>     <span class="number">0</span>  <span class="keyword">this</span>   Lcom/atguigu/java1/StackFrameTest;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">method2</span><span class="params">()</span></span>;</span><br><span class="line">    descriptor: ()I</span><br><span class="line">    flags: (<span class="number">0x0001</span>) ACC_PUBLIC</span><br><span class="line">    Code:</span><br><span class="line">      stack=<span class="number">2</span>, locals=<span class="number">3</span>, args_size=<span class="number">1</span></span><br><span class="line">         0: getstatic     #7                  // Field java/lang/System.out:Ljava/io/PrintStream;</span><br><span class="line">         3: ldc           #13                 // String method2()开始执行...</span><br><span class="line">         5: invokevirtual #9                  // Method java/io/PrintStream.println:(Ljava/lang/String;)V</span><br><span class="line">         <span class="number">8</span>: bipush        <span class="number">10</span></span><br><span class="line">        <span class="number">10</span>: istore_1</span><br><span class="line">        <span class="number">11</span>: aload_0</span><br><span class="line">        12: invokevirtual #14                 // Method method3:()D</span><br><span class="line">        <span class="number">15</span>: d2i</span><br><span class="line">        <span class="number">16</span>: istore_2</span><br><span class="line">        17: getstatic     #7                  // Field java/lang/System.out:Ljava/io/PrintStream;</span><br><span class="line">        20: ldc           #15                 // String method2()即将结束...</span><br><span class="line">        22: invokevirtual #9                  // Method java/io/PrintStream.println:(Ljava/lang/String;)V</span><br><span class="line">        <span class="number">25</span>: iload_1</span><br><span class="line">        <span class="number">26</span>: iload_2</span><br><span class="line">        <span class="number">27</span>: iadd</span><br><span class="line">        <span class="number">28</span>: ireturn</span><br><span class="line">      LineNumberTable:</span><br><span class="line">        line <span class="number">33</span>: <span class="number">0</span></span><br><span class="line">        line <span class="number">34</span>: <span class="number">8</span></span><br><span class="line">        line <span class="number">35</span>: <span class="number">11</span></span><br><span class="line">        line <span class="number">36</span>: <span class="number">17</span></span><br><span class="line">        line <span class="number">37</span>: <span class="number">25</span></span><br><span class="line">      LocalVariableTable:</span><br><span class="line">        Start  Length  Slot  Name   Signature</span><br><span class="line">            <span class="number">0</span>      <span class="number">29</span>     <span class="number">0</span>  <span class="keyword">this</span>   Lcom/atguigu/java1/StackFrameTest;</span><br><span class="line">           <span class="number">11</span>      <span class="number">18</span>     <span class="number">1</span>     i   I</span><br><span class="line">           <span class="number">17</span>      <span class="number">12</span>     <span class="number">2</span>     m   I</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">double</span> <span class="title">method3</span><span class="params">()</span></span>;</span><br><span class="line">    descriptor: ()D</span><br><span class="line">    flags: (<span class="number">0x0001</span>) ACC_PUBLIC</span><br><span class="line">    Code:</span><br><span class="line">      stack=<span class="number">2</span>, locals=<span class="number">3</span>, args_size=<span class="number">1</span></span><br><span class="line">         0: getstatic     #7                  // Field java/lang/System.out:Ljava/io/PrintStream;</span><br><span class="line">         3: ldc           #16                 // String method3()开始执行...</span><br><span class="line">         5: invokevirtual #9                  // Method java/io/PrintStream.println:(Ljava/lang/String;)V</span><br><span class="line">         8: ldc2_w        #17                 // double 20.0d</span><br><span class="line">        <span class="number">11</span>: dstore_1</span><br><span class="line">        12: getstatic     #7                  // Field java/lang/System.out:Ljava/io/PrintStream;</span><br><span class="line">        15: ldc           #19                 // String method3()即将结束...</span><br><span class="line">        17: invokevirtual #9                  // Method java/io/PrintStream.println:(Ljava/lang/String;)V</span><br><span class="line">        <span class="number">20</span>: dload_1</span><br><span class="line">        <span class="number">21</span>: dreturn</span><br><span class="line">      LineNumberTable:</span><br><span class="line">        line <span class="number">41</span>: <span class="number">0</span></span><br><span class="line">        line <span class="number">42</span>: <span class="number">8</span></span><br><span class="line">        line <span class="number">43</span>: <span class="number">12</span></span><br><span class="line">        line <span class="number">44</span>: <span class="number">20</span></span><br><span class="line">      LocalVariableTable:</span><br><span class="line">        Start  Length  Slot  Name   Signature</span><br><span class="line">            <span class="number">0</span>      <span class="number">22</span>     <span class="number">0</span>  <span class="keyword">this</span>   Lcom/atguigu/java1/StackFrameTest;</span><br><span class="line">           <span class="number">12</span>      <span class="number">10</span>     <span class="number">1</span>     j   D</span><br><span class="line">&#125;</span><br><span class="line">SourceFile: <span class="string">"StackFrameTest.java"</span></span><br></pre></td></tr></table></figure></div>
+
+<p><code>return</code>, <code>ireturn</code>, <code>dreturn</code> 中 <code>i</code> 代表 int， <code>d</code> 代表 double。</p>
+<h3 id="◆-栈帧的内部结构"><a href="#◆-栈帧的内部结构" class="headerlink" title="◆ 栈帧的内部结构"></a>◆ 栈帧的内部结构</h3><p><img src="/2020/07/05/JVM-03/%E6%A0%88%E5%B8%A71.png" alt="栈帧的内部结构"></p>
+<p>毎个栈帧中存儲着:</p>
+<ul>
+<li><strong>局部变量表(Local Variables)</strong></li>
+<li><strong>操作数栈(Operand Stack) ( 或表达式栈)</strong></li>
+<li>动态链接(Dynamic Linking) ( 或指向运行时常量池的方法引用)</li>
+<li>方法返回地址(Return Address) (或方法正常退出或者异常退出的定乂)</li>
+<li>一些附加信息</li>
+</ul>
+<hr>
+<h2 id="3-🌿-局部变量表"><a href="#3-🌿-局部变量表" class="headerlink" title="3 🌿 局部变量表"></a>3 🌿 局部变量表</h2><ul>
+<li><p>局部变量表也被称之为局部变量数组或本地变量表</p>
+</li>
+<li><p><strong>定义为一个数字数组，主要用于存储方法参数和定义在方法体内的局部变量</strong>，这些数据类型包括各类本数据类型、对象引用(reference) ，以及returnAddress类型。</p>
+</li>
+<li><p>由于局部变量表是建立在线程的栈上，是线程的私有数据，因此<strong>不存在数据安全问题</strong></p>
+</li>
+<li><p><strong>局部变量表所需的容量大小是在编译期确定下来的</strong>，并保存在方法的Code属性的 <code>maximum local variables</code> 数据项中。在方法运行期间是不会改变局部变量表的大小的。</p>
+</li>
+<li><p><strong>方法嵌套调用的次数由栈的大小决定</strong>。一般来说，栈越大，方法嵌套调用次数越多。对一个函数而言，它的参数和局部变量越多，使得局部变量表膨胀，它的栈帧就越大，以满足方法调用所需传递的信息增大的需求。进而函数调用就会占用更多的栈空间，导致其嵌套调用次数就会减少。</p>
+</li>
+<li><p><strong>局部变量表中的变量只在当前方法调用中有效</strong>。在方法执行时，虚拟机通过使用局部变量表完成参数值到参数变量列表的传递过程。<strong>当方法调用结束后，随着方法栈帧的销毁，局部变量表也会随之销毁</strong>。</p>
+</li>
+</ul>
+<h3 id="字节码中方法内部结构的剖析"><a href="#字节码中方法内部结构的剖析" class="headerlink" title="字节码中方法内部结构的剖析"></a>字节码中方法内部结构的剖析</h3><p>以main方法为例：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    LocalVariablesTest test = <span class="keyword">new</span> LocalVariablesTest();</span><br><span class="line">    <span class="keyword">int</span> num = <span class="number">10</span>;</span><br><span class="line">    test.test1();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p><code>javap -v</code> 得到的内容，main方法部分：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(java.lang.String[])</span></span>;</span><br><span class="line">  descriptor: ([Ljava/lang/String;)V</span><br><span class="line">  flags: (<span class="number">0x0009</span>) ACC_PUBLIC, ACC_STATIC</span><br><span class="line">  Code:</span><br><span class="line">    stack=<span class="number">2</span>, locals=<span class="number">3</span>, args_size=<span class="number">1</span></span><br><span class="line">       0: new           #1                  // class com/atguigu/java1/LocalVariablesTest</span><br><span class="line">       <span class="number">3</span>: dup</span><br><span class="line">       4: invokespecial #2                  // Method "&lt;init&gt;":()V</span><br><span class="line">       <span class="number">7</span>: astore_1</span><br><span class="line">       <span class="number">8</span>: bipush        <span class="number">10</span></span><br><span class="line">      <span class="number">10</span>: istore_2</span><br><span class="line">      <span class="number">11</span>: aload_1</span><br><span class="line">      12: invokevirtual #3                  // Method test1:()V</span><br><span class="line">      <span class="number">15</span>: <span class="keyword">return</span></span><br><span class="line">    LineNumberTable:</span><br><span class="line">      line <span class="number">13</span>: <span class="number">0</span></span><br><span class="line">      line <span class="number">14</span>: <span class="number">8</span></span><br><span class="line">      line <span class="number">15</span>: <span class="number">11</span></span><br><span class="line">      line <span class="number">16</span>: <span class="number">15</span></span><br><span class="line">    LocalVariableTable:</span><br><span class="line">      Start  Length  Slot  Name   Signature</span><br><span class="line">          <span class="number">0</span>      <span class="number">16</span>     <span class="number">0</span>  args   [Ljava/lang/String;</span><br><span class="line">          <span class="number">8</span>       <span class="number">8</span>     <span class="number">1</span>  test   Lcom/atguigu/java1/LocalVariablesTest;</span><br><span class="line">         <span class="number">11</span>       <span class="number">5</span>     <span class="number">2</span>   num   I</span><br></pre></td></tr></table></figure></div>
+
+<p>以上信息中：  </p>
+<table>
+<thead>
+<tr>
+<th>这些东西</th>
+<th>是啥意思？</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>descriptor: ([Ljava/lang/String;)V</td>
+<td>描述符：[表示一维数组，L表示引用类型变量，V表示方法返回值 <code>void</code></td>
+</tr>
+<tr>
+<td>flags: (0x0009) ACC_PUBLIC, ACC_STATIC</td>
+<td>Access flags即访问标识 <code>public static</code></td>
+</tr>
+<tr>
+<td>Code:</td>
+<td>字节码：</td>
+</tr>
+<tr>
+<td>stack=2, locals=3, args_size=1</td>
+<td>locals=3表示局部变量表深度为3，stack=2表示操作数栈深度为2</td>
+</tr>
+<tr>
+<td>Code: 0到15</td>
+<td>字节码指令号</td>
+</tr>
+<tr>
+<td>LineNumberTable line 13: 0</td>
+<td>行号表 line 13表示java源代码中的行号13: 0表示字节码指令号0</td>
+</tr>
+<tr>
+<td>LocalVariableTable：Start Length Slot</td>
+<td>局部变量表：Start和Length在一起表示了局部变量的作用范围：字节码指令中从Start开始，长度为Length，Slot为槽的索引</td>
+</tr>
+</tbody></table>
+<h3 id="关于Slot的理解"><a href="#关于Slot的理解" class="headerlink" title="关于Slot的理解"></a>关于Slot的理解</h3><ul>
+<li>参数值的存放总是在局部变量数组的index0开始，到数组长度-1的索引结束。</li>
+<li><strong>局部变量表，最基本的存储单元是Slot (变量槽)</strong></li>
+<li>局部变量表中存放编译期可知的各种基本数据类型(8种)，引用类型(reference)，returnAddress类型。</li>
+<li><strong>在局部变量表里，32位以内的类型只占用一个slot (包括returnAddress类型)，64位的类型(long和double)占用两个slot</strong>。<ul>
+<li>➢ byte、short、char 在存储前被转换为int, boolean也被转换为int，0表示false, 非0表示true。</li>
+<li>➢ long和double 则占据两个Slot。</li>
+</ul>
+</li>
+</ul>
+<p><img src="/2020/07/05/JVM-03/%E5%8F%98%E9%87%8F%E6%A7%BDSlot1.png" alt="变量槽Slot"></p>
+<ul>
+<li>JVM会为局部变量表中的每一个Slot都分配一个访问索引，通过这个索引即可成功访问到局部变量表中指定的局部变量值</li>
+<li>当一个实例方法被调用的时候，它的方法参数和方法体内部定义的局部变量将会<strong>按照顺序被复制</strong>到局部变量表中的每一个slot上</li>
+<li><strong>如果需要访问局部变量表中一个64bit的局部变量值时，只需要使用前一个索引即可</strong>。(比如:访问long或double类型变量)</li>
+<li>如果当前帧是由构造方法或者实例方法创建的，那么<strong>该对象引用this将会存放在index为0的slot处</strong>，其余的参数按照参数表顺序继续排列。</li>
+</ul>
+<p>又如 test2 方法：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">test2</span><span class="params">(Date dateP, String name2)</span> </span>&#123;</span><br><span class="line">    dateP = <span class="keyword">null</span>;</span><br><span class="line">    name2 = <span class="string">"songhongkang"</span>;</span><br><span class="line">    <span class="keyword">double</span> weight = <span class="number">130.5</span>;<span class="comment">//占据两个slot</span></span><br><span class="line">    <span class="keyword">char</span> gender = <span class="string">'男'</span>;</span><br><span class="line">    <span class="keyword">return</span> dateP + name2;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>test2方法的局部变量表如下：其中slot index0是对象引用<code>this</code>，slot index3和4是<code>double</code>类型的变量（只需要索引index 3即可访问double类型的变量weight），slot index5是<code>char</code>类型变量。</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> java.lang.<span class="function">String <span class="title">test2</span><span class="params">(java.util.Date, java.lang.String)</span></span>;</span><br><span class="line">  descriptor: (Ljava/util/Date;Ljava/lang/String;)Ljava/lang/String;</span><br><span class="line">  flags: (<span class="number">0x0001</span>) ACC_PUBLIC</span><br><span class="line">  Code:</span><br><span class="line">    stack=<span class="number">2</span>, locals=<span class="number">6</span>, args_size=<span class="number">3</span></span><br><span class="line">       <span class="number">0</span>: aconst_null</span><br><span class="line">       <span class="number">1</span>: astore_1</span><br><span class="line">       2: ldc           #18                 // String songhongkang</span><br><span class="line"></span><br><span class="line">    .......中间省略.........</span><br><span class="line"></span><br><span class="line">    LocalVariableTable:</span><br><span class="line">      Start  Length  Slot  Name   Signature</span><br><span class="line">          <span class="number">0</span>      <span class="number">33</span>     <span class="number">0</span>  <span class="keyword">this</span>   Lcom/atguigu/java1/LocalVariablesTest;</span><br><span class="line">          <span class="number">0</span>      <span class="number">33</span>     <span class="number">1</span> dateP   Ljava/util/Date;</span><br><span class="line">          <span class="number">0</span>      <span class="number">33</span>     <span class="number">2</span> name2   Ljava/lang/String;</span><br><span class="line">          <span class="number">9</span>      <span class="number">24</span>     <span class="number">3</span> weight   D</span><br><span class="line">         <span class="number">14</span>      <span class="number">19</span>     <span class="number">5</span> gender   C</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="Slot的重复利用"><a href="#Slot的重复利用" class="headerlink" title="Slot的重复利用"></a>Slot的重复利用</h3><p><strong>栈帧中的局部变量表中的槽位是可以重用的</strong>，如果一个局部变量过了其作用域，那么在其作用域之后申明的新的局部变量就很有可能会复用过期局部变量的槽位，从而<strong>达到节省资源的目的</strong>。test4方法演示了这一点：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test4</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> a = <span class="number">0</span>;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">int</span> b = <span class="number">0</span>;</span><br><span class="line">        b = a + <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//变量c使用之前已经销毁的变量b占据的slot的位置</span></span><br><span class="line">    <span class="keyword">int</span> c = a + <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>下面是 <code>javap -v</code> 得到的test4方法部分的局部变量表 LocalVariableTable:</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test4</span><span class="params">()</span></span>;</span><br><span class="line">  descriptor: ()V</span><br><span class="line">  flags: (<span class="number">0x0001</span>) ACC_PUBLIC</span><br><span class="line">  Code:</span><br><span class="line">    stack=<span class="number">2</span>, locals=<span class="number">3</span>, args_size=<span class="number">1</span></span><br><span class="line">       <span class="number">0</span>: iconst_0</span><br><span class="line">       <span class="number">1</span>: istore_1</span><br><span class="line">       <span class="number">2</span>: iconst_0</span><br><span class="line">       <span class="number">3</span>: istore_2</span><br><span class="line">       <span class="number">4</span>: iload_1</span><br><span class="line">       <span class="number">5</span>: iconst_1</span><br><span class="line">       <span class="number">6</span>: iadd</span><br><span class="line">       <span class="number">7</span>: istore_2</span><br><span class="line">       <span class="number">8</span>: iload_1</span><br><span class="line">       <span class="number">9</span>: iconst_1</span><br><span class="line">      <span class="number">10</span>: iadd</span><br><span class="line">      <span class="number">11</span>: istore_2</span><br><span class="line">      <span class="number">12</span>: <span class="keyword">return</span></span><br><span class="line">    LineNumberTable:</span><br><span class="line">      line <span class="number">53</span>: <span class="number">0</span></span><br><span class="line">      line <span class="number">55</span>: <span class="number">2</span></span><br><span class="line">      line <span class="number">56</span>: <span class="number">4</span></span><br><span class="line">      line <span class="number">59</span>: <span class="number">8</span></span><br><span class="line">      line <span class="number">60</span>: <span class="number">12</span></span><br><span class="line">    LocalVariableTable:</span><br><span class="line">      Start  Length  Slot  Name   Signature</span><br><span class="line">          <span class="number">4</span>       <span class="number">4</span>     <span class="number">2</span>     b   I</span><br><span class="line">          <span class="number">0</span>      <span class="number">13</span>     <span class="number">0</span>  <span class="keyword">this</span>   Lcom/atguigu/java1/LocalVariablesTest;</span><br><span class="line">          <span class="number">2</span>      <span class="number">11</span>     <span class="number">1</span>     a   I</span><br><span class="line">         <span class="number">12</span>       <span class="number">1</span>     <span class="number">2</span>     c   I</span><br></pre></td></tr></table></figure></div>
+
+<p>从 LocalVariableTable 可以看出，局部变量 <em>b</em> 的作用域范围是4（Start）到8（Start+Length），即test4方法中用 <code>{</code> 和 <code>}</code> 括起来的部分。从9开始，Slot 2这个槽实际就相当于空着了，所以局部变量 <em>c</em> 的作用域范围从12开始，局部变量 <em>c</em> 就重复利用了过期局部变量 <em>b</em> 的槽位。</p>
+<h3 id="举例-静态变量与局部变量的对比"><a href="#举例-静态变量与局部变量的对比" class="headerlink" title="举例:静态变量与局部变量的对比"></a>举例:静态变量与局部变量的对比</h3><p>● 参数表分配完毕之后，再根据方法体内定义的变量的顺序和作用域分配。<br>● 我们知道类变量表有两次初始化的机会，第一次是在“<strong>准备阶段</strong>”，执行系统初始化，对类变量设置零值，另一次则是在“<strong>初始化</strong>”阶段，赋予程序员在代码中定义的初始值。<br>● 和类变量初始化不同的是，局部变量表不存在系统初始化的过程，这意味着一旦定义了局部变量则必须人为的初始化，否则无法使用。</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">    变量的分类：按照数据类型分：</span></span><br><span class="line"><span class="comment">    ① 基本数据类型  ② 引用数据类型</span></span><br><span class="line"><span class="comment">    按照在类中声明的位置分：</span></span><br><span class="line"><span class="comment">    ① 成员变量：在使用前，都经历过默认初始化赋值</span></span><br><span class="line"><span class="comment">      类变量： linking的prepare阶段：给类变量默认赋值  ---&gt; initial阶段：给类变量显式赋值即静态代码块赋值</span></span><br><span class="line"><span class="comment">      实例变量：随着对象的创建，会在堆空间中分配实例变量空间，并进行默认赋值</span></span><br><span class="line"><span class="comment">    ② 局部变量：在使用前，必须要进行显式赋值的！否则，编译不通过</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">test5Temp</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">int</span> num;</span><br><span class="line">        <span class="comment">//System.out.println(num);//错误信息：变量num未进行初始化</span></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></div>
+
+<p><strong><em>这样的代码是错误的，没有赋值不能够使用</em></strong>。</p>
+<h3 id="补充说明"><a href="#补充说明" class="headerlink" title="补充说明"></a>补充说明</h3><p>● 在栈帧中，与性能调优关系最为密切的部分就是前面提到的局部变量表。在方法执行时，虚拟机使用局部变量表完成方法的传递。<br>● <strong>局部变量表中的变量也是重要的垃圾回收根节点，只要被局部变量表中直接或间接引用的对象都不会被回收</strong>。  </p>
+<hr>
+<h2 id="4-操作数栈"><a href="#4-操作数栈" class="headerlink" title="4 操作数栈"></a>4 操作数栈</h2><ul>
+<li>每一个独立的栈帧中除了包含局部变量表以外，还包含一个后进先出(Last-In-First-out )的操作数栈，也可以称之为表达式栈(Expression Stack) 。</li>
+<li><strong>操作数栈，在方法执行过程中，根据字节码指令，往栈中写入数据或提取数据，即入栈(push) /出栈(pop)</strong>。<ul>
+<li>➢ 某些字节码指令将值压入操作数栈，其余的字节码指令将操作数取出栈。使用它们后再把结果压入栈。</li>
+<li>➢ 比如:执行复制、交换、求和等操作</li>
+</ul>
+</li>
+<li>操作数栈，<strong>主要用于保存计算过程的中间结果，同时作为计算过程中变量临时的存储空间</strong>。</li>
+<li>操作数栈就是JVM执行引擎的一个工作区，当一个方法刚开始执行的时候，一个新的栈帧也会随之被创建出来，<strong>这个方法的操作数栈是空的</strong>。</li>
+<li>每一个操作数栈都会拥有一个明确的栈深度用于存储数值，其所需的最大深度<strong>在编译期就定义好了</strong>，保存在方法的Code属性中（比如<code>stack=2</code>），为max_stack的值。</li>
+<li>栈中的任何一个元素都是可以任意的Java数据类型。<ul>
+<li>➢ 32bit的类型占用一个栈单位深度</li>
+<li>➢ 64bit的类型占用两个栈单位深度</li>
+</ul>
+</li>
+<li>操作数栈<strong>并非采用访问索引的方式来进行数据访问</strong>的，而是只能通过标准的入栈(push) 和出栈(pop) 操作来完成一次数据访问。</li>
+<li><strong>如果被调用的方法带有返回值的话，其返回值将会被压入当前栈帧的操作数栈中</strong>，并更新PC寄存器中下一条需要执行的字节码指令。</li>
+<li>操作数栈中元素的数据类型必须与字节码指令的序列严格匹配，这由编译器在编译器期间进行验证，同时在类加载过程中的类检验阶段的数据流分析阶段要再次验证。</li>
+<li>另外，我们说Java虚拟机的<strong>解释引擎是基于栈的执行引擎</strong>，其中的栈指的就是操作数栈。</li>
+</ul>
+<p>代码追踪：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testAddOperation</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">//byte、short、char、boolean：都以int型来保存</span></span><br><span class="line">        <span class="keyword">byte</span> i = <span class="number">15</span>;</span><br><span class="line">        <span class="keyword">int</span> j = <span class="number">8</span>;</span><br><span class="line">        <span class="keyword">int</span> k = i + j;</span><br><span class="line"></span><br><span class="line">       <span class="comment">// int m = 800;</span></span><br><span class="line"></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></div>
+
+<p><code>javap -v 类名.class</code></p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testAddOperation</span><span class="params">()</span></span>;</span><br><span class="line">  descriptor: ()V</span><br><span class="line">  flags: (<span class="number">0x0001</span>) ACC_PUBLIC</span><br><span class="line">  Code:</span><br><span class="line">    stack=<span class="number">2</span>, locals=<span class="number">4</span>, args_size=<span class="number">1</span></span><br><span class="line">       <span class="number">0</span>: bipush        <span class="number">15</span></span><br><span class="line">       <span class="number">2</span>: istore_1</span><br><span class="line">       <span class="number">3</span>: bipush        <span class="number">8</span></span><br><span class="line">       <span class="number">5</span>: istore_2</span><br><span class="line">       <span class="number">6</span>: iload_1</span><br><span class="line">       <span class="number">7</span>: iload_2</span><br><span class="line">       <span class="number">8</span>: iadd</span><br><span class="line">       <span class="number">9</span>: istore_3</span><br><span class="line">      <span class="number">10</span>: <span class="keyword">return</span></span><br><span class="line">    LineNumberTable:</span><br><span class="line">      line <span class="number">10</span>: <span class="number">0</span></span><br><span class="line">      line <span class="number">11</span>: <span class="number">3</span></span><br><span class="line">      line <span class="number">12</span>: <span class="number">6</span></span><br><span class="line">      line <span class="number">16</span>: <span class="number">10</span></span><br><span class="line">    LocalVariableTable:</span><br><span class="line">      Start  Length  Slot  Name   Signature</span><br><span class="line">          <span class="number">0</span>      <span class="number">11</span>     <span class="number">0</span>  <span class="keyword">this</span>   Lcom/atguigu/java1/OperandStackTest;</span><br><span class="line">          <span class="number">3</span>       <span class="number">8</span>     <span class="number">1</span>     i   B</span><br><span class="line">          <span class="number">6</span>       <span class="number">5</span>     <span class="number">2</span>     j   I</span><br><span class="line">         <span class="number">10</span>       <span class="number">1</span>     <span class="number">3</span>     k   I</span><br></pre></td></tr></table></figure></div>
+
+<p>分析（是我推测，不知对否，回头再看）：</p>
+<table>
+<thead>
+<tr>
+<th>字节码指令</th>
+<th>操作数栈（动作，栈元素 栈底 –&gt; 栈顶）</th>
+<th>局部变量表（Slot0123）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0: bipush        15</td>
+<td>入栈，15</td>
+<td>this,</td>
+</tr>
+<tr>
+<td>2: istore_1</td>
+<td>出栈，空</td>
+<td>this, 15</td>
+</tr>
+<tr>
+<td>3: bipush        8</td>
+<td>入栈，8</td>
+<td>this, 15</td>
+</tr>
+<tr>
+<td>5: istore_2</td>
+<td>出栈，空</td>
+<td>this, 15, 8</td>
+</tr>
+<tr>
+<td>6: iload_1</td>
+<td>入栈，15</td>
+<td>this, 15, 8</td>
+</tr>
+<tr>
+<td>7: iload_2</td>
+<td>入栈，15, 8</td>
+<td>this, 15, 8</td>
+</tr>
+<tr>
+<td>8: iadd</td>
+<td>出栈(8)，出栈(15)，入栈(23) ，23</td>
+<td>this, 15, 8</td>
+</tr>
+<tr>
+<td>9: istore_3</td>
+<td>出栈，空</td>
+<td>this, 15, 8, 23</td>
+</tr>
+<tr>
+<td>10: return</td>
+<td>无动作，空</td>
+<td>this, 15, 8, 23</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-代码追踪"><a href="#5-代码追踪" class="headerlink" title="5 代码追踪"></a>5 代码追踪</h2><iframe width="945" height="511" src="https://www.youtube.com/embed/LwvJVxoExqU?list=PLtGk8Nqe2ZcK0xUtbQjHeX2gqgoOdKJnX" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+<hr>
+<h3 id="i-和-i-的区别"><a href="#i-和-i-的区别" class="headerlink" title="i++ 和 ++i 的区别"></a><code>i++</code> 和 <code>++i</code> 的区别</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">  程序员面试过程中， 常见的i++和++i 的区别，放到字节码篇章时再介绍。</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">()</span></span>&#123;</span><br><span class="line">      <span class="comment">//第1类问题：</span></span><br><span class="line">      <span class="keyword">int</span> i1 = <span class="number">10</span>;</span><br><span class="line">      i1++;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">int</span> i2 = <span class="number">10</span>;</span><br><span class="line">      ++i2;</span><br><span class="line"></span><br><span class="line">      <span class="comment">//第2类问题：</span></span><br><span class="line">      <span class="keyword">int</span> i3 = <span class="number">10</span>;</span><br><span class="line">      <span class="keyword">int</span> i4 = i3++;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">int</span> i5 = <span class="number">10</span>;</span><br><span class="line">      <span class="keyword">int</span> i6 = ++i5;</span><br><span class="line"></span><br><span class="line">      <span class="comment">//第3类问题：</span></span><br><span class="line">      <span class="keyword">int</span> i7 = <span class="number">10</span>;</span><br><span class="line">      i7 = i7++;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">int</span> i8 = <span class="number">10</span>;</span><br><span class="line">      i8 = ++i8;</span><br><span class="line"></span><br><span class="line">      <span class="comment">//第4类问题：</span></span><br><span class="line">      <span class="keyword">int</span> i9 = <span class="number">10</span>;</span><br><span class="line">      <span class="keyword">int</span> i10 = i9++ + ++i9;</span><br><span class="line">      <span class="comment">//System.out.println(i10);//22</span></span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>尝试通过分析字节码的方式去理解：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">()</span></span>;</span><br><span class="line">  descriptor: ()V</span><br><span class="line">  flags: (<span class="number">0x0001</span>) ACC_PUBLIC</span><br><span class="line">  Code:</span><br><span class="line">    stack=<span class="number">2</span>, locals=<span class="number">11</span>, args_size=<span class="number">1</span></span><br><span class="line">       <span class="number">0</span>: bipush        <span class="number">10</span></span><br><span class="line">       <span class="number">2</span>: istore_1</span><br><span class="line">       <span class="number">3</span>: iinc          <span class="number">1</span>, <span class="number">1</span></span><br><span class="line">       <span class="number">6</span>: bipush        <span class="number">10</span></span><br><span class="line">       <span class="number">8</span>: istore_2</span><br><span class="line">       <span class="number">9</span>: iinc          <span class="number">2</span>, <span class="number">1</span></span><br><span class="line">      <span class="number">12</span>: bipush        <span class="number">10</span></span><br><span class="line">      <span class="number">14</span>: istore_3</span><br><span class="line">      <span class="number">15</span>: iload_3</span><br><span class="line">      <span class="number">16</span>: iinc          <span class="number">3</span>, <span class="number">1</span></span><br><span class="line">      <span class="number">19</span>: istore        <span class="number">4</span></span><br><span class="line">      <span class="number">21</span>: bipush        <span class="number">10</span></span><br><span class="line">      <span class="number">23</span>: istore        <span class="number">5</span></span><br><span class="line">      <span class="number">25</span>: iinc          <span class="number">5</span>, <span class="number">1</span></span><br><span class="line">      <span class="number">28</span>: iload         <span class="number">5</span></span><br><span class="line">      <span class="number">30</span>: istore        <span class="number">6</span></span><br><span class="line">      <span class="number">32</span>: bipush        <span class="number">10</span></span><br><span class="line">      <span class="number">34</span>: istore        <span class="number">7</span></span><br><span class="line">      <span class="number">36</span>: iload         <span class="number">7</span></span><br><span class="line">      <span class="number">38</span>: iinc          <span class="number">7</span>, <span class="number">1</span></span><br><span class="line">      <span class="number">41</span>: istore        <span class="number">7</span></span><br><span class="line">      <span class="number">43</span>: bipush        <span class="number">10</span></span><br><span class="line">      <span class="number">45</span>: istore        <span class="number">8</span></span><br><span class="line">      <span class="number">47</span>: iinc          <span class="number">8</span>, <span class="number">1</span></span><br><span class="line">      <span class="number">50</span>: iload         <span class="number">8</span></span><br><span class="line">      <span class="number">52</span>: istore        <span class="number">8</span></span><br><span class="line">      <span class="number">54</span>: bipush        <span class="number">10</span></span><br><span class="line">      <span class="number">56</span>: istore        <span class="number">9</span></span><br><span class="line">      <span class="number">58</span>: iload         <span class="number">9</span></span><br><span class="line">      <span class="number">60</span>: iinc          <span class="number">9</span>, <span class="number">1</span></span><br><span class="line">      <span class="number">63</span>: iinc          <span class="number">9</span>, <span class="number">1</span></span><br><span class="line">      <span class="number">66</span>: iload         <span class="number">9</span></span><br><span class="line">      <span class="number">68</span>: iadd</span><br><span class="line">      <span class="number">69</span>: istore        <span class="number">10</span></span><br><span class="line">      <span class="number">71</span>: <span class="keyword">return</span></span><br></pre></td></tr></table></figure></div>
+
+<p>程序员面试过程中，常见的 <code>i++</code> 和 <code>++i</code> 的区别, 放到字节码篇章时再介绍。</p>
+<hr>
+<h2 id="6-栈顶缓存技术"><a href="#6-栈顶缓存技术" class="headerlink" title="6 栈顶缓存技术"></a>6 栈顶缓存技术</h2><p>前面提过，基于栈式架构的虛拟机所使用的零地址指令更加紧凑，但完成一项操作的时候必然需要使用更多的入栈和出栈指令，这同时也就意味着将需要更多的指令分派(instruction dispatch)次数和内存读/写次数。</p>
+<p>由于操作数是存储在内存中的，因此频繁地执行内存读/写操作必然会影响执行速度。为了解决这个问题，HotSpot JVM的设计者们提出了栈顶缓存(ToS，Top-of-Stack Cashing)技术，<strong>将栈顶元素全部缓存在物理CPU的寄存器中，以此降低对内存的读/写次数，提升执行引擎的执行效率</strong>。</p>
+<hr>
+<h2 id="7-动态链接"><a href="#7-动态链接" class="headerlink" title="7 动态链接"></a>7 动态链接</h2><p><img src="/2020/07/05/JVM-03/%E6%A0%88%E5%B8%A71.png" alt="帧数据区"></p>
+<p>动态链接(或指向运行时常量池的方法引用)</p>
+<p>每一个栈帧内部都包含一个指向 <em>运行时常量池</em> 中 <strong>该栈帧所属方法的引用</strong>。包含这个引用的目的就是为了支持当前方法的代码能够实现<strong>动态链接(Dynamic Linking)</strong> 。比如: invokedynamic指令</p>
+<p>在Java源文件被编译到字节码文件中时，所有的变量和方法引用都作为符号引用(Symbolic Reference) 保存在 class文件的常量池（运行起来以后保存到方法区就是运行时常量池）里。比如:描述一个方法调用了另外的其他方法时，就是通过常量池中指向方法的符号引用来表示的，那么<strong>动态链接的作用就是为了将这些符号引用转换为调用方法的直接引用</strong>。</p>
+<p><img src="/2020/07/05/JVM-03/%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A51.png" alt="动态链接"></p>
+<p><strong>为什么需要常量池呢</strong>？</p>
+<p>常量池的作用，就是为了提供一些符号和常量，便于指令的识别。</p>
+<hr>
+<h2 id="8-方法的调用-解析与分派"><a href="#8-方法的调用-解析与分派" class="headerlink" title="8 方法的调用:解析与分派"></a>8 方法的调用:解析与分派</h2><p>原理、过程</p>
+<h3 id="方法的绑定机制"><a href="#方法的绑定机制" class="headerlink" title="方法的绑定机制"></a>方法的绑定机制</h3><p>在JVM中，将符号引用转换为调用方法的直接引用与方法的绑定机制相关。</p>
+<p>● <strong>静态链接</strong>:<br>当一个字节码文件被装载进JVM内部时，如果被调用的<strong>目标方法在编译期可知</strong>,且运行期保持不变时。这种情况下将调用方法的符号引用转换为直接引用的过程称之为静态链接。</p>
+<p>● <strong>动态链接</strong>:<br>如果<strong>被调用的方法在编译期无法被确定下来</strong>，也就是说，只能够在程序运行期将调用方法的符号引用转换为直接引用，由于这种引用转换过程具备动态性，因此也就被称之为动态链接。</p>
+<p>对应的方法的绑定机制为:早期绑定(Early Binding)和晚期绑定(Late Binding) 。<strong>绑定是一个字段、方法或者类在符号引用被替换为直接引用的过程，这仅仅发生一次</strong>。</p>
+<p>● <strong>早期绑定</strong>:<br>早期绑定就是指被调用的<strong>目标方法如果在编译期可知，且运行期保持不变时</strong>,即可将这个方法与所属的类型进行绑定，这样一来，由于明确了被调用的目标方法究竟是哪一个，因此也就可以使用静态链接的方式将符号引用转换为直接引用。</p>
+<p>● <strong>晚期绑定</strong>:<br>如果<strong>被调用的方法在编译期无法被确定下来，只能够在程序运行期根据实际的类型绑定相关的方法</strong>，这种绑定方式也就被称之为晚期绑定。</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java2;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 说明早期绑定和晚期绑定的例子</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020 上午 11:59</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Animal</span></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">eat</span><span class="params">()</span></span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"动物进食"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">Huntable</span></span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">hunt</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Dog</span> <span class="keyword">extends</span> <span class="title">Animal</span> <span class="keyword">implements</span> <span class="title">Huntable</span></span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">eat</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"狗吃骨头"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">hunt</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"捕食耗子，多管闲事"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Cat</span> <span class="keyword">extends</span> <span class="title">Animal</span> <span class="keyword">implements</span> <span class="title">Huntable</span></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Cat</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">super</span>();<span class="comment">//表现为：早期绑定</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Cat</span><span class="params">(String name)</span></span>&#123;</span><br><span class="line">        <span class="keyword">this</span>();<span class="comment">//表现为：早期绑定</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">eat</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.eat();<span class="comment">//表现为：早期绑定</span></span><br><span class="line">        System.out.println(<span class="string">"猫吃鱼"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">hunt</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"捕食耗子，天经地义"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AnimalTest</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">showAnimal</span><span class="params">(Animal animal)</span></span>&#123;</span><br><span class="line">        animal.eat();<span class="comment">//表现为：晚期绑定</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">showHunt</span><span class="params">(Huntable h)</span></span>&#123;</span><br><span class="line">        h.hunt();<span class="comment">//表现为：晚期绑定</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>随着高级语言的横空出世，类似于Java一样的基于面向对象的编程语言如今越来越多，尽管这类编程语言在语法风格上存在一定的差别，但是它们彼此之间始终保持着一个共性，那就是都支持封装、继承和多态等面向对象特性，既然<strong>这一类的编程语言具备多态特性，那么自然也就具备早期绑定和晚期绑定两种绑定方式</strong>。</p>
+<p>Java中任何一个普通的方法其实都具备虚函数的特征，它们相当于C++语言中的虚函数(C++中则需要使用关键字 <code>virtual</code> 来显式定义)。如果在Java程序中不希望某个方法拥有虚函数的特征时，则可以使用关键字 <code>final</code> 来标记这个方法。</p>
+<h3 id="虚方法与非虚方法"><a href="#虚方法与非虚方法" class="headerlink" title="虚方法与非虚方法"></a>虚方法与非虚方法</h3><p><strong>非虚方法</strong>:</p>
+<p>● 如果方法在编译期就确定了具体的调用版木，这个版木在运行时是不可变的。这样的方法称为<strong>非虚方法</strong>。<br>● <strong>静态方法、私有方法、final方法、实例构造器、父类方法都是非虚方法</strong>。<br>● 其他方法称为虚方法。  </p>
+<p>子类对象的多态性的使用前提: ① 类的继承关系 ② 方法的重写.</p>
+<h3 id="4种方法调用指令区分非虚方法与虚方法"><a href="#4种方法调用指令区分非虚方法与虚方法" class="headerlink" title="4种方法调用指令区分非虚方法与虚方法"></a>4种方法调用指令区分非虚方法与虚方法</h3><p>虚拟机中提供了以下几条方法调用指令:</p>
+<ul>
+<li>普通调用指令:<ol>
+<li><strong><code>invokestatic</code>: 调用静态方法，解析阶段确定唯一方法版本</strong></li>
+<li><strong><code>invokespecial</code>: 调用&lt;init&gt;方法、 私有及父类方法，解析阶段确定唯一方法版本</strong></li>
+<li><code>invokevirtual</code>: 调用所有虚方法</li>
+<li><code>invokeinterface</code>: 调用接口方法</li>
+</ol>
+</li>
+<li>动态调用指令:<ol>
+<li><code>invokedynamic</code>: 动态解析出需要调用的方法，然后执行</li>
+</ol>
+</li>
+</ul>
+<p>前四条指令固化在虛拟机内部，方法的调用执行不可人为干预，而 <code>invokedynamic</code> 指令则支持由用户确定方法版本。其中 <strong><code>invokestatic</code> 指令和 <code>invokespecial</code> 指令调用的方法称为非虛方法，其余的( <code>final</code> 修饰的除外)称为虚方法</strong>。</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java2;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 解析调用中非虚方法、虚方法的测试</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * invokestatic指令和invokespecial指令调用的方法称为非虚方法</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020 下午 12:07</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Father</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Father</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"father的构造器"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">showStatic</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"father "</span> + str);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">showFinal</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"father show final"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">showCommon</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"father 普通方法"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Son</span> <span class="keyword">extends</span> <span class="title">Father</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Son</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">//invokespecial</span></span><br><span class="line">        <span class="keyword">super</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Son</span><span class="params">(<span class="keyword">int</span> age)</span> </span>&#123;</span><br><span class="line">        <span class="comment">//invokespecial</span></span><br><span class="line">        <span class="keyword">this</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//不是重写的父类的静态方法，因为静态方法不能被重写！</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">showStatic</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"son "</span> + str);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">showPrivate</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">"son private"</span> + str);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">show</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">//invokestatic</span></span><br><span class="line">        showStatic(<span class="string">"atguigu.com"</span>);</span><br><span class="line">        <span class="comment">//invokestatic</span></span><br><span class="line">        <span class="keyword">super</span>.showStatic(<span class="string">"good!"</span>);</span><br><span class="line">        <span class="comment">//invokespecial</span></span><br><span class="line">        showPrivate(<span class="string">"hello!"</span>);</span><br><span class="line">        <span class="comment">//invokespecial</span></span><br><span class="line">        <span class="keyword">super</span>.showCommon();</span><br><span class="line"></span><br><span class="line">        <span class="comment">//invokevirtual</span></span><br><span class="line">        showFinal();<span class="comment">//因为此方法声明有final，不能被子类重写，所以也认为此方法是非虚方法。</span></span><br><span class="line">        <span class="comment">//虚方法如下：</span></span><br><span class="line">        <span class="comment">//invokevirtual</span></span><br><span class="line">        showCommon();</span><br><span class="line">        info();</span><br><span class="line"></span><br><span class="line">        MethodInterface in = <span class="keyword">null</span>;</span><br><span class="line">        <span class="comment">//invokeinterface</span></span><br><span class="line">        in.methodA();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">info</span><span class="params">()</span></span>&#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">display</span><span class="params">(Father f)</span></span>&#123;</span><br><span class="line">        f.showCommon();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Son so = <span class="keyword">new</span> Son();</span><br><span class="line">        so.show();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">MethodInterface</span></span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">methodA</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="关于-invokedynamic-指令"><a href="#关于-invokedynamic-指令" class="headerlink" title="关于 invokedynamic 指令"></a>关于 <code>invokedynamic</code> 指令</h3><p>JVM字节码指令集一直比较稳定，一直到Java7中才增加了一个 <code>invokedynamic</code> 指令，这是<strong>Java为了实现「动态类型语言」支持而做的一种改进</strong>。</p>
+<p>但是在Java7中并没有提供直接生成 <code>invokedynamic</code> 指令的方法，需要借助 ASM 这种底层字节码工具来产生 <code>invokedynamic</code> 指令。<strong>直到 Java8 的 Lambda 表达式的出现，<code>invokedynamic</code> 指令的生成，在Java中才有了直接的生成方式</strong>。</p>
+<p>Java7 中增加的动态语言类型支持的本质是对 Java虚拟机规范的修改，而不是对Java语言规则的修改，这一块相对来讲比较复杂，增加了虚拟机中的方法调用，最直接的受益者就是运行在Java平台的动态语言的编译器。</p>
+<p>静态类型语言与动态类型语言：</p>
+<p>动态类型语言和静态类型语言两者的区别就在于对类型的检查是在编译期还是在运行期，满足前者就是静态类型语言，反之是动态类型语言。</p>
+<p>说的再直白一点就是，<strong>静态类型语言是判断变量自身的类型信息；动态类型语言是判断变量值的类型信息，变量没有类型信息，变量值才有类型信息</strong>，这是动态语言的一“个重要特征。</p>
+<p>比如， 静态类型语言Java；动态类型语言JS，Python。  </p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Java: String info &#x3D; &quot;atguigu&quot;; &#x2F;&#x2F;info &#x3D; atguigu;  </span><br><span class="line">JS: var name &#x3D; &quot;shkstart&quot;; var name &#x3D; 10 ;  </span><br><span class="line">Python: info &#x3D; 130.5</span><br></pre></td></tr></table></figure></div>
+
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java2;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 体会invokedynamic指令</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020 下午 3:09</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@FunctionalInterface</span></span><br><span class="line"><span class="class"><span class="keyword">interface</span> <span class="title">Func</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">func</span><span class="params">(String str)</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Lambda</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">lambda</span><span class="params">(Func func)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Lambda lambda = <span class="keyword">new</span> Lambda();</span><br><span class="line"></span><br><span class="line">        Func func = s -&gt; &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        lambda.lambda(func);</span><br><span class="line"></span><br><span class="line">        lambda.lambda(s -&gt; &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>main方法对应字节码指令如下：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"> 0 new #2 &lt;com/atguigu/java2/Lambda&gt;</span><br><span class="line"> <span class="number">3</span> dup</span><br><span class="line"> 4 invokespecial #3 &lt;com/atguigu/java2/Lambda.&lt;init&gt;&gt;</span><br><span class="line"> <span class="number">7</span> astore_1</span><br><span class="line"> 8 invokedynamic #4 &lt;func, BootstrapMethods #0&gt;</span><br><span class="line"><span class="number">13</span> astore_2</span><br><span class="line"><span class="number">14</span> aload_1</span><br><span class="line"><span class="number">15</span> aload_2</span><br><span class="line">16 invokevirtual #5 &lt;com/atguigu/java2/Lambda.lambda&gt;</span><br><span class="line"><span class="number">19</span> aload_1</span><br><span class="line">20 invokedynamic #6 &lt;func, BootstrapMethods #1&gt;</span><br><span class="line">25 invokevirtual #5 &lt;com/atguigu/java2/Lambda.lambda&gt;</span><br><span class="line"><span class="number">28</span> <span class="keyword">return</span></span><br></pre></td></tr></table></figure></div>
+
+<h3 id="方法重写的本质"><a href="#方法重写的本质" class="headerlink" title="方法重写的本质"></a>方法重写的本质</h3><p>Java语言中方法重写的本质:</p>
+<ol>
+<li>找到操作数栈项的第一个元素所执行的对象的实际类型，记作 <code>C</code>.</li>
+<li>如果在类型 <code>C</code> 中找到与常量中的描述符合简单名称都相符的方法，则进行访问权限校验，如果通过则返回这个方法的直接引用，查找过程结束；如果不通过，则返回 <code>java.lang.IllegalAccessError</code> 异常。</li>
+<li>否则，按照继承关系从下往上依次对 <code>C</code> 的各个父类进行第2步的搜索和验证过程。</li>
+<li>如果始终没有找到合适的方法，则抛出 <code>java.lang.AbstractMethodError</code> 异常。</li>
+</ol>
+<p><strong>IllegalAccessError介绍</strong>: 程序试图访问或修改一个属性或调用一个方法， 这个属性或方法，你没有权限访问。一般的，这个会引起编译器异常。这个错误如果发生在运行时，就说明一个类发生了不兼容的改变。</p>
+<p>⚠️：Maven的jar包管理冲突时容易出现这个问题，且不易发现。</p>
+<h3 id="虚方法表"><a href="#虚方法表" class="headerlink" title="虚方法表"></a>虚方法表</h3><p>从方法重写的本质可以看出来，频繁的查找效率低。</p>
+<p>● 在面向对象的编程中，会很频繁的使用到动态分派，如果在每次动态分派的过程中都要重新在类的方法元数据中搜索合适的目标的话就可能影响到执行效率。因此，<strong>为了提高性能</strong>，<strong>JVM采用在类的方法区建立一个虚方法表(virtual method table) (非虚方法不会出现在表中)来实现。使用索引表来代替查找</strong>。</p>
+<p>● 每个类中都有一个虚方法表，表中存放着各个方法的实际入口。</p>
+<p>● 那么虚方法表什么时候被创建?<br>虚方法表会在类加载的链接阶段被创建并开始初始化，类的变量初始值准备完成之后，JVM会把该类的方法表也初始化完毕。</p>
+<hr>
+<h2 id="9-方法返回地址"><a href="#9-方法返回地址" class="headerlink" title="9 方法返回地址"></a>9 方法返回地址</h2><p><img src="/2020/07/05/JVM-03/%E6%A0%88%E5%B8%A71.png" alt="栈帧中的方法返回地址"></p>
+<p>方法返回地址(return address)。</p>
+<p>● 存放调用该方法的pc寄存器的值。</p>
+<p>一个方法的结束，有两种方式:</p>
+<ul>
+<li>➢ 正常执行完成</li>
+<li>➢ 出现未处理的异常，非正常退出</li>
+</ul>
+<p>无论通过哪种方式退出，在方法退出后都返回到该方法被调用的位置。方法正常退出时，<strong>调用者的pc计数器的值作为返回地址，即调用该方法的指令的下一条指令的地址</strong>。而通过异常退出的，返回地址是要通过异常表来确定，栈帧中-般不会保存这部分信息。</p>
+<p>当一个方法开始执行后，只有两种方式可以退出这个方法:</p>
+<p>1、执行引擎遇到任意一个方法返回的字节码指令(return) ，会有返回值传递给上层的方法调用者，简称<strong>正常完成出口</strong>；</p>
+<ul>
+<li>➢ 一个方法在正常调用完成之后究竟需要使用哪一个返回指令还需要根据方法返回值的实际数据类型而定。</li>
+<li>➢ 在字节码指令中，返回指令包含 <code>ireturn</code> (当返回值是 <code>boolean</code>、 <code>byte</code>、<code>char</code>、 <code>short</code> 和 <code>int</code> 类型时使用)、<code>lreturn</code> （long）、 <code>freturn</code> （float）、 <code>dreturn</code> （double） 以及 <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.areturn" target="_blank" rel="noopener"><code>areturn</code> （返回引用类型）</a>,另外还有一个 <code>return</code> 指令供声明为 <code>void</code> 的方法、实例初始化方法、类和接口的初始化方法使用。</li>
+</ul>
+<p>2、在方法执行的过程中遇到了异常(Exception)，并且这个异常没有在方法内进行处理，也就是只要在本方法的异常表中没有搜索到匹配的异常处理器，就会导致方法退出。简称<strong>异常完成出口</strong>。</p>
+<p>方法执行过程中抛出异常时的异常处理，存储在一个异常处理表，方便在发生异常的时候找到处理异常的代码。</p>
+<table>
+<thead>
+<tr>
+<th>Exception table:</th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>from</td>
+<td>to</td>
+<td>target</td>
+<td>type</td>
+</tr>
+<tr>
+<td>4</td>
+<td>16</td>
+<td>19</td>
+<td>any</td>
+</tr>
+<tr>
+<td>19</td>
+<td>21</td>
+<td>19</td>
+<td>any</td>
+</tr>
+</tbody></table>
+<p>本质上，方法的退出就是当前栈帧出栈的过程。此时，需要恢复上层方法的局部变量表、操作数栈、将返回值压入调用者栈帧的操作数栈、设置PC寄存器值等，让调用者方法继续执行下去。</p>
+<p><strong>正常完成出口和异常完成出口的区别在于:通过异常完成出口退出的不会给他的上层调用者产生任何的返回值</strong>。</p>
+<hr>
+<h2 id="10-一些附加信息"><a href="#10-一些附加信息" class="headerlink" title="10 一些附加信息"></a>10 一些附加信息</h2><p>栈帧中还允许携带与Java虛拟机实现相关的一些附加信息。例如,对程序调试提供支持的信息。</p>
+<hr>
+<h2 id="11-虚拟机栈的相关面试题"><a href="#11-虚拟机栈的相关面试题" class="headerlink" title="11 虚拟机栈的相关面试题"></a>11 虚拟机栈的相关面试题</h2><p>这一章主要讲了虚拟机栈的内部结构，其中栈帧的结构包含局部变量表、操作数栈、方法返回地址、动态链接和一些附加信息。也提到了方法调用和一些字节码指令。</p>
+<ul>
+<li>● 举例栈溢出的情况? （<code>StackOverflowError</code>）<ul>
+<li>通过 <code>-Xss</code> 设置栈的大小：<code>OOM</code>(栈大小动态扩容内存不足时出现)</li>
+</ul>
+</li>
+<li>● 调整栈大小，就能保证不出现溢出吗? （不能）</li>
+<li>● 分配的栈内存越大越好吗? （不是。比如物理机器内存容量有限，会挤占其他进程的内存空间）</li>
+<li>● 垃圾回收是否会涉及到虚拟机栈? （不会）<table>
+<thead>
+<tr>
+<th>运行时数据区</th>
+<th>Error</th>
+<th>GC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>程序计数器</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>虚拟机栈</td>
+<td>✅</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>本地方法栈</td>
+<td>✅</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>堆</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>方法区</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+</tbody></table>
+</li>
+<li>● 方法中定义的局部变量是否线程安全? （具体问题具体分析）</li>
+</ul>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java3;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 面试题：</span></span><br><span class="line"><span class="comment"> * 方法中定义的局部变量是否线程安全？具体情况具体分析</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *   何为线程安全？</span></span><br><span class="line"><span class="comment"> *      如果只有一个线程才可以操作此数据，则必是线程安全的。</span></span><br><span class="line"><span class="comment"> *      如果有多个线程操作此数据，则此数据是共享数据。如果不考虑同步机制的话，会存在线程安全问题。</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020 下午 7:48</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">StringBuilderTest</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> num = <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//s1的声明方式是线程安全的</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">method1</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="comment">//StringBuilder:线程不安全</span></span><br><span class="line">        StringBuilder s1 = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">        s1.append(<span class="string">"a"</span>);</span><br><span class="line">        s1.append(<span class="string">"b"</span>);</span><br><span class="line">        <span class="comment">//...</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//sBuilder的操作过程：是线程不安全的</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">method2</span><span class="params">(StringBuilder sBuilder)</span></span>&#123;</span><br><span class="line">        sBuilder.append(<span class="string">"a"</span>);</span><br><span class="line">        sBuilder.append(<span class="string">"b"</span>);</span><br><span class="line">        <span class="comment">//...</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//s1的操作：是线程不安全的</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> StringBuilder <span class="title">method3</span><span class="params">()</span></span>&#123;</span><br><span class="line">        StringBuilder s1 = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">        s1.append(<span class="string">"a"</span>);</span><br><span class="line">        s1.append(<span class="string">"b"</span>);</span><br><span class="line">        <span class="keyword">return</span> s1;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//s1的操作：是线程安全的</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">method4</span><span class="params">()</span></span>&#123;</span><br><span class="line">        StringBuilder s1 = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">        s1.append(<span class="string">"a"</span>);</span><br><span class="line">        s1.append(<span class="string">"b"</span>);</span><br><span class="line">        <span class="keyword">return</span> s1.toString();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        StringBuilder s = <span class="keyword">new</span> StringBuilder();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">            s.append(<span class="string">"a"</span>);</span><br><span class="line">            s.append(<span class="string">"b"</span>);</span><br><span class="line">        &#125;).start();</span><br><span class="line"></span><br><span class="line">        method2(s);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<hr>
+<h2 id="本地方法栈-Native-Method-Stack"><a href="#本地方法栈-Native-Method-Stack" class="headerlink" title="本地方法栈(Native Method Stack)"></a>本地方法栈(Native Method Stack)</h2><p><img src="/2020/07/05/JVM-03/%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%A0%881.png" alt="HotSpot JVM 本地方法栈"></p>
+<p><strong>Java虛拟机栈用于管理Java方法的调用，而本地方法栈用于管理本地方法的调用</strong>。</p>
+<p>本地方法栈，也是线程私有的。</p>
+<p>允许被实现成固定或者是可动态扩展的内存大小。( 在内存溢出方面是相同的)</p>
+<ul>
+<li>➢ 如果线程请求分配的栈容量超过本地方法栈允许的最大容量，Java虚拟机将会抛出一个 <code>stackoverflowError</code> 异常。</li>
+<li>➢ 如果本地方法栈可以动态扩展，并且在尝试扩展的时候无法申请到足够的内存，或者在创建新的线程时没有足够的内存去创建对应的本地方法栈，那么Java虚拟机将会抛出一个 <code>outOfMemoryError</code> 异常。</li>
+</ul>
+<p>本地方法是使用C语言实现的。</p>
+<p>它的具体做法是Native Method Stack中登记native方法，在Execution Engine 执行时加载本地方法库。</p>
+<p><strong>当某个线程调用一个本地方法时，它就进入了一个全新的并且不再受虚拟机限制的世界。它和虚拟机拥有同样的权限</strong>。</p>
+<ul>
+<li>➢ 本地方法可以通过本地方法接口来<strong>访问虚拟机内部的运行时数据区</strong>。</li>
+<li>➢ 它甚至可以直接使用本地处理器中的寄存器</li>
+<li>➢ 直接从本地内存的堆中分配任意数量的内存。</li>
+</ul>
+<p>● <strong>并不是所有的JVM都支持本地方法。因为Java虚拟机规范并没有明确要求本地方法栈的使用语言、具体实现方式、数据结构等</strong>。如果JVM产品不打算支持native方法，也可以无需实现本地方法栈。</p>
+<p>● 在Hotspot JVM中，直接将本地方法栈和虚拟机栈合二为一。</p>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../../11/JVM-04/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            JVM 04 运行时数据区之堆 (Heap)
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../JVM-02/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">JVM 02 运行时数据区概述及线程、程序计数器</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%8B%B1%E8%AF%AD/" rel="tag">英语</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/Git-Bash/" style="font-size: 10px;">Git Bash</a> <a href="../../../../tags/Github/" style="font-size: 12px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/Hadoop/" style="font-size: 18px;">Hadoop</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/JVM/" style="font-size: 18px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/Linux/" style="font-size: 16px;">Linux</a> <a href="../../../../tags/MapReduce/" style="font-size: 12px;">MapReduce</a> <a href="../../../../tags/Maven/" style="font-size: 14px;">Maven</a> <a href="../../../../tags/Shell/" style="font-size: 12px;">Shell</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/hexo/" style="font-size: 12px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 10px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 12px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12px;">竹云</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 10px;">终端</a> <a href="../../../../tags/%E8%8B%B1%E8%AF%AD/" style="font-size: 10px;">英语</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../../../2022/08/16/2022%E6%B5%8B%E8%AF%95/">2022测试</a>
+          </li>
+        
+          <li>
+            <a href="../../../08/23/%E5%BA%94%E7%94%A8%E7%B3%BB%E7%BB%9F%E9%9B%86%E6%88%90%E2%80%94%E2%80%94%E8%AE%BF%E9%97%AE%E6%8E%A7%E5%88%B6/">应用系统集成——访问控制</a>
+          </li>
+        
+          <li>
+            <a href="../../../08/23/%E5%BA%94%E7%94%A8%E7%B3%BB%E7%BB%9F%E9%9B%86%E6%88%90%E2%80%94%E2%80%94%E8%BA%AB%E4%BB%BD%E7%AE%A1%E7%90%86/">应用系统集成 —— 身份管理</a>
+          </li>
+        
+          <li>
+            <a href="../../../08/23/%E5%AF%BC%E5%87%BAjar%E5%8C%85%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F/">导出 jar 包的几种方式（命令行、Idea、Eclipse）</a>
+          </li>
+        
+          <li>
+            <a href="../../../08/08/JVM-07/">JVM 07 对象的实例化内存布局与访问定位</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2022 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>
