@@ -785,3 +785,7 @@ html, body, #fullpage{
     flex-direction: column;
   }
 }
+/* mermaid样式 */
+.mermaid {
+  background: transparent;
+ }
