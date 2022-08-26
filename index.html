@@ -162,11 +162,11 @@
 <p> <img src="/2022/08/25/MacOS-%E5%AE%89%E8%A3%85-PowerLine-%E5%AD%97%E4%BD%93%E5%B9%B6%E5%9C%A8-VSCode-%E5%92%8C-iTerm-zsh-%E7%BB%88%E7%AB%AF%E9%87%8C%E8%AE%BE%E7%BD%AE%E5%AD%97%E4%BD%93%E8%A7%A3%E5%86%B3%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/2022-08-25-23-26-42.png" alt="macOS 批量安装字体"></p>
 </li>
 </ol>
-<h2 id="设置-VSCode-里的终端字体修改"><a href="#设置-VSCode-里的终端字体修改" class="headerlink" title="设置 VSCode 里的终端字体修改"></a>设置 VSCode 里的终端字体修改</h2><p>VSCode 用户设置部分，编辑 <code>settings.json</code> 文件</p>
+<h2 id="VSCode-设置里的终端字体修改"><a href="#VSCode-设置里的终端字体修改" class="headerlink" title="VSCode 设置里的终端字体修改"></a>VSCode 设置里的终端字体修改</h2><p>VSCode 用户设置部分，编辑 <code>settings.json</code> 文件</p>
 <figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">"terminal.integrated.fontFamily": "Meslo LG L DZ for Powerline", // 需安装字体</span><br><span class="line">"terminal.integrated.defaultProfile.osx": "zsh",</span><br><span class="line">"terminal.external.osxExec": "iTerm.app",</span><br><span class="line">"terminal.integrated.profiles.osx": &#123;</span><br><span class="line">    "zsh": &#123;</span><br><span class="line">        "path": "/bin/zsh",</span><br><span class="line">        "args": ["-l"], // 若为空数组 [], 则环境变量有问题；为 ["-l"] 或则不配置 "args" 参数</span><br><span class="line">        "icon": "terminal-powershell"</span><br><span class="line">    &#125;</span><br><span class="line">&#125;,</span><br><span class="line">"settingsSync.ignoredSettings": [</span><br><span class="line">    <span class="string">"terminal.integrated.fontFamily"</span></span><br><span class="line">]</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>ps：需要确保指定字体已安装，且字体名称正确。（注意可能字体文件名和字体名称可能不同）</p>
+<p>ps：需要确保指定字体已安装，且字体名称正确。（注意: 字体文件名和字体名称可能不同）</p>
 </blockquote>
 <h2 id="iTerm-终端字体"><a href="#iTerm-终端字体" class="headerlink" title="iTerm 终端字体"></a>iTerm 终端字体</h2><p>iTerm 终端的字体设置方法比较简单</p>
 <p><img src="/2022/08/25/MacOS-%E5%AE%89%E8%A3%85-PowerLine-%E5%AD%97%E4%BD%93%E5%B9%B6%E5%9C%A8-VSCode-%E5%92%8C-iTerm-zsh-%E7%BB%88%E7%AB%AF%E9%87%8C%E8%AE%BE%E7%BD%AE%E5%AD%97%E4%BD%93%E8%A7%A3%E5%86%B3%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/2022-08-25-23-43-10.png" alt="iTerm 终端的字体设置"></p>
