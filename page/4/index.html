@@ -80,6 +80,79 @@
       <div id="middlecontent" title class="global-width sidebar-right">
         <section id="main">
   
+    <article id="post-Git-Bash中使用ssh远程连接至macOS-Linux服务器中文乱码-附Git-Bash-for-Windows主题美化和字体设置" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2020/06/21/Git-Bash%E4%B8%AD%E4%BD%BF%E7%94%A8ssh%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E8%87%B3macOS-Linux%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81-%E9%99%84Git-Bash-for-Windows%E4%B8%BB%E9%A2%98%E7%BE%8E%E5%8C%96%E5%92%8C%E5%AD%97%E4%BD%93%E8%AE%BE%E7%BD%AE/">Git Bash中使用ssh远程连接至macOS/Linux服务器中文乱码 附Git Bash for Windows主题美化和字体设置</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2020/06/21/Git-Bash%E4%B8%AD%E4%BD%BF%E7%94%A8ssh%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E8%87%B3macOS-Linux%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81-%E9%99%84Git-Bash-for-Windows%E4%B8%BB%E9%A2%98%E7%BE%8E%E5%8C%96%E5%92%8C%E5%AD%97%E4%BD%93%E8%AE%BE%E7%BD%AE/" class="article-date">
+  <time datetime="2020-06-21T15:36:03.000Z" itemprop="datePublished">2020-06-21</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/ssh/" rel="tag">ssh</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <h2 id="Windows-Git-Bash-主题美化和字体设置"><a href="#Windows-Git-Bash-主题美化和字体设置" class="headerlink" title="Windows Git Bash 主题美化和字体设置"></a><a id="top1">Windows Git Bash 主题美化和字体设置</a></h2><h3 id="ssh远程连接至服务器，终端命令提示符等乱码"><a href="#ssh远程连接至服务器，终端命令提示符等乱码" class="headerlink" title="ssh远程连接至服务器，终端命令提示符等乱码"></a>ssh远程连接至服务器，终端命令提示符等乱码</h3><p><strong>问题描述</strong>：  </p>
+<p>远程服务器上我使用的是oh-my-zsh终端并且使用了agnoster主题以及<code>Meslo LG L DZ Regular for Powerline</code>字体，在Windows上使用ssh远程连接至服务器时由于Windows没有Powerline字体，终端命令提示符有些非ASCII字符会乱码。</p>
+<p><strong>解决方法</strong>：  </p>
+<ol>
+<li>下载并安装字体<br>在Windows上安装上述字体，点击 <a href="https://github.com/powerline/fonts/raw/master/Meslo%20Dotted/Meslo%20LG%20L%20DZ%20Regular%20for%20Powerline.ttf" target="_blank" rel="noopener">Meslo LG L DZ Regular for Powerline</a> 下载字体至本地，双击下载的字体文件，安装字体。</li>
+<li>修改Git Bash配置文件使用安装好的字体<br>在Git Bash的Option中的Text选项卡也能设置字体，但是它的字体列表显示的不完全，很多Windows上已有的和上述新安装的Powerline字体在Git bash的设置里面都找不到。解决方法是直接修改Git Bash的配置文件，一般这个配置文件都是用户目录下的.minttyrc文件，即<code>~/.minttyrc</code>，如果没有这个文件也不影响下面的操作，会自动创建。在<code>~/.minttyrc</code>文件中填写以下配置：  </li>
+</ol>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">Font&#x3D;Meslo LG L DZ Regular for Powerline</span><br><span class="line">FontHeight&#x3D;14</span><br><span class="line">ForegroundColour&#x3D;131,148,150</span><br><span class="line">BackgroundColour&#x3D;0,43,54</span><br><span class="line">CursorColour&#x3D;222,222,0</span><br><span class="line"></span><br><span class="line">Black&#x3D;7,54,66</span><br><span class="line">BoldBlack&#x3D;0,43,54</span><br><span class="line">Red&#x3D;220,50,47</span><br><span class="line">BoldRed&#x3D;203,75,22</span><br><span class="line">Green&#x3D;133,153,0</span><br><span class="line">BoldGreen&#x3D;88,110,117</span><br><span class="line">Yellow&#x3D;181,137,0</span><br><span class="line">BoldYellow&#x3D;101,123,131</span><br><span class="line">Blue&#x3D;38,139,210</span><br><span class="line">BoldBlue&#x3D;131,148,150</span><br><span class="line">Magenta&#x3D;211,54,130</span><br><span class="line">BoldMagenta&#x3D;108,113,196</span><br><span class="line">Cyan&#x3D;42,161,152</span><br><span class="line">BoldCyan&#x3D;147,161,161</span><br><span class="line">White&#x3D;238,232,213</span><br><span class="line">BoldWhite&#x3D;253,246,227</span><br><span class="line">Locale&#x3D;zh_CN </span><br><span class="line">Charset&#x3D;UTF-8</span><br><span class="line">CursorType&#x3D;block</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="主题配色和隐藏用户主机名"><a href="#主题配色和隐藏用户主机名" class="headerlink" title="主题配色和隐藏用户主机名"></a>主题配色和隐藏用户主机名</h3><ol>
+<li>主题美化：<br>主题美化很简单，事实上已经配置完成了。以上配置文件中已经配置了字体<code>Font</code>和字体大小<code>FontHeight</code>，同时也配置了MinGW的主题配色为<a href="https://github.com/mavnn/mintty-colors-solarized" target="_blank" rel="noopener">mintty-colors-solarized</a>。重启Git Bash就能看到新的主题配色和字体。  </li>
+<li>隐藏命令提示符前的 ‘用户名@主机名’：<br>打开Git Bash，输入命令<code>vi ~/.profile</code>打开.profile文件，按<code>i</code>进入<code>INSERT</code>模式，在文件末尾添加一行<code>export PS1=&quot;\W\[\033[32m\]\$(parse_git_branch)\[\033[00m\] $ &quot;</code> ，按<code>ESC</code>，输入<code>:wq</code>保存退出。再次重启Git Bash，用户名和主机名都不会显示啦。如果想只显示用户名而不显示电脑主机名，就把输入的那一行改为<del>改成啥来着，忘了，百度一下吧</del>。  </li>
+</ol>
+<hr>
+<h2 id="使用ssh远程连接时中文乱码"><a href="#使用ssh远程连接时中文乱码" class="headerlink" title="使用ssh远程连接时中文乱码"></a>使用ssh远程连接时中文乱码</h2><p><strong>问题描述</strong>：<br>在本地Windows系统的Git Bash上使用ssh连接至远程的macOS服务器（Linux同理），中文还是乱码。  </p>
+<p><strong>解决方法</strong>:  </p>
+<ol>
+<li>在Windows上编辑<code>~/.minttyrc</code>文件，填入<code>Locale=zh_CN</code>和<code>Charset=UTF-8</code>这两行（上面修改主题部分给出的配置中已经有了这两行，没有就添加）以修改字符集为UTF-8；  </li>
+<li>在<code>ssh username@host</code>连接上远程服务器之后，输入<code>export LANG=&quot;zh_CN.UTF-8&quot;</code>，中文即可显示正常。  </li>
+<li>第2点的命令只对本次连接有效，下次使用ssh重新连接远程服务器时还是会出现中文乱码。为使之永久生效，可以将上述export命令添加到远程主机（macOS/Linux）的环境变量中。  </li>
+</ol>
+<hr>
+<p>写完才发现我远程oh-my-zsh（<a href="https://www.ioiox.com/archives/34.html" target="_blank" rel="noopener">macOS上</a>）使用的字体是 <a href="https://github.com/abertsch/Menlo-for-Powerline" target="_blank" rel="noopener">Menlo-for-Powerline</a> ，虽然Windows本地的Git Bash上配置的字体和远程终端不一样，但是也不影响，因为两者都是支持非ASCII字符显示的Powerline字体。  </p>
+<p>链接：macOS终端iTerm2及其主题美化：  </p>
+<ol>
+<li><a href="https://www.ioiox.com/archives/34.html" target="_blank" rel="noopener">macOS使用oh-my-zsh美化Terminal,iTerm2,VSCode命令行终端配置教程</a></li>
+<li><a href="https://hsiangfeng.github.io/other/20200123/1105303313/" target="_blank" rel="noopener">Mac OS 終端機美化(Mac OS Terminal)</a></li>
+<li><a href="https://www.jianshu.com/p/6d21d3484444" target="_blank" rel="noopener">【vscode】windows中使用zsh美化vscode终端</a></li>
+<li><a href="https://sspai.com/post/45332" target="_blank" rel="noopener">一款基于 Electron 的跨平台终端 Terminal Emulator: Hyper</a></li>
+</ol>
+<hr>
+<p><a href="#top1">回到顶部</a></p>
+<hr>
+
+          
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
     <article id="post-Linux-macOS终端命令之——basename" class="article global-container article-type-post" itemscope itemprop="blogPost">
   
     <header class="article-header">
@@ -650,7 +723,7 @@
   <div class="widget-box">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%8B%B1%E8%AF%AD/" rel="tag">英语</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%8B%B1%E8%AF%AD/" rel="tag">英语</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
     </div>
   </div>
 
@@ -660,7 +733,7 @@
   <div class="widget-box">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="../../tags/Git-Bash/" style="font-size: 10px;">Git Bash</a> <a href="../../tags/Github/" style="font-size: 14px;">Github</a> <a href="../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../tags/Hadoop/" style="font-size: 18px;">Hadoop</a> <a href="../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../tags/JVM/" style="font-size: 18px;">JVM</a> <a href="../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../tags/Linux/" style="font-size: 16px;">Linux</a> <a href="../../tags/MapReduce/" style="font-size: 12px;">MapReduce</a> <a href="../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../tags/Maven/" style="font-size: 14px;">Maven</a> <a href="../../tags/SQL/" style="font-size: 14px;">SQL</a> <a href="../../tags/Shell/" style="font-size: 12px;">Shell</a> <a href="../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../tags/hexo/" style="font-size: 12px;">hexo</a> <a href="../../tags/macOS/" style="font-size: 12px;">macOS</a> <a href="../../tags/ssh/" style="font-size: 12px;">ssh</a> <a href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12px;">竹云</a> <a href="../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12px;">终端</a> <a href="../../tags/%E8%8B%B1%E8%AF%AD/" style="font-size: 10px;">英语</a> <a href="../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
+      <a href="../../tags/Git-Bash/" style="font-size: 10px;">Git Bash</a> <a href="../../tags/Github/" style="font-size: 14px;">Github</a> <a href="../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../tags/Hadoop/" style="font-size: 18px;">Hadoop</a> <a href="../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../tags/JVM/" style="font-size: 18px;">JVM</a> <a href="../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../tags/Linux/" style="font-size: 16px;">Linux</a> <a href="../../tags/MapReduce/" style="font-size: 12px;">MapReduce</a> <a href="../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../tags/Maven/" style="font-size: 14px;">Maven</a> <a href="../../tags/SQL/" style="font-size: 14px;">SQL</a> <a href="../../tags/Shell/" style="font-size: 12px;">Shell</a> <a href="../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../tags/hexo/" style="font-size: 12px;">hexo</a> <a href="../../tags/macOS/" style="font-size: 12px;">macOS</a> <a href="../../tags/ssh/" style="font-size: 12px;">ssh</a> <a href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../tags/%E7%94%B5%E8%84%91/" style="font-size: 10px;">电脑</a> <a href="../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12px;">竹云</a> <a href="../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12px;">终端</a> <a href="../../tags/%E8%8B%B1%E8%AF%AD/" style="font-size: 10px;">英语</a> <a href="../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
     </div>
   </div>
 
@@ -681,6 +754,10 @@
       <ul>
         
           <li>
+            <a href="../../2022/08/27/%E7%94%B5%E8%84%91BIOS%E7%83%AD%E9%94%AEU%E7%9B%98%E5%90%AF%E5%8A%A8%E5%BF%AB%E6%8D%B7%E9%94%AE%E8%A1%A8/">电脑BIOS热键U盘启动快捷键表</a>
+          </li>
+        
+          <li>
             <a href="../../2022/08/27/MySQL%E4%BC%98%E5%8C%96%E6%8A%80%E5%B7%A7/">MySQL优化技巧</a>
           </li>
         
@@ -694,10 +771,6 @@
         
           <li>
             <a href="../../2022/08/25/MacOS-%E5%AE%89%E8%A3%85-PowerLine-%E5%AD%97%E4%BD%93%E5%B9%B6%E5%9C%A8-VSCode-%E5%92%8C-iTerm-zsh-%E7%BB%88%E7%AB%AF%E9%87%8C%E8%AE%BE%E7%BD%AE%E5%AD%97%E4%BD%93%E8%A7%A3%E5%86%B3%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/">MacOS 安装 PowerLine 字体并在 VSCode 和 iTerm zsh 终端里设置字体解决乱码问题</a>
-          </li>
-        
-          <li>
-            <a href="../../2022/08/25/Github-%E5%8F%AA%E5%85%8B%E9%9A%86-%E4%B8%8B%E8%BD%BD-%E5%90%8C%E6%AD%A5%E9%83%A8%E5%88%86%E6%8C%87%E5%AE%9A%E6%96%87%E4%BB%B6%E5%A4%B9%E7%9A%84%E6%96%B9%E6%B3%95/">Github 只克隆/下载/同步部分指定文件夹的方法</a>
           </li>
         
       </ul>
