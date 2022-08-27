@@ -27,15 +27,15 @@
 <meta property="og:site_name" content="空城盼故人">
 <meta property="og:description" content="SQL 优化已经成为衡量程序猿优秀与否的硬性指标，甚至在各大厂招聘岗位职能上都有明码标注，如果是你，在这个问题上能吊打面试官还是会被吊打呢？ 有朋友疑问到，SQL 优化真的有这么重要么？如下图所示，SQL 优化在提升系统性能中是：成本最低和优化效果最明显的途径。 如果你的团队在 SQL 优化这方面搞得很优秀，对你们整个大型系统可用性方面无疑是一个质的跨越，真的能让你们老板省下不止几沓子钱。  优">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_jpg/jqCHqBaKLl1KXI0QYz7SDnpY8aorXN3EGCHqGWUkZpBDTJdgK27icPa1NDAJxibkKy25maxAMSLuLibqcdDs2JmfA/640?wx_fmt=jpeg&wxfrom=5&wx_lazy=1&wx_co=1">
-<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_png/MOwlO0INfQqTZtufrq3FwvMO7x98uagPguxbDhhibv5x7fB255ticibYBJicaERcwyonkFSkdbb2k8dvRettw2NPMQ/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta property="og:image" content="https://s3.51cto.com/oss/202008/19/d9252510a479f874702cac440bcd7a30.jpg">
+<meta property="og:image" content="https://s1.51cto.com/oss/202008/19/734e0d75c12e4026751e71dd2d7b0812.png">
 <meta property="article:published_time" content="2022-08-27T05:56:46.000Z">
-<meta property="article:modified_time" content="2022-08-27T06:47:25.626Z">
+<meta property="article:modified_time" content="2022-08-27T07:00:28.212Z">
 <meta property="article:author" content="许嵩老公">
 <meta property="article:tag" content="SQL">
 <meta property="article:tag" content="转载">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://mmbiz.qpic.cn/mmbiz_jpg/jqCHqBaKLl1KXI0QYz7SDnpY8aorXN3EGCHqGWUkZpBDTJdgK27icPa1NDAJxibkKy25maxAMSLuLibqcdDs2JmfA/640?wx_fmt=jpeg&wxfrom=5&wx_lazy=1&wx_co=1">
+<meta name="twitter:image" content="https://s3.51cto.com/oss/202008/19/d9252510a479f874702cac440bcd7a30.jpg">
   
     <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
   
@@ -117,14 +117,14 @@
     <div class="article-content article-content-cloud" itemprop="articleBody">
       
         
-        <p><img src="https://mmbiz.qpic.cn/mmbiz_jpg/jqCHqBaKLl1KXI0QYz7SDnpY8aorXN3EGCHqGWUkZpBDTJdgK27icPa1NDAJxibkKy25maxAMSLuLibqcdDs2JmfA/640?wx_fmt=jpeg&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+        <p><img src="https://s3.51cto.com/oss/202008/19/d9252510a479f874702cac440bcd7a30.jpg" alt="1"></p>
 <p>SQL 优化已经成为衡量程序猿优秀与否的硬性指标，甚至在各大厂招聘岗位职能上都有明码标注，如果是你，在这个问题上能吊打面试官还是会被吊打呢？</p>
 <p>有朋友疑问到，SQL 优化真的有这么重要么？如下图所示，SQL 优化在提升系统性能中是：成本最低和优化效果最明显的途径。</p>
 <p>如果你的团队在 SQL 优化这方面搞得很优秀，对你们整个大型系统可用性方面无疑是一个质的跨越，真的能让你们老板省下不止几沓子钱。</p>
-<p><img src="https://mmbiz.qpic.cn/mmbiz_png/MOwlO0INfQqTZtufrq3FwvMO7x98uagPguxbDhhibv5x7fB255ticibYBJicaERcwyonkFSkdbb2k8dvRettw2NPMQ/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片"></p>
+<p><img src="https://s1.51cto.com/oss/202008/19/734e0d75c12e4026751e71dd2d7b0812.png" alt="2"></p>
 <p><strong>优化成本：</strong> 硬件&gt;系统配置&gt;数据库表结构&gt;SQL 及索引。</p>
 <p><strong>优化效果：</strong> 硬件&lt;系统配置&lt;数据库表结构&lt;SQL 及索引。</p>
-<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">String result &#x3D; &quot;嗯，不错，&quot;;</span><br><span class="line">if (&quot;SQL 优化经验足&quot;) &#123;</span><br><span class="line">    if (&quot;熟悉事务锁&quot;) &#123;</span><br><span class="line">        if (&quot;并发场景处理 666&quot;) &#123;</span><br><span class="line">            if (&quot;会打王者荣耀&quot;) &#123;</span><br><span class="line">                result +&#x3D; &quot;明天入职&quot;;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125; else &#123;</span><br><span class="line">    result +&#x3D; &quot;先回去等消息吧&quot;;</span><br><span class="line">&#125;</span><br><span class="line">Logger.info (&quot;面试官：&quot; + result );</span><br></pre></td></tr></table></figure></div>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">String result = <span class="string">"嗯，不错，"</span>;</span><br><span class="line"><span class="keyword">if</span> (<span class="string">"SQL 优化经验足"</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="string">"熟悉事务锁"</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="string">"并发场景处理 666"</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (<span class="string">"会打王者荣耀"</span>) &#123;</span><br><span class="line">                result += <span class="string">"明天入职"</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    result += <span class="string">"先回去等消息吧"</span>;</span><br><span class="line">&#125;</span><br><span class="line">Logger.info (<span class="string">"面试官："</span> + result );</span><br></pre></td></tr></table></figure></div>
 
 <p>别看了，上面这是一道送命题。</p>
 <p>好了我们言归正传，首先，对于 MySQL 层优化我一般遵从五个原则：</p>
