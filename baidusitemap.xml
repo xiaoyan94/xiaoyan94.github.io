@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>https://xiaoyan94.github.io/2022/08/29/NET-Framework-%E8%BF%9E%E6%8E%A5-Oracle%E6%95%B0%E6%8D%AE%E5%BA%93/</loc>
+    <lastmod>2022-08-30</lastmod>
+  </url>  <url>
+    <loc>https://xiaoyan94.github.io/2020/06/22/%E4%BD%BF%E7%94%A8Github-Actions-CI-CD-%E8%87%AA%E5%8A%A8%E5%8C%96%E9%83%A8%E7%BD%B2Hexo%E5%88%B0Github-Gitee-Pages/</loc>
+    <lastmod>2022-08-29</lastmod>
+  </url>  <url>
     <loc>https://xiaoyan94.github.io/2022/08/27/%E7%94%B5%E8%84%91BIOS%E7%83%AD%E9%94%AEU%E7%9B%98%E5%90%AF%E5%8A%A8%E5%BF%AB%E6%8D%B7%E9%94%AE%E8%A1%A8/</loc>
     <lastmod>2022-08-27</lastmod>
   </url>  <url>
@@ -83,9 +89,6 @@
     <lastmod>2022-08-26</lastmod>
   </url>  <url>
     <loc>https://xiaoyan94.github.io/2020/06/25/Linux-macOS-Shell%E7%BB%88%E7%AB%AF%E5%BF%AB%E6%8D%B7%E9%94%AE/</loc>
-    <lastmod>2022-08-26</lastmod>
-  </url>  <url>
-    <loc>https://xiaoyan94.github.io/2020/06/22/%E4%BD%BF%E7%94%A8Github-Actions-CI-CD-%E8%87%AA%E5%8A%A8%E5%8C%96%E9%83%A8%E7%BD%B2Hexo%E5%88%B0Github-Gitee-Pages/</loc>
     <lastmod>2022-08-26</lastmod>
   </url>  <url>
     <loc>https://xiaoyan94.github.io/2020/06/22/ssh%E8%BF%9C%E7%A8%8B%E7%99%BB%E5%BD%95/</loc>

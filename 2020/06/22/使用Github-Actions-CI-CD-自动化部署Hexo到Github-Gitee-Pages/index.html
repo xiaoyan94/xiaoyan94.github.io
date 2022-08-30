@@ -20,15 +20,15 @@
   <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
   <meta name="baidu-site-verification" content="HBrapLOndy" />
   
-  <meta name="description" content="Something about Continuously Integrity &#x2F; Continuously Deploy… Github Actions. .github&#x2F;workflows&#x2F;main.yml文件代码： 1something...  SSH CI 持续集成">
+  <meta name="description" content="Something about Continuously Integrity &#x2F; Continuously Deploy… Github Actions. .github&#x2F;workflows&#x2F;main.yml文件代码： 12345678910111213141516171819202122name: Syncon:  push:    branches: [master]  workflow_di">
 <meta property="og:type" content="article">
 <meta property="og:title" content="使用Github Actions CI &#x2F; CD 自动化部署Hexo到Github&#x2F;Gitee Pages">
 <meta property="og:url" content="https://xiaoyan94.github.io/2020/06/22/%E4%BD%BF%E7%94%A8Github-Actions-CI-CD-%E8%87%AA%E5%8A%A8%E5%8C%96%E9%83%A8%E7%BD%B2Hexo%E5%88%B0Github-Gitee-Pages/index.html">
 <meta property="og:site_name" content="空城盼故人">
-<meta property="og:description" content="Something about Continuously Integrity &#x2F; Continuously Deploy… Github Actions. .github&#x2F;workflows&#x2F;main.yml文件代码： 1something...  SSH CI 持续集成">
+<meta property="og:description" content="Something about Continuously Integrity &#x2F; Continuously Deploy… Github Actions. .github&#x2F;workflows&#x2F;main.yml文件代码： 12345678910111213141516171819202122name: Syncon:  push:    branches: [master]  workflow_di">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-06-22T05:56:03.000Z">
-<meta property="article:modified_time" content="2022-08-26T08:30:08.004Z">
+<meta property="article:modified_time" content="2022-08-29T00:33:37.947Z">
 <meta property="article:author" content="许嵩老公">
 <meta property="article:tag" content="Github">
 <meta property="article:tag" content="hexo">
@@ -118,7 +118,7 @@
         <p>Something about Continuously Integrity / Continuously Deploy…</p>
 <p>Github Actions.</p>
 <p>.github/workflows/main.yml文件代码：</p>
-<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YML"><figure class="iseeu highlight /yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">something...</span></span><br></pre></td></tr></table></figure></div>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="YML"><figure class="iseeu highlight /yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">name:</span> <span class="string">Sync</span></span><br><span class="line"></span><br><span class="line"><span class="attr">on:</span></span><br><span class="line">  <span class="attr">push:</span></span><br><span class="line">    <span class="attr">branches:</span> <span class="string">[master]</span></span><br><span class="line">  <span class="attr">workflow_dispatch:</span></span><br><span class="line"></span><br><span class="line"><span class="attr">jobs:</span></span><br><span class="line">  <span class="attr">build:</span></span><br><span class="line">    <span class="attr">runs-on:</span> <span class="string">ubuntu-latest</span></span><br><span class="line">    <span class="attr">steps:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">Build</span> <span class="string">Gitee</span> <span class="string">Pages</span></span><br><span class="line">        <span class="attr">uses:</span> <span class="string">yanglbme/gitee-pages-action@main</span></span><br><span class="line">        <span class="attr">with:</span></span><br><span class="line">          <span class="comment"># 注意替换为你的 Gitee 用户名</span></span><br><span class="line">          <span class="attr">gitee-username:</span> <span class="string">xy94</span></span><br><span class="line">          <span class="comment"># 注意在 Settings-&gt;Secrets 配置 GITEE_PASSWORD</span></span><br><span class="line">          <span class="attr">gitee-password:</span> <span class="string">$&#123;&#123;</span> <span class="string">secrets.GITEE_PASSWORD</span> <span class="string">&#125;&#125;</span></span><br><span class="line">          <span class="comment"># 注意替换为你的 Gitee 仓库，仓库名严格区分大小写，请准确填写，否则会出错</span></span><br><span class="line">          <span class="attr">gitee-repo:</span> <span class="string">xy94/xy94</span></span><br><span class="line">          <span class="comment"># 要部署的分支，默认是 master，若是其他分支，则需要指定（指定的分支必须存在）</span></span><br><span class="line">          <span class="attr">branch:</span> <span class="string">master</span></span><br></pre></td></tr></table></figure></div>
 
 <p>SSH</p>
 <p>CI 持续集成</p>
@@ -263,6 +263,10 @@ gitment.render('gitmentContainer')
       <ul>
         
           <li>
+            <a href="../../../../2022/08/29/NET-Framework-%E8%BF%9E%E6%8E%A5-Oracle%E6%95%B0%E6%8D%AE%E5%BA%93/">.NET Framework 连接 Oracle数据库：找不到请求的 .Net Framework Data Provider。可能没有安装</a>
+          </li>
+        
+          <li>
             <a href="../../../../2022/08/27/%E7%94%B5%E8%84%91BIOS%E7%83%AD%E9%94%AEU%E7%9B%98%E5%90%AF%E5%8A%A8%E5%BF%AB%E6%8D%B7%E9%94%AE%E8%A1%A8/">电脑BIOS热键U盘启动快捷键表</a>
           </li>
         
@@ -276,10 +280,6 @@ gitment.render('gitmentContainer')
         
           <li>
             <a href="../../../../2022/08/26/VSCode%E7%BB%88%E7%AB%AF%E6%8F%90%E7%A4%BAShell%E9%9B%86%E6%88%90%E6%97%A0%E6%B3%95%E6%BF%80%E6%B4%BB%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">VSCode终端提示Shell集成无法激活的解决方法</a>
-          </li>
-        
-          <li>
-            <a href="../../../../2022/08/25/MacOS-%E5%AE%89%E8%A3%85-PowerLine-%E5%AD%97%E4%BD%93%E5%B9%B6%E5%9C%A8-VSCode-%E5%92%8C-iTerm-zsh-%E7%BB%88%E7%AB%AF%E9%87%8C%E8%AE%BE%E7%BD%AE%E5%AD%97%E4%BD%93%E8%A7%A3%E5%86%B3%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/">MacOS 安装 PowerLine 字体并在 VSCode 和 iTerm zsh 终端里设置字体解决乱码问题</a>
           </li>
         
       </ul>
