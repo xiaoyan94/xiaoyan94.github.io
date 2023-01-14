@@ -20,6 +20,8 @@
   <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
   <meta name="baidu-site-verification" content="HBrapLOndy" />
   
+  <meta name="keywords" content="许嵩老公" />
+  
   <meta name="description" content="深吸一口梦，吹个气球存起来">
 <meta property="og:type" content="website">
 <meta property="og:title" content="空城盼故人">
@@ -28,6 +30,7 @@
 <meta property="og:description" content="深吸一口梦，吹个气球存起来">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="许嵩老公">
 <meta name="twitter:card" content="summary">
   
     <link rel="alternate" href="../../atom.xml" title="空城盼故人" type="application/atom+xml">
@@ -79,6 +82,207 @@
 </header>
       <div id="middlecontent" title class="global-width sidebar-right">
         <section id="main">
+  
+    <article id="post-MacOS-安装-PowerLine-字体并在-VSCode-和-iTerm-zsh-终端里设置字体解决乱码问题" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2022/08/25/MacOS-%E5%AE%89%E8%A3%85-PowerLine-%E5%AD%97%E4%BD%93%E5%B9%B6%E5%9C%A8-VSCode-%E5%92%8C-iTerm-zsh-%E7%BB%88%E7%AB%AF%E9%87%8C%E8%AE%BE%E7%BD%AE%E5%AD%97%E4%BD%93%E8%A7%A3%E5%86%B3%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/">MacOS 安装 PowerLine 字体并在 VSCode 和 iTerm zsh 终端里设置字体解决乱码问题</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2022/08/25/MacOS-%E5%AE%89%E8%A3%85-PowerLine-%E5%AD%97%E4%BD%93%E5%B9%B6%E5%9C%A8-VSCode-%E5%92%8C-iTerm-zsh-%E7%BB%88%E7%AB%AF%E9%87%8C%E8%AE%BE%E7%BD%AE%E5%AD%97%E4%BD%93%E8%A7%A3%E5%86%B3%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/" class="article-date">
+  <time datetime="2022-08-25T15:14:04.000Z" itemprop="datePublished">2022-08-25</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/macOS/" rel="tag">macOS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <h2 id="macOS-安装字体"><a href="#macOS-安装字体" class="headerlink" title="macOS 安装字体"></a>macOS 安装字体</h2><ol>
+<li><p>以下载安装 PowerLine 字体为例，下载仓库为 <a href="https://github.com/powerline/fonts" target="_blank" rel="noopener">https://github.com/powerline/fonts</a></p>
+ <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> \</span><br><span class="line">--depth 1 \</span><br><span class="line">--filter=blob:none \</span><br><span class="line">--no-checkout \</span><br><span class="line">https://github.com/powerline/fonts \ <span class="comment"># 仓库地址</span></span><br><span class="line">;</span><br><span class="line"><span class="built_in">cd</span> fonts</span><br><span class="line">git checkout master Meslo\ Dotted</span><br><span class="line">git checkout master Meslo\ Slashed</span><br></pre></td></tr></table></figure></div>
+</li>
+<li><p>进入字体文件夹，可以手动打开字体ttf文件进行安装，亦可以批量安装</p>
+ <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> Meslo\ Dotted</span><br><span class="line">ll *.ttf</span><br><span class="line">cp *.ttf ~/Library/Fonts</span><br></pre></td></tr></table></figure></div>
+
+<p> <img src="/2022/08/25/MacOS-%E5%AE%89%E8%A3%85-PowerLine-%E5%AD%97%E4%BD%93%E5%B9%B6%E5%9C%A8-VSCode-%E5%92%8C-iTerm-zsh-%E7%BB%88%E7%AB%AF%E9%87%8C%E8%AE%BE%E7%BD%AE%E5%AD%97%E4%BD%93%E8%A7%A3%E5%86%B3%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/2022-08-25-23-26-42.png" alt="macOS 批量安装字体"></p>
+</li>
+</ol>
+<h2 id="VSCode-设置里的终端字体修改"><a href="#VSCode-设置里的终端字体修改" class="headerlink" title="VSCode 设置里的终端字体修改"></a>VSCode 设置里的终端字体修改</h2><p>VSCode 用户设置部分，编辑 <code>settings.json</code> 文件</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">"terminal.integrated.fontFamily": "Meslo LG L DZ for Powerline", // 需安装字体</span><br><span class="line">"terminal.integrated.defaultProfile.osx": "zsh",</span><br><span class="line">"terminal.external.osxExec": "iTerm.app",</span><br><span class="line">"terminal.integrated.profiles.osx": &#123;</span><br><span class="line">    "zsh": &#123;</span><br><span class="line">        "path": "/bin/zsh",</span><br><span class="line">        "args": ["-l"], // 若为空数组 [], 则环境变量有问题；为 ["-l"] 或则不配置 "args" 参数</span><br><span class="line">        "icon": "terminal-powershell"</span><br><span class="line">    &#125;</span><br><span class="line">&#125;,</span><br><span class="line">"settingsSync.ignoredSettings": [</span><br><span class="line">    <span class="string">"terminal.integrated.fontFamily"</span></span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>ps：需要确保指定字体已安装，且字体名称正确。（注意: 字体文件名和字体名称可能不同）</p>
+</blockquote>
+<h2 id="iTerm-终端字体"><a href="#iTerm-终端字体" class="headerlink" title="iTerm 终端字体"></a>iTerm 终端字体</h2><p>iTerm 终端的字体设置方法比较简单</p>
+<p><img src="/2022/08/25/MacOS-%E5%AE%89%E8%A3%85-PowerLine-%E5%AD%97%E4%BD%93%E5%B9%B6%E5%9C%A8-VSCode-%E5%92%8C-iTerm-zsh-%E7%BB%88%E7%AB%AF%E9%87%8C%E8%AE%BE%E7%BD%AE%E5%AD%97%E4%BD%93%E8%A7%A3%E5%86%B3%E4%B9%B1%E7%A0%81%E9%97%AE%E9%A2%98/2022-08-25-23-43-10.png" alt="iTerm 终端的字体设置"></p>
+<hr>
+
+          
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-Github-只克隆-下载-同步部分指定文件夹的方法" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2022/08/25/Github-%E5%8F%AA%E5%85%8B%E9%9A%86-%E4%B8%8B%E8%BD%BD-%E5%90%8C%E6%AD%A5%E9%83%A8%E5%88%86%E6%8C%87%E5%AE%9A%E6%96%87%E4%BB%B6%E5%A4%B9%E7%9A%84%E6%96%B9%E6%B3%95/">Github 只克隆/下载/同步部分指定文件夹的方法</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2022/08/25/Github-%E5%8F%AA%E5%85%8B%E9%9A%86-%E4%B8%8B%E8%BD%BD-%E5%90%8C%E6%AD%A5%E9%83%A8%E5%88%86%E6%8C%87%E5%AE%9A%E6%96%87%E4%BB%B6%E5%A4%B9%E7%9A%84%E6%96%B9%E6%B3%95/" class="article-date">
+  <time datetime="2022-08-25T14:39:42.000Z" itemprop="datePublished">2022-08-25</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Github/" rel="tag">Github</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>需要从 <a href="https://github.com/powerline/fonts" target="_blank" rel="noopener">GitHub 仓库</a> 安装 PowerLine 系列字体，然而字体太多，不想全部克隆下来，又不想一个一个下载单个文件。</p>
+        
+          <p class="article-more-link">
+            <a href="../../2022/08/25/Github-%E5%8F%AA%E5%85%8B%E9%9A%86-%E4%B8%8B%E8%BD%BD-%E5%90%8C%E6%AD%A5%E9%83%A8%E5%88%86%E6%8C%87%E5%AE%9A%E6%96%87%E4%BB%B6%E5%A4%B9%E7%9A%84%E6%96%B9%E6%B3%95/#more">阅读全文</a>
+          </p>
+        
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-SQL中Max函数查询效率问题与优化" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2022/08/25/SQL%E4%B8%ADMax%E5%87%BD%E6%95%B0%E6%9F%A5%E8%AF%A2%E6%95%88%E7%8E%87%E9%97%AE%E9%A2%98%E4%B8%8E%E4%BC%98%E5%8C%96/">SQL中Max函数查询效率问题与优化</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2022/08/25/SQL%E4%B8%ADMax%E5%87%BD%E6%95%B0%E6%9F%A5%E8%AF%A2%E6%95%88%E7%8E%87%E9%97%AE%E9%A2%98%E4%B8%8E%E4%BC%98%E5%8C%96/" class="article-date">
+  <time datetime="2022-08-25T01:37:52.000Z" itemprop="datePublished">2022-08-25</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/SQL/" rel="tag">SQL</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <h2 id="MySQL中使用order-by-…-limit-1替换Max函数"><a href="#MySQL中使用order-by-…-limit-1替换Max函数" class="headerlink" title="MySQL中使用order by … limit 1替换Max函数"></a>MySQL中使用order by … limit 1替换Max函数</h2><p>测试环境：</p>
+<p><img src="/2022/08/25/SQL%E4%B8%ADMax%E5%87%BD%E6%95%B0%E6%9F%A5%E8%AF%A2%E6%95%88%E7%8E%87%E9%97%AE%E9%A2%98%E4%B8%8E%E4%BC%98%E5%8C%96/%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83.png" alt="测试环境"></p>
+<p>测试Sql：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="keyword">max</span>(sscode) <span class="keyword">from</span> sm_sku_show <span class="keyword">where</span> del_flag = <span class="string">"0"</span>;</span><br><span class="line"><span class="keyword">select</span> sscode <span class="keyword">from</span> sm_sku_show <span class="keyword">where</span> del_flag = <span class="string">"0"</span> <span class="keyword">order</span> <span class="keyword">by</span> sscode <span class="keyword">desc</span> <span class="keyword">limit</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>测试耗时：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[SQL]</span><br><span class="line">select max(sscode) from sm_sku_show where del_flag = "0";</span><br><span class="line">受影响的行: 0</span><br><span class="line">时间: 19.503s</span><br><span class="line"></span><br><span class="line">[SQL]</span><br><span class="line">select sscode from sm_sku_show where del_flag = "0" order by sscode desc limit 1;</span><br><span class="line">受影响的行: 0</span><br><span class="line">时间: 0.001s</span><br></pre></td></tr></table></figure>
+
+<p>测试结果：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">+---------------------+</span><br><span class="line">| max(sscode)         |</span><br><span class="line">+---------------------+</span><br><span class="line">| SS20180120101925999 |</span><br><span class="line">+---------------------+</span><br><span class="line">1 row in set</span><br><span class="line"></span><br><span class="line">+---------------------+</span><br><span class="line">| sscode              |</span><br><span class="line">+---------------------+</span><br><span class="line">| SS20180120101925999 |</span><br><span class="line">+---------------------+</span><br><span class="line">1 row in set</span><br></pre></td></tr></table></figure>
+
+<p><strong>结论</strong>：</p>
+<p>max() 函数的需扫描where条件过滤后的所有行。</p>
+<p>请慎用max()函数，特别是频繁执行的sql，若需用到可转化为测试中的  order by id desc limit 1</p>
+        
+          <p class="article-more-link">
+            <a href="../../2022/08/25/SQL%E4%B8%ADMax%E5%87%BD%E6%95%B0%E6%9F%A5%E8%AF%A2%E6%95%88%E7%8E%87%E9%97%AE%E9%A2%98%E4%B8%8E%E4%BC%98%E5%8C%96/#more">阅读全文</a>
+          </p>
+        
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-VMware-Workstation-Pro-v16-2-4-官方版-16激活密钥" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2022/08/24/VMware-Workstation-Pro-v16-2-4-%E5%AE%98%E6%96%B9%E7%89%88-16%E6%BF%80%E6%B4%BB%E5%AF%86%E9%92%A5/">VMware Workstation Pro v16.2.4 官方版+16激活密钥</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2022/08/24/VMware-Workstation-Pro-v16-2-4-%E5%AE%98%E6%96%B9%E7%89%88-16%E6%BF%80%E6%B4%BB%E5%AF%86%E9%92%A5/" class="article-date">
+  <time datetime="2022-08-24T08:59:36.000Z" itemprop="datePublished">2022-08-24</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <h2 id="VMware-Workstation-Pro-v16-2-4-激活"><a href="#VMware-Workstation-Pro-v16-2-4-激活" class="headerlink" title="VMware Workstation Pro v16.2.4 激活"></a>VMware Workstation Pro v16.2.4 激活</h2><p>下载方式：VMware官网<br>激活方式：输入密钥 <code>ZF3R0-FHED2-M80TY-8QYGC-NPKYF</code></p>
+        
+          <p class="article-more-link">
+            <a href="../../2022/08/24/VMware-Workstation-Pro-v16-2-4-%E5%AE%98%E6%96%B9%E7%89%88-16%E6%BF%80%E6%B4%BB%E5%AF%86%E9%92%A5/#more">阅读全文</a>
+          </p>
+        
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
   
     <article id="post-mermaid测试" class="article global-container article-type-post" itemscope itemprop="blogPost">
   
@@ -135,7 +339,45 @@
     C-->D;</pre>
 
 <hr>
-<p>flowchart测试</p>
+<p>flowchart 测试</p>
+<pre class="mermaid">gantt
+    title A Gantt Diagram
+    dateFormat  YYYY-MM-DD
+    section Section
+    A task           :a1, 2014-01-01, 30d
+    Another task     :after a1  , 20d
+    section Another
+    Task in sec      :2014-01-12  , 12d
+    another task      : 24d</pre>
+
+<pre class="mermaid">graph TB
+    id1(圆角矩形)--普通线-->id2[矩形]
+    subgraph 子图表
+        id2==粗线==>id3{菱形}
+        id3-.虚线.->id4>右向旗帜]
+        id3--无箭头---id5((圆形))
+    end
+    style id1 fill:#f9f,stroke:#333,stroke-width:4px</pre>
+
+<pre class="mermaid">sequenceDiagram
+    participant z as 张
+    participant l as 刘
+    loop 中秋三天假
+        z->>l: 吃了吗您呐？
+        l-->>z: 没吃，您呢？
+        activate z
+        Note left of z: 想了一下
+        alt 还没吃
+            z-xl: 还没呢，正准备回去吃
+        else 已经吃了
+            z-xl: 我也吃过了，哈哈
+        end
+        opt 大过节的
+            l-->z: 祝您中秋快乐啊
+        end
+    end</pre>
+
+<hr>
 <pre class="mermaid">sequenceDiagram
     Alice->>+John: Hello John, how are you?
     Alice->>+John: John, can you hear me?
@@ -153,6 +395,8 @@ Note right of John: Rational thoughts!
 John-->>Alice: Great!
 John->>Bob: How about you?
 Bob-->>John: Jolly good!</pre>
+
+<hr>
 
           
       
@@ -449,245 +693,11 @@ Bob-->>John: Jolly good!</pre>
 </article>
 
   
-    <article id="post-JVM-06" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/08/08/JVM-06/">JVM 06 运行时数据区的总结与常见大厂面试题说明</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/08/08/JVM-06/" class="article-date">
-  <time datetime="2020-08-08T12:46:21.000Z" itemprop="datePublished">2020-08-08</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <p>常见面试题</p>
-        
-          <p class="article-more-link">
-            <a href="../../2020/08/08/JVM-06/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
-    <article id="post-JVM-05" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/07/17/JVM-05/">JVM 05 运行时数据区之方法区 (MethodArea)</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/07/17/JVM-05/" class="article-date">
-  <time datetime="2020-07-17T06:36:32.000Z" itemprop="datePublished">2020-07-17</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <p>方法区概述</p>
-<ul>
-<li><a href="#1-栈和堆和方法区间的交互关系">1 栈和堆和方法区间的交互关系</a></li>
-<li><a href="#2-方法区的理解">2 方法区的理解</a><ul>
-<li><a href="#方法区在哪里">方法区在哪里</a></li>
-<li><a href="#HotSpot中方法区的演进">HotSpot中方法区的演进</a></li>
-</ul>
-</li>
-<li><a href="#3-设置方法区大小与OOM">3 设置方法区大小与OOM</a></li>
-<li><a href="#4-方法区的内部结构">4 方法区的内部结构</a><ul>
-<li><a href="#方法区-Method-Area-存储什么">方法区 (Method Area) 存储什么</a><ul>
-<li><a href="#类型信息">类型信息</a></li>
-<li><a href="#域-Field-信息">域 (Field) 信息</a></li>
-<li><a href="#方法-Method-信息">方法 (Method) 信息</a></li>
-<li><a href="#字节码角度举例查看">字节码角度举例查看</a></li>
-</ul>
-</li>
-<li><a href="#non-final-的类变量">non-final 的类变量</a></li>
-<li><a href="#补充说明全局常量final-static">补充说明：全局常量：<code>final static</code></a></li>
-<li><a href="#class-文件中常量池的理解">class 文件中常量池的理解</a><ul>
-<li><a href="#运行时常量池-VS-常量池">运行时常量池 VS 常量池</a></li>
-<li><a href="#为什么需要常量池">为什么需要常量池</a></li>
-<li><a href="#常量池中有什么">常量池中有什么</a></li>
-<li><a href="#小结">小结</a></li>
-</ul>
-</li>
-<li><a href="#运行时常量池的理解">运行时常量池的理解</a><ul>
-<li><a href="#运行时常量池">运行时常量池</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a href="#5-方法区使用举例">5 方法区使用举例</a></li>
-<li><a href="#6-方法区的演进细节">6 方法区的演进细节</a><ul>
-<li><a href="#永久代为什么要被元空间替换">永久代为什么要被元空间替换</a></li>
-<li><a href="#StringTable为什么要调整位置">StringTable为什么要调整位置</a></li>
-<li><a href="#如何证明静态变量存在哪">如何证明静态变量存在哪</a></li>
-</ul>
-</li>
-<li><a href="#7-方法区的垃圾回收">7 方法区的垃圾回收</a></li>
-<li><a href="#8-总结">8 总结</a></li>
-</ul>
-        
-          <p class="article-more-link">
-            <a href="../../2020/07/17/JVM-05/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
-    <article id="post-JVM-04" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/07/11/JVM-04/">JVM 04 运行时数据区之堆 (Heap)</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/07/11/JVM-04/" class="article-date">
-  <time datetime="2020-07-11T09:02:59.000Z" itemprop="datePublished">2020-07-11</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <h2 id="1-堆的核心概述"><a href="#1-堆的核心概述" class="headerlink" title="1 堆的核心概述"></a>1 堆的核心概述</h2><ul>
-<li>● 一个 JVM 实例只存在一个堆内存，堆也是 Java 内存管理的核心区域。</li>
-<li>● Java 堆区在 JVM 启动的时候即被创建，其空间大小也就确定了。是 JVM 管理的最大一块内存空间。<ul>
-<li>➢ 堆内存的大小是可以调节的。</li>
-</ul>
-</li>
-<li>● 《Java 虚拟机规范》规定，堆可以处于物理上不连续的内存空间中，但在逻辑上它应该被视为连续的。</li>
-<li>● 所有的线程共享 Java 堆，在这里还可以划分线程私有的缓冲区 (ThreadLocal Allocation Buffer， TLAB)</li>
-</ul>
-<p>一个 JVM 实例对应一个进程，方法区和堆是一个进程一份，而程序计数器、本地方法栈、虚拟机栈是一个线程对应一份，一个进程中的所有线程共享方法区和堆（并不是完整的堆都一定是共享的，比如 TLAB）。</p>
-        
-          <p class="article-more-link">
-            <a href="../../2020/07/11/JVM-04/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
-    <article id="post-JVM-03" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/07/05/JVM-03/">JVM 03 运行时数据区之虚拟机栈 (Stack)</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/07/05/JVM-03/" class="article-date">
-  <time datetime="2020-07-05T08:06:02.000Z" itemprop="datePublished">2020-07-05</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <ul>
-<li>1 虚拟机栈概述</li>
-<li>2 栈的存储单位</li>
-<li>3 局部变量表</li>
-<li>4 操作数栈</li>
-<li>5 代码追踪</li>
-<li>6 栈顶缓存技术</li>
-<li>7 动态链接</li>
-<li>8 方法的调用:解析与分派</li>
-<li>9 方法返回地址</li>
-<li>10 一些附加信息</li>
-<li>11 栈的相关面试题</li>
-</ul>
-        
-          <p class="article-more-link">
-            <a href="../../2020/07/05/JVM-03/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
 
 
   <nav id="page-nav">
     <!--  -->
-    <a class="extend prev" rel="prev" href="../../">&lt;&lt; 上一页</a><a class="page-number" href="../../">1</a><span class="page-number current">2</span><a class="page-number" href="../3/">3</a><a class="page-number" href="../4/">4</a><a class="extend next" rel="next" href="../3/">下一页 &gt;&gt;</a>
+    <a class="extend prev" rel="prev" href="../../">&lt;&lt; 上一页</a><a class="page-number" href="../../">1</a><span class="page-number current">2</span><a class="page-number" href="../3/">3</a><a class="page-number" href="../4/">4</a><a class="page-number" href="../5/">5</a><a class="extend next" rel="next" href="../3/">下一页 &gt;&gt;</a>
   </nav>
 
 
@@ -717,7 +727,7 @@ Bob-->>John: Jolly good!</pre>
   <div class="widget-box">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%8B%B1%E8%AF%AD/" rel="tag">英语</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%8B%B1%E8%AF%AD/" rel="tag">英语</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
     </div>
   </div>
 
@@ -727,7 +737,7 @@ Bob-->>John: Jolly good!</pre>
   <div class="widget-box">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="../../tags/Git-Bash/" style="font-size: 10px;">Git Bash</a> <a href="../../tags/Github/" style="font-size: 14px;">Github</a> <a href="../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../tags/Hadoop/" style="font-size: 18px;">Hadoop</a> <a href="../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../tags/JVM/" style="font-size: 18px;">JVM</a> <a href="../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../tags/JavaScript/" style="font-size: 10px;">JavaScript</a> <a href="../../tags/Linux/" style="font-size: 16px;">Linux</a> <a href="../../tags/MapReduce/" style="font-size: 12px;">MapReduce</a> <a href="../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../tags/Maven/" style="font-size: 14px;">Maven</a> <a href="../../tags/SQL/" style="font-size: 14px;">SQL</a> <a href="../../tags/Shell/" style="font-size: 12px;">Shell</a> <a href="../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../tags/hexo/" style="font-size: 12px;">hexo</a> <a href="../../tags/macOS/" style="font-size: 12px;">macOS</a> <a href="../../tags/ssh/" style="font-size: 12px;">ssh</a> <a href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../tags/%E7%94%B5%E8%84%91/" style="font-size: 10px;">电脑</a> <a href="../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12px;">竹云</a> <a href="../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12px;">终端</a> <a href="../../tags/%E8%8B%B1%E8%AF%AD/" style="font-size: 10px;">英语</a> <a href="../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
+      <a href="../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../tags/Git-Bash/" style="font-size: 10px;">Git Bash</a> <a href="../../tags/Github/" style="font-size: 14px;">Github</a> <a href="../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../tags/Hadoop/" style="font-size: 18px;">Hadoop</a> <a href="../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../tags/JVM/" style="font-size: 18px;">JVM</a> <a href="../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../tags/JavaScript/" style="font-size: 14px;">JavaScript</a> <a href="../../tags/Linux/" style="font-size: 16px;">Linux</a> <a href="../../tags/MapReduce/" style="font-size: 12px;">MapReduce</a> <a href="../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../tags/Maven/" style="font-size: 14px;">Maven</a> <a href="../../tags/SQL/" style="font-size: 14px;">SQL</a> <a href="../../tags/Shell/" style="font-size: 12px;">Shell</a> <a href="../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../tags/hexo/" style="font-size: 12px;">hexo</a> <a href="../../tags/macOS/" style="font-size: 12px;">macOS</a> <a href="../../tags/ssh/" style="font-size: 12px;">ssh</a> <a href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../tags/%E7%94%B5%E8%84%91/" style="font-size: 10px;">电脑</a> <a href="../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12px;">竹云</a> <a href="../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12px;">终端</a> <a href="../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../tags/%E8%8B%B1%E8%AF%AD/" style="font-size: 10px;">英语</a> <a href="../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
     </div>
   </div>
 
@@ -736,7 +746,7 @@ Bob-->>John: Jolly good!</pre>
   <div class="widget-box">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/06/">六月 2020</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/06/">六月 2020</a></li></ul>
     </div>
   </div>
 
@@ -748,23 +758,23 @@ Bob-->>John: Jolly good!</pre>
       <ul>
         
           <li>
+            <a href="../../2023/01/14/AutoReconnectWiFi/">检测断网自动重连WiFi脚本</a>
+          </li>
+        
+          <li>
+            <a href="../../2022/11/18/JavaScript%E4%BD%BF%E7%94%A8-Web-Serial-API%E8%8E%B7%E5%8F%96%E4%B8%B2%E8%A1%8C%E8%AE%BE%E5%A4%87%E7%AB%AF%E5%8F%A3%E6%95%B0%E6%8D%AE-%E5%9C%B0%E7%A3%85%E4%B8%B2%E5%8F%A3%E6%95%B0%E6%8D%AE/">JavaScript使用 Web Serial API获取串行设备端口数据(地磅串口数据)</a>
+          </li>
+        
+          <li>
+            <a href="../../2022/09/07/JavaScript%E4%B9%8B%E5%87%BD%E6%95%B0/">JavaScript 之函数</a>
+          </li>
+        
+          <li>
+            <a href="../../2022/09/01/NET-Data-Parallelism-Task-Parallel-Library/">.NET 数据并行性（任务并行库） Data Parallelism (Task Parallel Library)</a>
+          </li>
+        
+          <li>
             <a href="../../2022/08/31/JavaScript%E8%8E%B7%E5%8F%96%E7%BD%91%E9%A1%B5URL%E5%9C%B0%E5%9D%80%E7%9A%84%E6%9F%A5%E8%AF%A2%E5%8F%82%E6%95%B0-QueryString-%E7%9A%84%E6%96%B9%E6%B3%95/">JavaScript获取网页URL地址的查询参数(QueryString)的方法</a>
-          </li>
-        
-          <li>
-            <a href="../../2022/08/29/NET-Framework-%E8%BF%9E%E6%8E%A5-Oracle%E6%95%B0%E6%8D%AE%E5%BA%93/">.NET Framework 连接 Oracle数据库：找不到请求的 .Net Framework Data Provider。可能没有安装</a>
-          </li>
-        
-          <li>
-            <a href="../../2022/08/27/%E7%94%B5%E8%84%91BIOS%E7%83%AD%E9%94%AEU%E7%9B%98%E5%90%AF%E5%8A%A8%E5%BF%AB%E6%8D%B7%E9%94%AE%E8%A1%A8/">电脑BIOS热键U盘启动快捷键表</a>
-          </li>
-        
-          <li>
-            <a href="../../2022/08/27/MySQL%E4%BC%98%E5%8C%96%E6%8A%80%E5%B7%A7/">MySQL优化技巧</a>
-          </li>
-        
-          <li>
-            <a href="../../2022/08/27/SQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">SQL学习笔记</a>
           </li>
         
       </ul>
@@ -794,7 +804,7 @@ Bob-->>John: Jolly good!</pre>
       </div>
       <footer id="footer">
   <div class="foot-box global-width center">
-    &copy; 2022 许嵩老公 &nbsp;&nbsp;
+    &copy; 2023 许嵩老公 &nbsp;&nbsp;
     Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
     &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
     <br>
