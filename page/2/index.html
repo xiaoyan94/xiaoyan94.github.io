@@ -83,6 +83,50 @@
       <div id="middlecontent" title class="global-width sidebar-right">
         <section id="main">
   
+    <article id="post-VSCode终端提示Shell集成无法激活的解决方法" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2022/08/26/VSCode%E7%BB%88%E7%AB%AF%E6%8F%90%E7%A4%BAShell%E9%9B%86%E6%88%90%E6%97%A0%E6%B3%95%E6%BF%80%E6%B4%BB%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">VSCode终端提示Shell集成无法激活的解决方法</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2022/08/26/VSCode%E7%BB%88%E7%AB%AF%E6%8F%90%E7%A4%BAShell%E9%9B%86%E6%88%90%E6%97%A0%E6%B3%95%E6%BF%80%E6%B4%BB%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/" class="article-date">
+  <time datetime="2022-08-26T06:16:31.000Z" itemprop="datePublished">2022-08-26</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/VSCode/" rel="tag">VSCode</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <h2 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h2><p><img src="/2022/08/26/VSCode%E7%BB%88%E7%AB%AF%E6%8F%90%E7%A4%BAShell%E9%9B%86%E6%88%90%E6%97%A0%E6%B3%95%E6%BF%80%E6%B4%BB%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/2022-08-26-14-21-56.png" alt="Shell 集成无法激活"></p>
+<h2 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h2>
+        
+          <p class="article-more-link">
+            <a href="../../2022/08/26/VSCode%E7%BB%88%E7%AB%AF%E6%8F%90%E7%A4%BAShell%E9%9B%86%E6%88%90%E6%97%A0%E6%B3%95%E6%BF%80%E6%B4%BB%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/#more">阅读全文</a>
+          </p>
+        
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
     <article id="post-MacOS-安装-PowerLine-字体并在-VSCode-和-iTerm-zsh-终端里设置字体解决乱码问题" class="article global-container article-type-post" itemscope itemprop="blogPost">
   
     <header class="article-header">
@@ -583,116 +627,6 @@ Bob-->>John: Jolly good!</pre>
 </article>
 
   
-    <article id="post-JVM-07" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/08/08/JVM-07/">JVM 07 对象的实例化内存布局与访问定位</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/08/08/JVM-07/" class="article-date">
-  <time datetime="2020-08-08T13:13:37.000Z" itemprop="datePublished">2020-08-08</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        
-        <h2 id="对象的实例化"><a href="#对象的实例化" class="headerlink" title="对象的实例化"></a>对象的实例化</h2><h3 id="对象实例化的几种方式"><a href="#对象实例化的几种方式" class="headerlink" title="对象实例化的几种方式"></a>对象实例化的几种方式</h3><p><em>美团</em>：  </p>
-<ul>
-<li>对象在 JVM 中饭是怎么存储的？</li>
-<li>对象头信息里面有哪些东西？</li>
-</ul>
-<p><em>蚂蚁金服</em>：</p>
-<ul>
-<li>二面：Java 对象头里有什么？</li>
-</ul>
-<p><strong>对象的实例化</strong>：</p>
-<ul>
-<li>创建对象的方式<ul>
-<li><code>new</code><ul>
-<li><code>new</code> 最常见的方式</li>
-<li>变形 1 : Xxx 的静态方法</li>
-<li>变形 2 : XxxBuilder/XxxFactory 的静态方法</li>
-</ul>
-</li>
-<li>Class 的 <code>newInstance()</code><ul>
-<li>反射的方式，只能调用空参的构造器，权限必须是 <code>public</code></li>
-</ul>
-</li>
-<li>Constructor 的 <code>newInstance(Xxx)</code><ul>
-<li>反射的方式，可以调用空参、带参的构造器。权限没有要求</li>
-</ul>
-</li>
-<li>使用 <code>clone()</code><ul>
-<li>不调用任何构造器，当前类需要实现 <code>Cloneable</code> 接口, 实现 <code>clone()</code></li>
-</ul>
-</li>
-<li>使用反序列化<ul>
-<li>从文件、网络中获取一个对象的二进制流</li>
-</ul>
-</li>
-<li>第三方库 <code>Objenesis</code></li>
-</ul>
-</li>
-<li>创建对象的步骤<ol>
-<li>判断对象对应的类是否加载、链接、初始化<br><em>虚拟机遇到一条 <code>new</code> 指令 ，首先去检查这个指令的参数能否在 Metaspace 的常量池中定位到一个类的符号引用，并且检查这个符号引用代表的类是否已经被加载、解忻和初始化。( 即判断类元信息是否存在)。如果没有，那么在双亲委派模式下，使用当前类加载器以 <code>ClassLoader+包名+类名</code> 为 Key 进行查找对应的 .class 文件。如果没有找到文件，则抛出 <code>ClassNotFoundException</code> 异常，如果找到，则进行类加载，并生成对应的 <code>Class</code> 类对象</em></li>
-<li>为对象分配内存<br><em>首先计算对象占用空间大小，接着在堆中划分一块内存给新对象。如果实例成员变量是引用变量，仅分配引用变量空间即可，即4个字节大小。</em><ol>
-<li>如果内存规整<ol>
-<li>指针碰撞</li>
-</ol>
-</li>
-<li>如果内存不规整<ol>
-<li>虚拟机需要维护一个列表</li>
-<li>空闲列表分配</li>
-</ol>
-</li>
-<li>说明</li>
-</ol>
-</li>
-<li>处理并发安全问题<ol>
-<li>采用 CAS 配上失败重试保证更新的原子性</li>
-<li>每个线程预先分配一块 TLAB</li>
-</ol>
-</li>
-<li>初始化分配到的空间<ol>
-<li>所有属性设置默认值，保证对象实例字段在不赋值时可以直接使用</li>
-</ol>
-</li>
-<li>设置对象的对象头</li>
-<li>执行 <code>init</code> 方法进行初始化</li>
-</ol>
-</li>
-</ul>
-<p>从字节码角度看对象的创建过程</p>
-<hr>
-<h2 id="对象的内存布局"><a href="#对象的内存布局" class="headerlink" title="对象的内存布局"></a>对象的内存布局</h2><hr>
-<h2 id="对象的访问定位"><a href="#对象的访问定位" class="headerlink" title="对象的访问定位"></a>对象的访问定位</h2><hr>
-
-          
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
 
 
   <nav id="page-nav">
@@ -737,7 +671,7 @@ Bob-->>John: Jolly good!</pre>
   <div class="widget-box">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../tags/Git-Bash/" style="font-size: 10px;">Git Bash</a> <a href="../../tags/Github/" style="font-size: 14px;">Github</a> <a href="../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../tags/Hadoop/" style="font-size: 18px;">Hadoop</a> <a href="../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../tags/JVM/" style="font-size: 18px;">JVM</a> <a href="../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../tags/JavaScript/" style="font-size: 14px;">JavaScript</a> <a href="../../tags/Linux/" style="font-size: 16px;">Linux</a> <a href="../../tags/MapReduce/" style="font-size: 12px;">MapReduce</a> <a href="../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../tags/Maven/" style="font-size: 14px;">Maven</a> <a href="../../tags/SQL/" style="font-size: 14px;">SQL</a> <a href="../../tags/Shell/" style="font-size: 12px;">Shell</a> <a href="../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../tags/hexo/" style="font-size: 12px;">hexo</a> <a href="../../tags/macOS/" style="font-size: 12px;">macOS</a> <a href="../../tags/ssh/" style="font-size: 12px;">ssh</a> <a href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../tags/%E7%94%B5%E8%84%91/" style="font-size: 10px;">电脑</a> <a href="../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12px;">竹云</a> <a href="../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12px;">终端</a> <a href="../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../tags/%E8%8B%B1%E8%AF%AD/" style="font-size: 10px;">英语</a> <a href="../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
+      <a href="../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../tags/Git-Bash/" style="font-size: 10px;">Git Bash</a> <a href="../../tags/Github/" style="font-size: 14px;">Github</a> <a href="../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../tags/Hadoop/" style="font-size: 18px;">Hadoop</a> <a href="../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../tags/JVM/" style="font-size: 18px;">JVM</a> <a href="../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../tags/JavaScript/" style="font-size: 14px;">JavaScript</a> <a href="../../tags/Linux/" style="font-size: 16px;">Linux</a> <a href="../../tags/MapReduce/" style="font-size: 12px;">MapReduce</a> <a href="../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../tags/Maven/" style="font-size: 14px;">Maven</a> <a href="../../tags/SQL/" style="font-size: 14px;">SQL</a> <a href="../../tags/Shell/" style="font-size: 12px;">Shell</a> <a href="../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../tags/hexo/" style="font-size: 12px;">hexo</a> <a href="../../tags/macOS/" style="font-size: 12px;">macOS</a> <a href="../../tags/ssh/" style="font-size: 12px;">ssh</a> <a href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../tags/%E7%94%B5%E8%84%91/" style="font-size: 12px;">电脑</a> <a href="../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12px;">竹云</a> <a href="../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12px;">终端</a> <a href="../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../tags/%E8%8B%B1%E8%AF%AD/" style="font-size: 10px;">英语</a> <a href="../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
     </div>
   </div>
 
@@ -758,6 +692,10 @@ Bob-->>John: Jolly good!</pre>
       <ul>
         
           <li>
+            <a href="../../2023/01/18/Windows%E7%B3%BB%E7%BB%9FC%E7%9B%98%E6%B8%85%E7%90%86%E5%B7%A5%E5%85%B7FreeMove%E5%8F%8A%E6%96%87%E4%BB%B6%E5%8D%A0%E7%94%A8%E8%BF%9B%E7%A8%8B%E6%9F%A5%E7%9C%8B%E8%BD%AF%E4%BB%B6LockHunter%E9%85%8D%E5%90%88%E4%BD%BF%E7%94%A8/">Windows系统C盘清理工具FreeMove及文件占用进程查看软件LockHunter配合使用</a>
+          </li>
+        
+          <li>
             <a href="../../2023/01/14/AutoReconnectWiFi/">检测断网自动重连WiFi脚本</a>
           </li>
         
@@ -771,10 +709,6 @@ Bob-->>John: Jolly good!</pre>
         
           <li>
             <a href="../../2022/09/01/NET-Data-Parallelism-Task-Parallel-Library/">.NET 数据并行性（任务并行库） Data Parallelism (Task Parallel Library)</a>
-          </li>
-        
-          <li>
-            <a href="../../2022/08/31/JavaScript%E8%8E%B7%E5%8F%96%E7%BD%91%E9%A1%B5URL%E5%9C%B0%E5%9D%80%E7%9A%84%E6%9F%A5%E8%AF%A2%E5%8F%82%E6%95%B0-QueryString-%E7%9A%84%E6%96%B9%E6%B3%95/">JavaScript获取网页URL地址的查询参数(QueryString)的方法</a>
           </li>
         
       </ul>
