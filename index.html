@@ -83,6 +83,70 @@
       <div id="middlecontent" title class="global-width sidebar-right">
         <section id="main">
   
+    <article id="post-终端命令代理" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="2023/02/08/%E7%BB%88%E7%AB%AF%E5%91%BD%E4%BB%A4%E4%BB%A3%E7%90%86/">终端命令设置代理</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="2023/02/08/%E7%BB%88%E7%AB%AF%E5%91%BD%E4%BB%A4%E4%BB%A3%E7%90%86/" class="article-date">
+  <time datetime="2023-02-08T06:17:51.000Z" itemprop="datePublished">2023-02-08</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="tags/%E4%BB%A3%E7%90%86/" rel="tag">代理</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <h2 id="终端命令设置代理科学上网"><a href="#终端命令设置代理科学上网" class="headerlink" title="终端命令设置代理科学上网"></a>终端命令设置代理科学上网</h2><ol>
+<li><p>Linux/macOS bash/Windows Git Bash</p>
+<ol>
+<li>使用 <code>export https_proxy=http://127.0.0.1:7890;export http_proxy=http://127.0.0.1:7890;export all_proxy=socks5://127.0.0.1:7890</code> 设置代理</li>
+<li>使用 <code>curl -verbose ip.gs</code> 命令进行检查代理是否设置成功。</li>
+</ol>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SHELL"><figure class="iseeu highlight /shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">export</span> https_proxy=http://127.0.0.1:7890;<span class="built_in">export</span> http_proxy=http://127.0.0.1:7890;<span class="built_in">export</span> all_proxy=socks5://127.0.0.1:7890</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> curl -verbose ip.gs</span></span><br><span class="line">* Uses proxy env variable http_proxy == 'http://127.0.0.1:7890'</span><br><span class="line">*   Trying 127.0.0.1:7890...</span><br><span class="line">* Connected to 127.0.0.1 (127.0.0.1) port 7890 (#0)</span><br><span class="line"><span class="meta">&gt;</span><span class="bash"> GET http://ip.gs/ HTTP/1.1</span></span><br><span class="line"><span class="meta">&gt;</span><span class="bash"> Host: ip.gs</span></span><br><span class="line"><span class="meta">&gt;</span><span class="bash"> User-Agent: curl/7.84.0</span></span><br><span class="line"><span class="meta">&gt;</span><span class="bash"> Accept: */*</span></span><br><span class="line"><span class="meta">&gt;</span><span class="bash"> Referer: rbose</span></span><br><span class="line"><span class="meta">&gt;</span><span class="bash"> Proxy-Connection: Keep-Alive</span></span><br><span class="line"><span class="meta">&gt;</span></span><br><span class="line">* Mark bundle as not supporting multiuse</span><br><span class="line">&lt; HTTP/1.1 200 OK</span><br><span class="line">&lt; Transfer-Encoding: chunked</span><br><span class="line">&lt; Cache-Control: no-cache</span><br><span class="line">&lt; Connection: keep-alive</span><br><span class="line">&lt; Content-Type: text/plain</span><br><span class="line">&lt; Date: Wed, 08 Feb 2023 06:01:21 GMT</span><br><span class="line">&lt; Keep-Alive: timeout=4</span><br><span class="line">&lt; Proxy-Connection: keep-alive</span><br><span class="line">&lt; Server: nginx</span><br><span class="line">&lt; Vary: Accept-Encoding</span><br><span class="line">&lt;</span><br><span class="line">2607:f130:0:手动马赛克::d891:eccc</span><br><span class="line">* Connection #0 to host 127.0.0.1 left intact</span><br></pre></td></tr></table></figure></div>
+</li>
+<li><p>Windows CMD</p>
+<ol>
+<li>使用 <code>set http_proxy=http://127.0.0.1:7890 &amp; set https_proxy=http://127.0.0.1:7890</code> 设置代理</li>
+<li>使用 <code>curl -vvvk https://google.com</code> 命令进行检查代理是否设置成功。</li>
+</ol>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">C:\<span class="title">Users</span>\<span class="title">R00004050</span>&gt;<span class="title">set</span> <span class="title">http_proxy</span>=<span class="title">http</span>://127.0.0.1:7890 &amp; <span class="title">set</span> <span class="title">https_proxy</span>=<span class="title">http</span>://127.0.0.1:7890</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="title">C</span>:\<span class="title">Users</span>\<span class="title">R00004050</span>&gt;<span class="title">curl</span> -<span class="title">vvvk</span> <span class="title">https</span>://<span class="title">google.com</span></span></span><br><span class="line"><span class="function">* <span class="title">Uses</span> <span class="title">proxy</span> <span class="title">env</span> <span class="title">variable</span> <span class="title">https_proxy</span> == '<span class="title">http</span>://127.0.0.1:7890'</span></span><br><span class="line"><span class="function">*   <span class="title">Trying</span> 127.0.0.1:7890...</span></span><br><span class="line"><span class="function">* <span class="title">Connected</span> <span class="title">to</span> 127.0.0.1 (127.0.0.1) <span class="title">port</span> 7890 (#0)</span></span><br><span class="line"><span class="function">* <span class="title">allocate</span> <span class="title">connect</span> <span class="title">buffer</span></span></span><br><span class="line"><span class="function">* <span class="title">Establish</span> <span class="title">HTTP</span> <span class="title">proxy</span> <span class="title">tunnel</span> <span class="title">to</span> <span class="title">google.com</span>:443</span></span><br><span class="line"><span class="function">&gt; <span class="title">CONNECT</span> <span class="title">google.com</span>:443 <span class="title">HTTP</span>/1.1</span></span><br><span class="line"><span class="function">&gt; <span class="title">Host</span>: <span class="title">google.com</span>:443</span></span><br><span class="line"><span class="function">&gt; <span class="title">User</span>-<span class="title">Agent</span>: <span class="title">curl</span>/7.83.1</span></span><br><span class="line"><span class="function">&gt; <span class="title">Proxy</span>-<span class="title">Connection</span>: <span class="title">Keep</span>-<span class="title">Alive</span></span></span><br><span class="line"><span class="function">&gt;</span></span><br><span class="line"><span class="function">&lt; <span class="title">HTTP</span>/1.1 200 <span class="title">Connection</span> <span class="title">established</span></span></span><br><span class="line"><span class="function">&lt;</span></span><br><span class="line"><span class="function">* <span class="title">Proxy</span> <span class="title">replied</span> 200 <span class="title">to</span> <span class="title">CONNECT</span> <span class="title">request</span></span></span><br><span class="line"><span class="function">* <span class="title">CONNECT</span> <span class="title">phase</span> <span class="title">completed</span></span></span><br><span class="line"><span class="function">* <span class="title">schannel</span>: <span class="title">disabled</span> <span class="title">automatic</span> <span class="title">use</span> <span class="title">of</span> <span class="title">client</span> <span class="title">certificate</span></span></span><br><span class="line"><span class="function">* <span class="title">ALPN</span>: <span class="title">offers</span> <span class="title">http</span>/1.1</span></span><br><span class="line"><span class="function">* <span class="title">ALPN</span>: <span class="title">server</span> <span class="title">accepted</span> <span class="title">http</span>/1.1</span></span><br><span class="line"><span class="function">&gt; <span class="title">GET</span> / <span class="title">HTTP</span>/1.1</span></span><br><span class="line"><span class="function">&gt; <span class="title">Host</span>: <span class="title">google.com</span></span></span><br><span class="line"><span class="function">&gt; <span class="title">User</span>-<span class="title">Agent</span>: <span class="title">curl</span>/7.83.1</span></span><br><span class="line"><span class="function">&gt; <span class="title">Accept</span>: */*</span></span><br><span class="line"><span class="function">&gt;</span></span><br><span class="line"><span class="function">* <span class="title">Mark</span> <span class="title">bundle</span> <span class="title">as</span> <span class="title">not</span> <span class="title">supporting</span> <span class="title">multiuse</span></span></span><br><span class="line"><span class="function">&lt; <span class="title">HTTP</span>/1.1 301 <span class="title">Moved</span> <span class="title">Permanently</span></span></span><br><span class="line"><span class="function">&lt; <span class="title">Location</span>: <span class="title">https</span>://<span class="title">www.google.com</span>/</span></span><br><span class="line"><span class="function">&lt; <span class="title">Content</span>-<span class="title">Type</span>: <span class="title">text</span>/<span class="title">html</span>; <span class="title">charset</span>=<span class="title">UTF</span>-8</span></span><br><span class="line"><span class="function">&lt; <span class="title">Date</span>: <span class="title">Wed</span>, 08 <span class="title">Feb</span> 2023 06:52:11 <span class="title">GMT</span></span></span><br><span class="line"><span class="function">&lt; <span class="title">Expires</span>: <span class="title">Fri</span>, 10 <span class="title">Mar</span> 2023 06:52:11 <span class="title">GMT</span></span></span><br><span class="line"><span class="function">&lt; <span class="title">Cache</span>-<span class="title">Control</span>: <span class="title">public</span>, <span class="title">max</span>-<span class="title">age</span>=2592000</span></span><br><span class="line"><span class="function">&lt; <span class="title">Server</span>: <span class="title">gws</span></span></span><br><span class="line"><span class="function">&lt; <span class="title">Content</span>-<span class="title">Length</span>: 220</span></span><br><span class="line"><span class="function">&lt; <span class="title">X</span>-<span class="title">XSS</span>-<span class="title">Protection</span>: 0</span></span><br><span class="line"><span class="function">&lt; <span class="title">X</span>-<span class="title">Frame</span>-<span class="title">Options</span>: <span class="title">SAMEORIGIN</span></span></span><br><span class="line"><span class="function">&lt; <span class="title">Alt</span>-<span class="title">Svc</span>: <span class="title">h3</span>=":443"; <span class="title">ma</span>=2592000,<span class="title">h3</span>-29=":443"; <span class="title">ma</span>=2592000</span></span><br><span class="line"><span class="function">&lt;</span></span><br><span class="line"><span class="function">&lt;<span class="title">HTML</span>&gt;&lt;<span class="title">HEAD</span>&gt;&lt;<span class="title">meta</span> <span class="title">http</span>-<span class="title">equiv</span>="<span class="title">content</span>-<span class="title">type</span>" <span class="title">content</span>="<span class="title">text</span>/<span class="title">html</span>;<span class="title">charset</span>=<span class="title">utf</span>-8"&gt;</span></span><br><span class="line"><span class="function">&lt;<span class="title">TITLE</span>&gt;301 <span class="title">Moved</span>&lt;/<span class="title">TITLE</span>&gt;&lt;/<span class="title">HEAD</span>&gt;&lt;<span class="title">BODY</span>&gt;</span></span><br><span class="line"><span class="function">&lt;<span class="title">H1</span>&gt;301 <span class="title">Moved</span>&lt;/<span class="title">H1</span>&gt;</span></span><br><span class="line"><span class="function"><span class="title">The</span> <span class="title">document</span> <span class="title">has</span> <span class="title">moved</span></span></span><br><span class="line"><span class="function">&lt;<span class="title">A</span> <span class="title">HREF</span>="<span class="title">https</span>://<span class="title">www.google.com</span>/"&gt;<span class="title">here</span>&lt;/<span class="title">A</span>&gt;.</span></span><br><span class="line"><span class="function">&lt;/<span class="title">BODY</span>&gt;&lt;/<span class="title">HTML</span>&gt;</span></span><br><span class="line"><span class="function">* <span class="title">Connection</span> #0 <span class="title">to</span> <span class="title">host</span> 127.0.0.1 <span class="title">left</span> <span class="title">intact</span></span></span><br></pre></td></tr></table></figure></div>
+
+<p> 一些参数解释</p>
+<ul>
+<li>-v verbose (print errors/warnings while in event loop)</li>
+<li>-vv very verbose (also print client commands/reponses)</li>
+<li>-vvv extremely verbose (also print internal state transitions)</li>
+<li>-k 关闭SSL证书检查</li>
+</ul>
+</li>
+</ol>
+
+          
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
     <article id="post-Windows系统C盘清理工具FreeMove及文件占用进程查看软件LockHunter配合使用" class="article global-container article-type-post" itemscope itemprop="blogPost">
   
     <header class="article-header">
@@ -729,62 +793,6 @@
 </article>
 
   
-    <article id="post-SQL学习笔记" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="2022/08/27/SQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">SQL学习笔记</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="2022/08/27/SQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="article-date">
-  <time datetime="2022-08-27T01:26:20.000Z" itemprop="datePublished">2022-08-27</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="tags/SQL/" rel="tag">SQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <ul>
-<li><a href="#sql基础函数用法">sql基础函数用法</a><ul>
-<li><a href="#round函数-四舍五入保留小数">round函数 四舍五入保留小数</a></li>
-<li><a href="#limit关键字">limit关键字</a><ul>
-<li><a href="#top关键字">top关键字</a></li>
-<li><a href="#limit">limit</a></li>
-<li><a href="#rownum">rownum</a></li>
-<li><a href="#在-sql-server-中实现-limit-m-n-的功能">在 sql server 中实现 limit m, n 的功能</a></li>
-</ul>
-</li>
-<li><a href="#left函数-right函数-与oracle中的substr函数">left函数 right函数 与oracle中的substr函数</a></li>
-</ul>
-</li>
-</ul>
-        
-          <p class="article-more-link">
-            <a href="2022/08/27/SQL%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
 
 
   <nav id="page-nav">
@@ -819,7 +827,7 @@
   <div class="widget-box">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E4%BB%A3%E7%90%86/" rel="tag">代理</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
     </div>
   </div>
 
@@ -829,7 +837,7 @@
   <div class="widget-box">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="tags/NET/" style="font-size: 10px;">.NET</a> <a href="tags/Git-Bash/" style="font-size: 10px;">Git Bash</a> <a href="tags/Github/" style="font-size: 14px;">Github</a> <a href="tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="tags/Hadoop/" style="font-size: 18px;">Hadoop</a> <a href="tags/Idea/" style="font-size: 10px;">Idea</a> <a href="tags/JVM/" style="font-size: 18px;">JVM</a> <a href="tags/Java/" style="font-size: 20px;">Java</a> <a href="tags/JavaScript/" style="font-size: 14px;">JavaScript</a> <a href="tags/Linux/" style="font-size: 16px;">Linux</a> <a href="tags/MapReduce/" style="font-size: 12px;">MapReduce</a> <a href="tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="tags/Maven/" style="font-size: 14px;">Maven</a> <a href="tags/SQL/" style="font-size: 14px;">SQL</a> <a href="tags/Shell/" style="font-size: 12px;">Shell</a> <a href="tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="tags/YARN/" style="font-size: 10px;">YARN</a> <a href="tags/hexo/" style="font-size: 12px;">hexo</a> <a href="tags/macOS/" style="font-size: 12px;">macOS</a> <a href="tags/ssh/" style="font-size: 12px;">ssh</a> <a href="tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="tags/%E7%94%B5%E8%84%91/" style="font-size: 12px;">电脑</a> <a href="tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12px;">竹云</a> <a href="tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12px;">终端</a> <a href="tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
+      <a href="tags/NET/" style="font-size: 10px;">.NET</a> <a href="tags/Git-Bash/" style="font-size: 12px;">Git Bash</a> <a href="tags/Github/" style="font-size: 14px;">Github</a> <a href="tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="tags/Hadoop/" style="font-size: 18px;">Hadoop</a> <a href="tags/Idea/" style="font-size: 10px;">Idea</a> <a href="tags/JVM/" style="font-size: 18px;">JVM</a> <a href="tags/Java/" style="font-size: 20px;">Java</a> <a href="tags/JavaScript/" style="font-size: 14px;">JavaScript</a> <a href="tags/Linux/" style="font-size: 16px;">Linux</a> <a href="tags/MapReduce/" style="font-size: 12px;">MapReduce</a> <a href="tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="tags/Maven/" style="font-size: 14px;">Maven</a> <a href="tags/SQL/" style="font-size: 14px;">SQL</a> <a href="tags/Shell/" style="font-size: 12px;">Shell</a> <a href="tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="tags/YARN/" style="font-size: 10px;">YARN</a> <a href="tags/hexo/" style="font-size: 12px;">hexo</a> <a href="tags/macOS/" style="font-size: 12px;">macOS</a> <a href="tags/ssh/" style="font-size: 12px;">ssh</a> <a href="tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="tags/%E4%BB%A3%E7%90%86/" style="font-size: 10px;">代理</a> <a href="tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="tags/%E7%94%B5%E8%84%91/" style="font-size: 12px;">电脑</a> <a href="tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12px;">竹云</a> <a href="tags/%E7%BB%88%E7%AB%AF/" style="font-size: 14px;">终端</a> <a href="tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
     </div>
   </div>
 
@@ -838,7 +846,7 @@
   <div class="widget-box">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2020/06/">六月 2020</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2020/06/">六月 2020</a></li></ul>
     </div>
   </div>
 
@@ -848,6 +856,10 @@
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="2023/02/08/%E7%BB%88%E7%AB%AF%E5%91%BD%E4%BB%A4%E4%BB%A3%E7%90%86/">终端命令设置代理</a>
+          </li>
         
           <li>
             <a href="2023/01/18/Windows%E7%B3%BB%E7%BB%9FC%E7%9B%98%E6%B8%85%E7%90%86%E5%B7%A5%E5%85%B7FreeMove%E5%8F%8A%E6%96%87%E4%BB%B6%E5%8D%A0%E7%94%A8%E8%BF%9B%E7%A8%8B%E6%9F%A5%E7%9C%8B%E8%BD%AF%E4%BB%B6LockHunter%E9%85%8D%E5%90%88%E4%BD%BF%E7%94%A8/">Windows系统C盘清理工具FreeMove及文件占用进程查看软件LockHunter配合使用</a>
@@ -863,10 +875,6 @@
         
           <li>
             <a href="2022/09/07/JavaScript%E4%B9%8B%E5%87%BD%E6%95%B0/">JavaScript 之函数</a>
-          </li>
-        
-          <li>
-            <a href="2022/09/01/NET-Data-Parallelism-Task-Parallel-Library/">.NET 数据并行性（任务并行库） Data Parallelism (Task Parallel Library)</a>
           </li>
         
       </ul>
