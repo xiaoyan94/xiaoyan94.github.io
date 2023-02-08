@@ -430,7 +430,8 @@
     <div class="article-content article-content-cloud" itemprop="articleBody">
       
         
-        <p>在当前仓库 <code>hexobackup</code> 配置以下工作流，实现向当前仓库提交更新时，触发 GitPages 自动编译。</p>
+        <p><img src="/2020/06/22/%E4%BD%BF%E7%94%A8Github-Actions-CI-CD-%E8%87%AA%E5%8A%A8%E5%8C%96%E9%83%A8%E7%BD%B2Hexo%E5%88%B0Github-Gitee-Pages/%E6%B5%81%E7%A8%8B%E5%9B%BE.png" alt="流程图"></p>
+<p>在当前仓库 <code>hexobackup</code> 配置以下工作流，实现向当前仓库提交更新时，触发 GitPages 自动编译。</p>
 <pre class="mermaid">graph TD;
     1(手动执行 hexo g 和 hexo d 部署命令)-->自动推送GiteePages仓库-->2(已推送至 Gitee Pages 仓库)-->官方自动部署GiteePages要钱;
     1-->自动推送GithubPages仓库-->已推送至GithubPages仓库-->官方自动部署GithubPages-->完成同步更新;
