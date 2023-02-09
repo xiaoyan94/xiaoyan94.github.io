@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>SpringBoot项目相关知识点 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="Spring与SpringBootSpring框架，它的主要功能包括IoC容器、AOP支持、事务支持、MVC开发以及强大的第三方集成功能等。 那么，Spring Boot又是什么？它和Spring是什么关系？ Spring Boot是一个基于Spring的套件，它帮我们预组装了Spring的一系列组件，以便以尽可能少的代码和配置来开发基于Spring的Java应用程序。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SpringBoot项目相关知识点">
+<meta property="og:url" content="https://xiaoyan94.github.io/2023/02/09/SpringBoot%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E7%82%B9/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="Spring与SpringBootSpring框架，它的主要功能包括IoC容器、AOP支持、事务支持、MVC开发以及强大的第三方集成功能等。 那么，Spring Boot又是什么？它和Spring是什么关系？ Spring Boot是一个基于Spring的套件，它帮我们预组装了Spring的一系列组件，以便以尽可能少的代码和配置来开发基于Spring的Java应用程序。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-02-09T06:22:09.000Z">
+<meta property="article:modified_time" content="2023-02-09T06:55:21.516Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="SpringBoot">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-SpringBoot相关知识点" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      SpringBoot项目相关知识点
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2023-02-09T06:22:09.000Z" itemprop="datePublished">2023-02-09</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <h2 id="Spring与SpringBoot"><a href="#Spring与SpringBoot" class="headerlink" title="Spring与SpringBoot"></a>Spring与SpringBoot</h2><p>Spring框架，它的主要功能包括IoC容器、AOP支持、事务支持、MVC开发以及强大的第三方集成功能等。</p>
+<p>那么，Spring Boot又是什么？<strong>它和Spring是什么关系</strong>？</p>
+<p><a href="https://spring.io/projects/spring-boot" target="_blank" rel="noopener">Spring Boot</a>是一个基于Spring的套件，它帮我们预组装了Spring的一系列组件，以便以尽可能少的代码和配置来开发基于Spring的Java应用程序。</p>
+<a id="more"></a>
+
+<ul>
+<li><a href="#spring与springboot">Spring与SpringBoot</a></li>
+<li><a href="#springboot配置">springboot配置</a><ul>
+<li><a href="#配置文件格式">配置文件格式</a></li>
+<li><a href="#自动配置和自动扫描">自动配置和自动扫描</a></li>
+<li><a href="#springboot自动重新加载">springboot自动重新加载</a><ul>
+<li><a href="#解决idea中自动重启不生效">解决idea中自动重启不生效</a></li>
+</ul>
+</li>
+<li><a href="#打包springboot应用">打包springboot应用</a><ul>
+<li><a href="#打jar包和运行jar包">打jar包和运行jar包</a></li>
+<li><a href="#打包时排除开发者工具">打包时排除开发者工具</a></li>
+<li><a href="#指定打包文件名称">指定打包文件名称</a></li>
+</ul>
+</li>
+<li><a href="#瘦身打包应用减小jar包体积"><strong>瘦身打包</strong>应用减小jar包体积</a><ul>
+<li><a href="#打包后体积过大问题原因">打包后体积过大问题原因</a></li>
+<li><a href="#瘦身打包配置"><strong>瘦身打包配置</strong></a></li>
+<li><a href="#瘦身打包插件原理">瘦身打包插件原理</a><ul>
+<li><a href="#瘦身打包预热">瘦身打包——预热</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#使用环境变量">使用环境变量</a></li>
+<li><a href="#使用profiles进行不同环境的配置">使用profiles进行不同环境的配置</a><ul>
+<li><a href="#使用profiles进行条件装配">使用profiles进行条件装配</a></li>
+</ul>
+</li>
+<li><a href="#使用conditional进行条件装配">使用conditional进行条件装配</a></li>
+<li><a href="#加载配置到bean中">加载配置到bean中</a></li>
+</ul>
+</li>
+</ul>
+<p>本文Spring Boot版本是3.x版，如果使用Spring Boot 2.x则需注意，两者有以下不同：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Spring Boot 2.x</th>
+<th>Spring Boot 3.x</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Spring版本</td>
+<td>Spring 5.x</td>
+<td>Spring 6.x</td>
+</tr>
+<tr>
+<td>JDK版本</td>
+<td>&gt;= 1.8</td>
+<td>&gt;= 17</td>
+</tr>
+<tr>
+<td>Tomcat版本</td>
+<td>9.x</td>
+<td>10.x</td>
+</tr>
+<tr>
+<td>Annotation包</td>
+<td>javax.annotation</td>
+<td>jakarta.annotation</td>
+</tr>
+<tr>
+<td>Servlet包</td>
+<td>javax.servlet</td>
+<td>jakarta.servlet</td>
+</tr>
+<tr>
+<td>JMS包</td>
+<td>javax.jms</td>
+<td>jakarta.jms</td>
+</tr>
+<tr>
+<td>JavaMail包</td>
+<td>javax.mail</td>
+<td>jakarta.mail</td>
+</tr>
+</tbody></table>
+<h2 id="springboot配置"><a href="#springboot配置" class="headerlink" title="springboot配置"></a>springboot配置</h2><h3 id="配置文件格式"><a href="#配置文件格式" class="headerlink" title="配置文件格式"></a>配置文件格式</h3><p><code>application.properties</code>作为默认配置文件。也可以使用YAML格式，将前者删除，再新建<code>application.yml</code>文件即可，SpringBoot 会自动识别和读取该配置文件。</p>
+<h3 id="自动配置和自动扫描"><a href="#自动配置和自动扫描" class="headerlink" title="自动配置和自动扫描"></a>自动配置和自动扫描</h3><p>Spring Boot是一个基于Spring提供了开箱即用的一组套件，它可以让我们基于很少的配置和代码快速搭建出一个完整的应用程序。</p>
+<p>Spring Boot有非常强大的<code>AutoConfiguration</code>功能，它是通过<strong>自动扫描+条件装配</strong>实现的。</p>
+<p>启动Spring Boot应用程序只需要一行代码加上一个注解<code>@SpringBootApplication</code>，这样一个注解就相当于启动了<strong>自动配置和自动扫描</strong>。</p>
+<h3 id="springboot自动重新加载"><a href="#springboot自动重新加载" class="headerlink" title="springboot自动重新加载"></a>springboot自动重新加载</h3><p>只需添加如下依赖到<code>pom.xml</code>：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-devtools<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+<p>直接启动应用程序，然后试着修改源码，保存，观察日志输出，Spring Boot会自动重新加载。</p>
+<p>默认配置下，针对<code>/static</code>、<code>/public</code>和<code>/templates</code>目录中的文件修改，不会自动重启，因为禁用缓存后，这些文件的修改可以实时更新。</p>
+<p>经常要修改代码，然后重启Spring Boot应用。经常手动停止再启动，比较麻烦。</p>
+<p>Spring Boot 提供的 <code>devtools</code> 可以监控 classpath 路径上的文件。只要源码或配置文件发生修改，Spring Boot 应用可以自动重启。在开发阶段，这个功能比较有用。</p>
+<h4 id="解决idea中自动重启不生效"><a href="#解决idea中自动重启不生效" class="headerlink" title="解决idea中自动重启不生效"></a>解决idea中自动重启不生效</h4><p>修改了类文件后，idea不会自动编译，得修改idea设置。需要两步操作：</p>
+<ol>
+<li>打开 Idea 的<code>偏好设置——构建、执行、部署——编译器</code>，勾选<code>自动构建项目</code></li>
+<li>打开 Idea 的<code>运行——编辑配置——（构建并运行）修改选项——Spring Boot——执行“更新”操作时</code>，选择<code>更新类和资源</code></li>
+</ol>
+<p>以上在IntelliJ IDEA 2022.3.2中测试ok。</p>
+<h3 id="打包springboot应用"><a href="#打包springboot应用" class="headerlink" title="打包springboot应用"></a>打包springboot应用</h3><p>Spring Boot提供了一个Maven插件用于打包所有依赖到单一jar文件，此插件十分易用，无需配置。</p>
+<h4 id="打jar包和运行jar包"><a href="#打jar包和运行jar包" class="headerlink" title="打jar包和运行jar包"></a>打jar包和运行jar包</h4><p>在Spring Boot应用中，打包更加简单，因为Spring Boot自带一个更简单的<code>spring-boot-maven-plugin</code>插件用来打包，我们只需要在<code>pom.xml</code>中加入以下配置：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">project</span> <span class="attr">...</span>&gt;</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="tag">&lt;<span class="name">build</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">plugins</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-maven-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">plugins</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">build</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">project</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+<p>无需任何配置，Spring Boot的这款插件会自动定位应用程序的入口Class，执行以下Maven命令即可打包：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SHELL"><figure class="iseeu highlight /shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mvn clean package</span><br></pre></td></tr></table></figure></div>
+
+<p>使用<code>java -jar</code>命令即可运行。</p>
+<h4 id="打包时排除开发者工具"><a href="#打包时排除开发者工具" class="headerlink" title="打包时排除开发者工具"></a>打包时排除开发者工具</h4><p>使用早期的Spring Boot版本时，需要配置一下才能排除<code>spring-boot-devtools</code>这个依赖：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-maven-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">excludeDevtools</span>&gt;</span>true<span class="tag">&lt;/<span class="name">excludeDevtools</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+<h4 id="指定打包文件名称"><a href="#指定打包文件名称" class="headerlink" title="指定打包文件名称"></a>指定打包文件名称</h4><p>如果不喜欢默认的项目名+版本号作为文件名，可以加一个配置指定文件名：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">project</span> <span class="attr">...</span>&gt;</span></span><br><span class="line">    ...</span><br><span class="line">    <span class="tag">&lt;<span class="name">build</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">finalName</span>&gt;</span>awesome-app<span class="tag">&lt;/<span class="name">finalName</span>&gt;</span></span><br><span class="line">        ...</span><br><span class="line">    <span class="tag">&lt;/<span class="name">build</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">project</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+<p>这样打包后的文件名就是<code>awesome-app.jar</code>。</p>
+<h3 id="瘦身打包应用减小jar包体积"><a href="#瘦身打包应用减小jar包体积" class="headerlink" title="瘦身打包应用减小jar包体积"></a><strong>瘦身打包</strong>应用减小jar包体积</h3><h4 id="打包后体积过大问题原因"><a href="#打包后体积过大问题原因" class="headerlink" title="打包后体积过大问题原因"></a>打包后体积过大问题原因</h4><p>使用Spring Boot提供的<code>spring-boot-maven-plugin</code>打包Spring Boot应用，可以直接获得一个完整的可运行的jar包，把它上传到服务器上再运行就极其方便。</p>
+<p>但是这种方式也不是没有缺点。最大的缺点就是包太大了，动不动几十MB，在网速不给力的情况下，上传服务器非常耗时。并且，其中我们引用到的Tomcat、Spring和其他第三方组件，只要版本号不变，这些jar就相当于每次都重复打进去，再重复上传了一遍。</p>
+<p>真正经常改动的代码其实是我们自己编写的代码。如果只打包我们自己编写的代码，通常jar包也就几百KB。但是，运行的时候，classpath中没有依赖的jar包，肯定会报错。</p>
+<p>所以问题来了：如何只打包我们自己编写的代码，同时又自动把依赖包下载到某处，并自动引入到classpath中。解决方案就是使用<code>spring-boot-thin-launcher</code>。</p>
+<h4 id="瘦身打包配置"><a href="#瘦身打包配置" class="headerlink" title="瘦身打包配置"></a><strong>瘦身打包配置</strong></h4><p>给原来的<code>spring-boot-maven-plugin</code>增加一个<code>&lt;dependency&gt;</code>：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">project</span> <span class="attr">...</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">parent</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-parent<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.0.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">parent</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">    <span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-devtools<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">        ...</span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">build</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">plugins</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">plugin</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-maven-plugin<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">excludeDevtools</span>&gt;</span>true<span class="tag">&lt;/<span class="name">excludeDevtools</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot.experimental<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-thin-layout<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">                        <span class="comment">&lt;!--瘦身插件:版本应该是和org.springframework.boot版本有关系,版本不匹配会运行报错--&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.0.28.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">                        <span class="comment">&lt;!--java -Dthin.root=. -jar target/springboot-hello-1.0-SNAPSHOT.jar--&gt;</span></span><br><span class="line">                        <span class="comment">&lt;!--java -Dthin.dryrun=true -Dthin.root=. -jar</span></span><br><span class="line"><span class="comment">           target/springboot-hello-1.0-SNAPSHOT.jar--&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">plugin</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">plugins</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">build</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">project</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+<p><strong>注意版本问题</strong>：</p>
+<ul>
+<li>SpringBoot版本：<code>3.0.2</code></li>
+<li>spring-boot-thin-layout版本：<code>1.0.28.RELEASE</code></li>
+</ul>
+<p>打包命令：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SHELL"><figure class="iseeu highlight /shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mvn clean package </span><br><span class="line">ll target # 查看打包输出</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="瘦身打包插件原理"><a href="#瘦身打包插件原理" class="headerlink" title="瘦身打包插件原理"></a>瘦身打包插件原理</h4><p>利用<code>spring-boot-thin-launcher</code>可以给Spring Boot应用瘦身。其原理是<strong>记录app依赖的jar包，在首次运行时先下载依赖项并缓存到本地</strong>。</p>
+<p>实际上<code>spring-boot-thin-launcher</code>这个插件改变了<code>spring-boot-maven-plugin</code>的默认行为。它输出的jar包只包含我们自己代码编译后的class，一个很小的<code>ThinJarWrapper</code>，以及解析<code>pom.xml</code>后得到的所有依赖jar的列表。</p>
+<p>运行的时候，入口实际上是<code>ThinJarWrapper</code>，它会先在指定目录搜索看看依赖的jar包是否都存在，如果不存在，先从Maven中央仓库下载到本地，然后，再执行我们自己编写的<code>main()</code>入口方法。这种方式有点类似很多在线安装程序：用户下载后得到的是一个很小的exe安装程序，执行安装程序时，会首先在线下载所需的若干巨大的文件，再进行真正的安装。</p>
+<p>这个<code>spring-boot-thin-launcher</code>在启动时搜索的默认目录是用户主目录的<code>.m2</code>，我们也可以指定下载目录，例如，将下载目录指定为当前目录：</p>
+<p>运行命令：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SHELL"><figure class="iseeu highlight /shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -Dthin.root=. -jar awesome-app.jar</span><br></pre></td></tr></table></figure></div>
+
+<p>上述命令通过环境变量<code>thin.root</code>传入当前目录，执行后发现当前目录下自动生成了一个<code>repository</code>目录，这和Maven的默认下载目录<code>~/.m2/repository</code>的结构是完全一样的，只是它仅包含<code>awesome-app.jar</code>所需的运行期依赖项。</p>
+<p>注意：只有首次运行时会自动下载依赖项，再次运行时由于无需下载，所以启动速度会大大加快。如果删除了repository目录，再次运行时就会再次触发下载。</p>
+<h5 id="瘦身打包——预热"><a href="#瘦身打包——预热" class="headerlink" title="瘦身打包——预热"></a>瘦身打包——预热</h5><p>把79KB大小的<code>awesome-app.jar</code>直接扔到服务器执行，上传过程就非常快。但是，第一次在服务器上运行<code>awesome-app.jar</code>时，仍需要从Maven中央仓库下载大量的jar包，所以，<code>spring-boot-thin-launcher</code>还提供了一个<code>dryrun</code>选项，专门用来下载依赖项而不执行实际代码：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SHELL"><figure class="iseeu highlight /shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -Dthin.dryrun=true -Dthin.root=. -jar awesome-app.jar</span><br></pre></td></tr></table></figure></div>
+
+<p><strong><em>如果执行报错，可能是版本的原因，换个版本试试</em></strong>。</p>
+<p>执行上述代码会在当前目录创建<code>repository</code>目录，并下载所有依赖项，但并不会运行我们编写的<code>main()</code>方法。此过程称之为“预热”（warm up）。</p>
+<p>如果服务器由于安全限制不允许从外网下载文件，那么可以在本地预热，然后把<code>awesome-app.jar</code>和<code>repository</code>目录上传到服务器。只要依赖项没有变化，后续改动只需要上传<code>awesome-app.jar</code>即可。</p>
+<h3 id="使用环境变量"><a href="#使用环境变量" class="headerlink" title="使用环境变量"></a>使用环境变量</h3><p>在配置文件中，我们经常使用如下的格式对某个key进行配置：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">server:</span><br><span class="line">  port: $&#123;APP_PORT:18081&#125;</span><br><span class="line">spring:</span><br><span class="line">  application:</span><br><span class="line">    name: $&#123;APP_NAME:unnamed&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>这种<code>${APP_PORT:18081}</code>意思是，首先从环境变量查找<code>APP_PORT</code>，如果环境变量定义了，那么使用环境变量的值，否则，使用默认值<code>18081</code>。</p>
+<p>这使得我们在开发和部署时更加方便，因为开发时无需设定任何环境变量，直接使用默认值即本地数据库，而实际线上运行的时候，只需要传入环境变量即可：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SHELL"><figure class="iseeu highlight /shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">APP_PORT=801 java -Dthin.dryrun=false -Dthin.root=. -jar target/springboot-hello-1.0-SNAPSHOT.jar</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="使用profiles进行不同环境的配置"><a href="#使用profiles进行不同环境的配置" class="headerlink" title="使用profiles进行不同环境的配置"></a>使用profiles进行不同环境的配置</h3><ul>
+<li>通过Profile可以实现一套代码在不同环境启用不同的配置和功能。</li>
+<li>Spring Boot允许在一个配置文件中针对不同Profile进行配置；</li>
+<li>Spring Boot在未指定Profile时默认为default。</li>
+</ul>
+<p>Profile本身是Spring提供的功能，Profile表示一个环境的概念，如开发、测试和生产这3个环境：</p>
+<ul>
+<li>native</li>
+<li>test</li>
+<li>production</li>
+</ul>
+<p>或者按git分支定义master、dev这些环境：</p>
+<ul>
+<li>master</li>
+<li>dev</li>
+</ul>
+<p>在启动一个Spring应用程序的时候，可以传入一个或多个环境，例如：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SHELL"><figure class="iseeu highlight /shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-Dspring.profiles.active=test,master</span><br></pre></td></tr></table></figure></div>
+
+<p>Spring Boot对Profiles的支持在于，可以在application.yml中为每个环境进行配置。下面是一个示例配置：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="YML"><figure class="iseeu highlight /yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">port:</span> <span class="string">$&#123;APP_PORT:18081&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">application:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">$&#123;APP_NAME:unnamed&#125;</span></span><br><span class="line">  <span class="attr">datasource:</span></span><br><span class="line">    <span class="attr">url:</span> <span class="string">jdbc:hsqldb:file:testdb</span></span><br><span class="line">    <span class="attr">username:</span> <span class="string">sa</span></span><br><span class="line">    <span class="attr">password:</span></span><br><span class="line">    <span class="attr">driver-class-name:</span> <span class="string">org.hsqldb.jdbc.JDBCDriver</span></span><br><span class="line">    <span class="comment"># HikariCP配置:</span></span><br><span class="line">    <span class="attr">hikari:</span></span><br><span class="line">      <span class="attr">auto-commit:</span> <span class="literal">false</span></span><br><span class="line">      <span class="attr">connection-timeout:</span> <span class="number">3000</span></span><br><span class="line">      <span class="attr">validation-timeout:</span> <span class="number">3000</span></span><br><span class="line">      <span class="attr">max-lifetime:</span> <span class="number">60000</span></span><br><span class="line">      <span class="attr">maximum-pool-size:</span> <span class="number">20</span></span><br><span class="line">      <span class="attr">minimum-idle:</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line"><span class="attr">pebble:</span></span><br><span class="line">  <span class="attr">suffix:</span></span><br><span class="line">  <span class="attr">cache:</span> <span class="literal">false</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#  Spring Boot对Profiles的支持在于，可以在application.yml中为每个环境进行配置。下面是一个示例配置：</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">config:</span></span><br><span class="line">    <span class="attr">activate:</span></span><br><span class="line">      <span class="attr">on-profile:</span> <span class="string">test,debug</span></span><br><span class="line"><span class="attr">management:</span></span><br><span class="line">  <span class="attr">endpoints:</span></span><br><span class="line">    <span class="attr">web:</span></span><br><span class="line">      <span class="attr">exposure:</span></span><br><span class="line">        <span class="attr">include:</span> <span class="string">info,</span> <span class="string">health,</span> <span class="string">beans,</span> <span class="string">env,</span> <span class="string">metrics</span></span><br><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">port:</span> <span class="string">$&#123;APP_PORT:8000&#125;</span></span><br><span class="line">  <span class="comment"># 使用环境变量: APP_PORT=801 java -Dthin.dryrun=false -Dthin.root=. -Dspring.profiles.active=test -jar target/springboot-hello-1.0-SNAPSHOT.jar</span></span><br><span class="line"></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">config:</span></span><br><span class="line">    <span class="attr">activate:</span></span><br><span class="line">      <span class="attr">on-profile:</span> <span class="string">production</span></span><br><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">port:</span> <span class="number">80</span></span><br><span class="line"></span><br><span class="line"><span class="attr">pebble:</span></span><br><span class="line">  <span class="attr">cache:</span> <span class="literal">true</span></span><br><span class="line"><span class="comment">#  注意到分隔符---，最前面的配置是默认配置，不需要指定Profile，后面的每段配置都必须以spring.config.activate.on-profile.profiles: xxx开头，表示一个Profile。</span></span><br><span class="line"><span class="comment">#  上述配置默认使用的前面配置的端口，但是在test环境下，使用8000端口，在production环境下，使用80端口，并且启用Pebble的缓存。</span></span><br><span class="line"><span class="comment">#  如果不指定任何Profile，直接启动应用程序，那么Profile实际上就是default，可以从Spring Boot启动日志看</span></span><br><span class="line"><span class="comment">#  可以使用条件装配 @Profile("default") @Profile("test") @Profile("production")实现不同环境下使用不同的bean</span></span><br></pre></td></tr></table></figure></div>
+
+<p>指定了<code>-Dspring.profiles.active=test</code>，那么Profile实际上就是<code>test</code>，，可以从Spring Boot启动日志看出：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SHELL"><figure class="iseeu highlight /shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">  APP_PORT=801 java -Dthin.dryrun=false -Dthin.root=. -Dspring.profiles.active=test -jar target/springboot-hello-1.0-SNAPSHOT.jar</span><br><span class="line"></span><br><span class="line">  .   ____          _            __ _ _</span><br><span class="line"> /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \</span><br><span class="line">( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \</span><br><span class="line"> \\/  ___)| |_)| | | | | || (_| |  ) ) ) )</span><br><span class="line">  '  |____| .__|_| |_|_| |_\__, | / / / /</span><br><span class="line"> =========|_|==============|___/=/_/_/_/</span><br><span class="line"> :: Spring Boot ::                (v3.0.2)</span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line">2023-02-06T22:44:23.010+08:00  INFO 2452 --- [           main] com.itranswarp.learnjava.Application     : The following 1 profile is active: "test"</span><br><span class="line">...</span><br><span class="line">2023-02-06T22:44:24.419+08:00  INFO 2452 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 801 (http)</span><br><span class="line">...</span><br><span class="line">2023-02-06T22:44:25.837+08:00  INFO 2452 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 801 (http) with context path ''</span><br><span class="line">...</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="使用profiles进行条件装配"><a href="#使用profiles进行条件装配" class="headerlink" title="使用profiles进行条件装配"></a>使用profiles进行条件装配</h4><p>在接口实现类的 Bean 上使用<code>@Profile(&quot;default&quot;)</code>注解，即默认启用该 Bean；在另一个实现类上使用<code>@Profile(&quot;!default&quot;)</code>注解，即非<code>default</code>环境时，启用该 Bean。</p>
+<p>这样，一套代码，就实现了不同环境启用不同的配置。根据<code>Component</code>的不同<code>@Profile</code>注解，决定装配哪个<code>Component</code>的过程就是<strong>条件装配</strong>。</p>
+<h3 id="使用conditional进行条件装配"><a href="#使用conditional进行条件装配" class="headerlink" title="使用conditional进行条件装配"></a>使用conditional进行条件装配</h3><h3 id="加载配置到bean中"><a href="#加载配置到bean中" class="headerlink" title="加载配置到bean中"></a>加载配置到bean中</h3>
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../%E4%BD%9C%E4%B8%BA%E7%94%A8%E6%88%B7%EF%BC%8C%E4%BF%AE%E6%94%B9Cookie%E6%9C%89%E6%95%88%E6%9C%9F%EF%BC%8C%E5%BB%B6%E9%95%BFCookie%E6%9C%9F%E9%99%90/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">作为用户，修改Cookie有效期，延长Cookie期限</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.67px;">Git Bash</a> <a href="../../../../tags/Github/" style="font-size: 13.33px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/Hadoop/" style="font-size: 18.33px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/JVM/" style="font-size: 18.33px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 16.67px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 15px;">Linux</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.67px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/SQL/" style="font-size: 13.33px;">SQL</a> <a href="../../../../tags/Shell/" style="font-size: 11.67px;">Shell</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/hexo/" style="font-size: 11.67px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.67px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.67px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.67px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.67px;">竹云</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 13.33px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/12/">十二月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="">SpringBoot项目相关知识点</a>
+          </li>
+        
+          <li>
+            <a href="../%E4%BD%9C%E4%B8%BA%E7%94%A8%E6%88%B7%EF%BC%8C%E4%BF%AE%E6%94%B9Cookie%E6%9C%89%E6%95%88%E6%9C%9F%EF%BC%8C%E5%BB%B6%E9%95%BFCookie%E6%9C%9F%E9%99%90/">作为用户，修改Cookie有效期，延长Cookie期限</a>
+          </li>
+        
+          <li>
+            <a href="../../08/%E7%BB%88%E7%AB%AF%E5%91%BD%E4%BB%A4%E4%BB%A3%E7%90%86/">终端命令网络设置</a>
+          </li>
+        
+          <li>
+            <a href="../../../01/18/Windows%E7%B3%BB%E7%BB%9FC%E7%9B%98%E6%B8%85%E7%90%86%E5%B7%A5%E5%85%B7FreeMove%E5%8F%8A%E6%96%87%E4%BB%B6%E5%8D%A0%E7%94%A8%E8%BF%9B%E7%A8%8B%E6%9F%A5%E7%9C%8B%E8%BD%AF%E4%BB%B6LockHunter%E9%85%8D%E5%90%88%E4%BD%BF%E7%94%A8/">Windows系统C盘清理工具FreeMove及文件占用进程查看软件LockHunter配合使用</a>
+          </li>
+        
+          <li>
+            <a href="../../../01/14/AutoReconnectWiFi/">检测断网自动重连WiFi脚本</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2023 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>
