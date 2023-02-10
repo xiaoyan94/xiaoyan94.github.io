@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Allow: /archives/
+Allow: /quick-notes/
+Allow: /about/
+Sitemap: /sitemap.xml
+Sitemap: /baidu_sitemap.xml
