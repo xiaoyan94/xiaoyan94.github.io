@@ -46,7 +46,7 @@
 <meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/StackAllocation1.png">
 <meta property="og:image" content="https://xiaoyan94.github.io/2020/07/11/JVM-04/StackAllocation2.png">
 <meta property="article:published_time" content="2020-07-11T09:02:59.000Z">
-<meta property="article:modified_time" content="2022-08-26T08:30:08.252Z">
+<meta property="article:modified_time" content="2022-08-26T08:30:08.000Z">
 <meta property="article:author" content="许嵩老公">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="JVM">
@@ -146,59 +146,59 @@
 <a id="more"></a>
 
 <ul>
-<li><a href="#1-堆的核心概述">1 堆的核心概述</a><ul>
-<li><a href="#内存细分">内存细分</a></li>
+<li><a href="#1-%E5%A0%86%E7%9A%84%E6%A0%B8%E5%BF%83%E6%A6%82%E8%BF%B0">1 堆的核心概述</a><ul>
+<li><a href="#%E5%86%85%E5%AD%98%E7%BB%86%E5%88%86">内存细分</a></li>
 </ul>
 </li>
-<li><a href="#2-设置堆内存大小与-OOM">2 设置堆内存大小与 OOM</a><ul>
-<li><a href="#堆空间大小的设置">堆空间大小的设置</a></li>
-<li><a href="#OutOfMemoryError-的说明与举例"><code>OutOfMemoryError</code> 的说明与举例</a></li>
+<li><a href="#2-%E8%AE%BE%E7%BD%AE%E5%A0%86%E5%86%85%E5%AD%98%E5%A4%A7%E5%B0%8F%E4%B8%8E-OOM">2 设置堆内存大小与 OOM</a><ul>
+<li><a href="#%E5%A0%86%E7%A9%BA%E9%97%B4%E5%A4%A7%E5%B0%8F%E7%9A%84%E8%AE%BE%E7%BD%AE">堆空间大小的设置</a></li>
+<li><a href="#OutOfMemoryError-%E7%9A%84%E8%AF%B4%E6%98%8E%E4%B8%8E%E4%B8%BE%E4%BE%8B"><code>OutOfMemoryError</code> 的说明与举例</a></li>
 </ul>
 </li>
-<li><a href="#3-年轻代与老年代">3 年轻代与老年代</a></li>
-<li><a href="#4-图解对象分配过程">4 图解对象分配过程</a></li>
-<li><a href="#5-Minor-GC-和-Major-GC-和-Full-GC">5 Minor GC 和 Major GC 和 Full GC</a><ul>
-<li><a href="#最简单的分代式GC策略的触发条件">最简单的分代式GC策略的触发条件</a></li>
-<li><a href="#GC举例与日志分析">GC举例与日志分析</a></li>
+<li><a href="#3-%E5%B9%B4%E8%BD%BB%E4%BB%A3%E4%B8%8E%E8%80%81%E5%B9%B4%E4%BB%A3">3 年轻代与老年代</a></li>
+<li><a href="#4-%E5%9B%BE%E8%A7%A3%E5%AF%B9%E8%B1%A1%E5%88%86%E9%85%8D%E8%BF%87%E7%A8%8B">4 图解对象分配过程</a></li>
+<li><a href="#5-Minor-GC-%E5%92%8C-Major-GC-%E5%92%8C-Full-GC">5 Minor GC 和 Major GC 和 Full GC</a><ul>
+<li><a href="#%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84%E5%88%86%E4%BB%A3%E5%BC%8FGC%E7%AD%96%E7%95%A5%E7%9A%84%E8%A7%A6%E5%8F%91%E6%9D%A1%E4%BB%B6">最简单的分代式GC策略的触发条件</a></li>
+<li><a href="#GC%E4%B8%BE%E4%BE%8B%E4%B8%8E%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90">GC举例与日志分析</a></li>
 </ul>
 </li>
-<li><a href="#6-堆空间分代思想">6 堆空间分代思想</a></li>
-<li><a href="#7-内存分配策略">7 内存分配策略</a></li>
-<li><a href="#8-为对象分配内存TLAB">8 为对象分配内存：TLAB</a></li>
-<li><a href="#9-小结堆空间的参数设置">9 小结堆空间的参数设置</a></li>
-<li><a href="#X-堆是分配对象的唯一选择吗">X 堆是分配对象的唯一选择吗</a><ul>
-<li><a href="#逃逸分析概述">逃逸分析概述</a></li>
-<li><a href="#逃逸分析之代码优化">逃逸分析之代码优化</a><ul>
-<li><a href="#代码优化之栈上分配">代码优化之栈上分配</a></li>
-<li><a href="#代码优化之同步省略消除">代码优化之同步省略（消除）</a></li>
-<li><a href="#-代码优化之标量替换">🌿 代码优化之标量替换</a></li>
-<li><a href="#逃逸分析小结">逃逸分析小结</a></li>
+<li><a href="#6-%E5%A0%86%E7%A9%BA%E9%97%B4%E5%88%86%E4%BB%A3%E6%80%9D%E6%83%B3">6 堆空间分代思想</a></li>
+<li><a href="#7-%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5">7 内存分配策略</a></li>
+<li><a href="#8-%E4%B8%BA%E5%AF%B9%E8%B1%A1%E5%88%86%E9%85%8D%E5%86%85%E5%AD%98TLAB">8 为对象分配内存：TLAB</a></li>
+<li><a href="#9-%E5%B0%8F%E7%BB%93%E5%A0%86%E7%A9%BA%E9%97%B4%E7%9A%84%E5%8F%82%E6%95%B0%E8%AE%BE%E7%BD%AE">9 小结堆空间的参数设置</a></li>
+<li><a href="#X-%E5%A0%86%E6%98%AF%E5%88%86%E9%85%8D%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%94%AF%E4%B8%80%E9%80%89%E6%8B%A9%E5%90%97">X 堆是分配对象的唯一选择吗</a><ul>
+<li><a href="#%E9%80%83%E9%80%B8%E5%88%86%E6%9E%90%E6%A6%82%E8%BF%B0">逃逸分析概述</a></li>
+<li><a href="#%E9%80%83%E9%80%B8%E5%88%86%E6%9E%90%E4%B9%8B%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96">逃逸分析之代码优化</a><ul>
+<li><a href="#%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96%E4%B9%8B%E6%A0%88%E4%B8%8A%E5%88%86%E9%85%8D">代码优化之栈上分配</a></li>
+<li><a href="#%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96%E4%B9%8B%E5%90%8C%E6%AD%A5%E7%9C%81%E7%95%A5%E6%B6%88%E9%99%A4">代码优化之同步省略（消除）</a></li>
+<li><a href="#-%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96%E4%B9%8B%E6%A0%87%E9%87%8F%E6%9B%BF%E6%8D%A2">🌿 代码优化之标量替换</a></li>
+<li><a href="#%E9%80%83%E9%80%B8%E5%88%86%E6%9E%90%E5%B0%8F%E7%BB%93">逃逸分析小结</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#本章小结">本章小结</a></li>
+<li><a href="#%E6%9C%AC%E7%AB%A0%E5%B0%8F%E7%BB%93">本章小结</a></li>
 </ul>
 <h3 id="内存细分"><a href="#内存细分" class="headerlink" title="内存细分"></a>内存细分</h3><p>现代垃圾收集器大部分都基于分代收集理论设计，堆空间细分为：</p>
 <p>Java 7 及之前堆内存逻辑上分为三部分：新生区 + 养老区 +<strong>永久区</strong></p>
 <ul>
-<li>➢ Young Generation Space 新生区 Young/New  <ul>
+<li>➢ Young Generation Space 新生区 Young&#x2F;New  <ul>
 <li>又被划分为 Eden 区和 Survivor 区</li>
 </ul>
 </li>
-<li>➢ Tenure generation space 养老区 0ld/Tenure</li>
+<li>➢ Tenure generation space 养老区 0ld&#x2F;Tenure</li>
 <li>➢ Permanent Space 永久区 Perm</li>
 </ul>
 <p>Java 8 及之后堆内存逻辑上分为三部分：新生区 + 养老区 +<strong>元空间</strong></p>
 <ul>
-<li>➢ Young Generation Space 新生区 Young/New<ul>
+<li>➢ Young Generation Space 新生区 Young&#x2F;New<ul>
 <li>又被划分为 Eden 区和 Survivor 区</li>
 </ul>
 </li>
-<li>➢ Tenure generation space 养老区 0ld/Tenure</li>
+<li>➢ Tenure generation space 养老区 0ld&#x2F;Tenure</li>
 <li>➢ Meta Space 元空间 Meta</li>
 </ul>
-<p>约定：新生区 / 新生代 / 年轻代、养老区 / 老年区 / 老年代、永久区 / 永久代</p>
+<p>约定：新生区 &#x2F; 新生代 &#x2F; 年轻代、养老区 &#x2F; 老年区 &#x2F; 老年代、永久区 &#x2F; 永久代</p>
 <p><img src="/2020/07/11/JVM-04/%E5%A0%86%E7%A9%BA%E9%97%B4%E5%86%85%E9%83%A8%E7%BB%93%E6%9E%84.png" alt="堆空间内部结构"></p>
 <p><img src="/2020/07/11/JVM-04/%E6%B0%B8%E4%B9%85%E4%BB%A3%E5%92%8C%E5%85%83%E7%A9%BA%E9%97%B4.jpeg" alt="永久代和元空间"></p>
 <p>演示 JVM 实例：</p>
@@ -243,8 +243,8 @@
 </li>
 <li>一旦堆区中的内存大小超过 “<code>-Xmx</code>“ 所指定的最大内存时，将会抛出 <code>OutOfMemoryError</code> 异常。</li>
 <li>通常会将 <code>-Xms</code> 和 <code>-Xmx</code> 两个参数配置相同的值，其目的是为了能够在 java 垃圾回收机制清理完堆区后不需要重新分隔计算堆区的大小，从而提高性能。</li>
-<li>默认情况下，初始内存大小：物理电脑内存大小 / 64</li>
-<li>最大内存大小：物理电脑内存大小 / 4</li>
+<li>默认情况下，初始内存大小：物理电脑内存大小 &#x2F; 64</li>
+<li>最大内存大小：物理电脑内存大小 &#x2F; 4</li>
 </ul>
 <p><code>-X</code> 参数用法：<a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html" target="_blank" rel="noopener">https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html</a></p>
 <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 1. 设置堆空间大小的参数</span></span><br><span class="line"><span class="comment"> * -Xms 用来设置堆空间（年轻代 + 老年代）的初始内存大小</span></span><br><span class="line"><span class="comment"> *      -X 是 jvm 的运行参数</span></span><br><span class="line"><span class="comment"> *      ms 是 memory start</span></span><br><span class="line"><span class="comment"> * -Xmx 用来设置堆空间（年轻代 + 老年代）的最大内存大小</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 2. 默认堆空间的大小</span></span><br><span class="line"><span class="comment"> *    初始内存大小：物理电脑内存大小 / 64</span></span><br><span class="line"><span class="comment"> *             最大内存大小：物理电脑内存大小 / 4</span></span><br><span class="line"><span class="comment"> * 3. 手动设置：-Xms600m -Xmx600m</span></span><br><span class="line"><span class="comment"> *     开发中建议将初始堆内存和最大的堆内存设置成相同的值。</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * 4. 查看设置的参数：方式一： jps   /  jstat -gc 进程 id</span></span><br><span class="line"><span class="comment"> *                  方式二：-XX:+PrintGCDetails</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  20:15</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HeapSpaceInitial</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span> <span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 返回 Java 虚拟机中的堆内存总量</span></span><br><span class="line">        <span class="keyword">long</span> initialMemory = Runtime.getRuntime ().totalMemory () / <span class="number">1024</span> / <span class="number">1024</span>;</span><br><span class="line">        <span class="comment">// 返回 Java 虚拟机试图使用的最大堆内存量</span></span><br><span class="line">        <span class="keyword">long</span> maxMemory = Runtime.getRuntime ().maxMemory () / <span class="number">1024</span> / <span class="number">1024</span>;</span><br><span class="line"></span><br><span class="line">        System.out.println (<span class="string">"-Xms :"</span> + initialMemory + <span class="string">"M"</span>);</span><br><span class="line">        System.out.println (<span class="string">"-Xmx :"</span> + maxMemory + <span class="string">"M"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 默认设置时，即不设置虚拟机参数使用默认分配内存大小</span></span><br><span class="line"><span class="comment">//        System.out.println ("系统内存大小为：" + initialMemory * 64.0 / 1024 + "G");</span></span><br><span class="line"><span class="comment">//        System.out.println ("系统内存大小为：" + maxMemory * 4.0 / 1024 + "G");</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Thread.sleep (<span class="number">1000000</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace ();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
@@ -257,14 +257,14 @@
 
 <p>通过下面两个柿子：</p>
 <ol>
-<li>25600 (S0C) + 25600 (S1C) + 153600 (EC) + 409600 (OC) = 614400, 614400 ÷ 1024 = 600</li>
-<li>25600 (S0C/S1C) + 153600 (EC) + 409600 (OC) = 588800, 588800 ÷ 1024 = 575</li>
+<li>25600 (S0C) + 25600 (S1C) + 153600 (EC) + 409600 (OC) &#x3D; 614400, 614400 ÷ 1024 &#x3D; 600</li>
+<li>25600 (S0C&#x2F;S1C) + 153600 (EC) + 409600 (OC) &#x3D; 588800, 588800 ÷ 1024 &#x3D; 575</li>
 </ol>
 <p>可知，575 为两个幸存者区其中一个幸存者区 + 伊甸园区 + 老年区的大小总和。</p>
 <p>也可以使用 <code>-XX:+PrintGCDetails</code> 查看：</p>
 <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">-Xms : <span class="number">575</span>M</span><br><span class="line">-Xmx : <span class="number">575</span>M</span><br><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">179200</span>K, used <span class="number">9216</span>K [<span class="number">0x00000007b3800000</span>, <span class="number">0x00000007c0000000</span>, <span class="number">0x00000007c0000000</span>)</span><br><span class="line">  eden space <span class="number">153600</span>K, <span class="number">6</span>% used [<span class="number">0x00000007b3800000</span>,<span class="number">0x00000007b41001a0</span>,<span class="number">0x00000007bce00000</span>)</span><br><span class="line">  from space <span class="number">25600</span>K, <span class="number">0</span>% used [<span class="number">0x00000007be700000</span>,<span class="number">0x00000007be700000</span>,<span class="number">0x00000007c0000000</span>)</span><br><span class="line">  to   space <span class="number">25600</span>K, <span class="number">0</span>% used [<span class="number">0x00000007bce00000</span>,<span class="number">0x00000007bce00000</span>,<span class="number">0x00000007be700000</span>)</span><br><span class="line"> ParOldGen       total <span class="number">409600</span>K, used <span class="number">0</span>K [<span class="number">0x000000079a800000</span>, <span class="number">0x00000007b3800000</span>, <span class="number">0x00000007b3800000</span>)</span><br><span class="line">  object space <span class="number">409600</span>K, <span class="number">0</span>% used [<span class="number">0x000000079a800000</span>,<span class="number">0x000000079a800000</span>,<span class="number">0x00000007b3800000</span>)</span><br><span class="line"> Metaspace       used <span class="number">2953</span>K, capacity <span class="number">4496</span>K, committed <span class="number">4864</span>K, reserved <span class="number">1056768</span>K</span><br><span class="line">  <span class="class"><span class="keyword">class</span> <span class="title">space</span>    <span class="title">used</span> 321<span class="title">K</span>, <span class="title">capacity</span> 388<span class="title">K</span>, <span class="title">committed</span> 512<span class="title">K</span>, <span class="title">reserved</span> 1048576<span class="title">K</span></span></span><br></pre></td></tr></table></figure></div>
 
-<p>179200K = 153600K + 25600K ，年轻代总大小为伊甸园区 + 一个幸存者 (from 或 to) 区的大小。</p>
+<p>179200K &#x3D; 153600K + 25600K ，年轻代总大小为伊甸园区 + 一个幸存者 (from 或 to) 区的大小。</p>
 <h3 id="OutOfMemoryError-的说明与举例"><a href="#OutOfMemoryError-的说明与举例" class="headerlink" title="OutOfMemoryError 的说明与举例"></a><code>OutOfMemoryError</code> 的说明与举例</h3><p>演示程序：</p>
 <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"><span class="keyword">import</span> java.util.Random;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * -Xms600m -Xmx600m</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  21:12</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">OOMTest</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span> <span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">        ArrayList&lt;Picture&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">        <span class="keyword">while</span> (<span class="keyword">true</span>)&#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                Thread.sleep (<span class="number">20</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace ();</span><br><span class="line">            &#125;</span><br><span class="line">            list.add (<span class="keyword">new</span> Picture (<span class="keyword">new</span> Random ().nextInt (<span class="number">1024</span> * <span class="number">1024</span>)));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Picture</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">byte</span> [] pixels;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Picture</span> <span class="params">(<span class="keyword">int</span> length)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.pixels = <span class="keyword">new</span> <span class="keyword">byte</span> [length];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
 
@@ -287,8 +287,8 @@
 <p>下面这参数开发中一般不会调：</p>
 <p>配置新生代与老年代在堆结构的占比。</p>
 <ul>
-<li>➢ 默认 <code>-XX:NewRatio=2</code>，表示新生代占 1，老年代占 2，新生代占整个堆的 1/3</li>
-<li>➢ 可以修改 <code>-XX:NewRatio=4</code>，表示新生代占 1，老年代占 4，新生代占整个堆的 1/5</li>
+<li>➢ 默认 <code>-XX:NewRatio=2</code>，表示新生代占 1，老年代占 2，新生代占整个堆的 1&#x2F;3</li>
+<li>➢ 可以修改 <code>-XX:NewRatio=4</code>，表示新生代占 1，老年代占 4，新生代占整个堆的 1&#x2F;5</li>
 </ul>
 <p>测试：</p>
 <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.atguigu.java1;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * -Xms600m -Xmx600m</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * -XX:NewRatio ： 设置新生代与老年代的比例。默认值是 2.</span></span><br><span class="line"><span class="comment"> * -XX:SurvivorRatio ：设置新生代中 Eden 区与 Survivor 区的比例。默认值是 8</span></span><br><span class="line"><span class="comment"> * -XX:-UseAdaptiveSizePolicy ：关闭自适应的内存分配策略  （暂时用不到）</span></span><br><span class="line"><span class="comment"> * -Xmn: 设置新生代的空间的大小。 （一般不设置）</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> shkstart  shkstart@126.com</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@create</span> 2020  17:23</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">EdenSurvivorTest</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span> <span class="params">(String [] args)</span> </span>&#123;</span><br><span class="line">        System.out.println (<span class="string">"我只是来打个酱油～"</span>);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Thread.sleep (<span class="number">1000000</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">            e.printStackTrace ();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
@@ -346,7 +346,7 @@
 <td>3</td>
 </tr>
 </tbody></table>
-<p>虽然默认的 <code>SurvivorRatio</code> 是 8，官方文档也是 8，但是实际运行中伊甸园区和幸存者区的比例是 150:25 = 6:1，即使使用 <code>-XX:-UseAdaptiveSizePolicy</code> ：关闭自适应的内存分配策略，也还是 6:1。除非显式地使用 <code>-XX:SurvivorRatio=8</code> 显式指定比例为 8:1</p>
+<p>虽然默认的 <code>SurvivorRatio</code> 是 8，官方文档也是 8，但是实际运行中伊甸园区和幸存者区的比例是 150:25 &#x3D; 6:1，即使使用 <code>-XX:-UseAdaptiveSizePolicy</code> ：关闭自适应的内存分配策略，也还是 6:1。除非显式地使用 <code>-XX:SurvivorRatio=8</code> 显式指定比例为 8:1</p>
 <ul>
 <li>在 HotSpot 中，Eden 空间和另外两个 Survivor 空间缺省所占的比例是 8:1:1</li>
 <li>当然开发人员可以通过选项 “<code>-XX:SurvivorRatio</code>“ 调整这个空间比例。比如 <code>-XX:SurvivorRatio=8</code></li>
@@ -374,10 +374,10 @@
 </li>
 </ol>
 <p><img src="/2020/07/11/JVM-04/%E6%96%B0%E7%94%9F%E4%BB%A3%E5%AF%B9%E8%B1%A1%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E4%B8%8E%E5%9B%9E%E6%94%B6%E8%BF%87%E7%A8%8B.png" alt="新生代对象内存分配与回收过程"></p>
-<p>当伊甸园区满的时候，会触发 YGC/MinorGC，会将伊甸园区和幸存者区 (from 区) 一起回收。但是幸存者区满的时候不会触发 YGC/MinorGC。</p>
+<p>当伊甸园区满的时候，会触发 YGC&#x2F;MinorGC，会将伊甸园区和幸存者区 (from 区) 一起回收。但是幸存者区满的时候不会触发 YGC&#x2F;MinorGC。</p>
 <p>总结：</p>
 <p><strong>针对幸存者 s0，s1 区的总结：复制之后有交换，谁空谁是 to</strong>。</p>
-<p><strong>关于垃圾回收：频繁在新生区收集，很少在养老区收集，几乎不在永久区 / 元空间收集</strong>。</p>
+<p><strong>关于垃圾回收：频繁在新生区收集，很少在养老区收集，几乎不在永久区 &#x2F; 元空间收集</strong>。</p>
 <p>对象分配特殊情况：</p>
 <p><img src="/2020/07/11/JVM-04/%E5%AF%B9%E8%B1%A1%E5%88%86%E9%85%8D%E7%89%B9%E6%AE%8A%E6%83%85%E5%86%B5.png" alt="对象分配特殊情况"></p>
 <p>代码举例与 JVisualVM 演示对象的分配过程：</p>
@@ -410,8 +410,8 @@
 <p>针对 HotSpot VM 的实现，它里面的 GC 按照回收区域又分为两大种类型：一种是部分收集 (Partial GC)，一种是整堆收集 (Full GC)</p>
 <ul>
 <li>部分收集：不是完整收集整个 Java 堆的垃圾收集。其中又分为:<ul>
-<li>➢ 新生代收集 (Minor GC / Young GC) : 只是新生代（Eden、s0、s1）的垃圾收集</li>
-<li>➢ 老年代收集 (Major GC / Old GC) : 只是老年代的垃圾收集。<ul>
+<li>➢ 新生代收集 (Minor GC &#x2F; Young GC) : 只是新生代（Eden、s0、s1）的垃圾收集</li>
+<li>➢ 老年代收集 (Major GC &#x2F; Old GC) : 只是老年代的垃圾收集。<ul>
 <li>目前，只有 CMS GC 会有单独收集老年代的行为。<ul>
 <li><em>注意，很多时候 Major GC 会和 Full GC 混淆使用，需要具体分辨是老年代回收还是整堆回收</em>。</li>
 </ul>
@@ -435,7 +435,7 @@
 <li>➢ Minor GC 会引发 STW， 暂停其它用户的线程，等垃圾回收结束，用户线程才恢复运行。</li>
 </ul>
 </li>
-<li><p>● <strong>老年代 GC (Major GC/Full GC) 触发机制</strong>:</p>
+<li><p>● <strong>老年代 GC (Major GC&#x2F;Full GC) 触发机制</strong>:</p>
 <ul>
 <li>➢ 指发生在老年代的 GC，对象从老年代消失时，我们说 “Major GC” 或 “Full GC” 发生了。</li>
 <li>➢ 出现了 Major GC， 经常会伴随至少一次的 Minor GC (但非绝对的，在 Parallel Scavenge 收集器的收集策略里就有直接进行 Major GC 的策略选择过程)。<ul>
@@ -480,7 +480,7 @@
 <h2 id="6-堆空间分代思想"><a href="#6-堆空间分代思想" class="headerlink" title="6 堆空间分代思想"></a>6 堆空间分代思想</h2><p>为什么需要对 Java 堆进行分代？不分代就不能正常工作了吗？</p>
 <ul>
 <li>经研究，不同对象的生命周期不同。70%-99% 的对象是临时对象。<ul>
-<li>➢ 新生代：有 Eden、两块大小相同的 Survivor (又称为 from/to， s0/s1) 构成，to 总为空。</li>
+<li>➢ 新生代：有 Eden、两块大小相同的 Survivor (又称为 from&#x2F;to， s0&#x2F;s1) 构成，to 总为空。</li>
 <li>➢ 老年代：存放新生代中经历多次 GC 仍然存活的对象。</li>
 </ul>
 </li>
@@ -515,7 +515,7 @@
 <p>在 JDK1.7 下运行结果如下：</p>
 <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Heap</span><br><span class="line"> PSYoungGen      total <span class="number">18432</span>K, used <span class="number">1967</span>K [<span class="number">0x00000007fec00000</span>, <span class="number">0x0000000800000000</span>, <span class="number">0x0000000800000000</span>)</span><br><span class="line">  eden space <span class="number">16384</span>K, <span class="number">12</span>% used [<span class="number">0x00000007fec00000</span>,<span class="number">0x00000007fedebc28</span>,<span class="number">0x00000007ffc00000</span>)</span><br><span class="line">  from space <span class="number">2048</span>K, <span class="number">0</span>% used [<span class="number">0x00000007ffe00000</span>,<span class="number">0x00000007ffe00000</span>,<span class="number">0x0000000800000000</span>)</span><br><span class="line">  to   space <span class="number">2048</span>K, <span class="number">0</span>% used [<span class="number">0x00000007ffc00000</span>,<span class="number">0x00000007ffc00000</span>,<span class="number">0x00000007ffe00000</span>)</span><br><span class="line"> ParOldGen       total <span class="number">40960</span>K, used <span class="number">20480</span>K [<span class="number">0x00000007fc400000</span>, <span class="number">0x00000007fec00000</span>, <span class="number">0x00000007fec00000</span>)</span><br><span class="line">  object space <span class="number">40960</span>K, <span class="number">50</span>% used [<span class="number">0x00000007fc400000</span>,<span class="number">0x00000007fd800010</span>,<span class="number">0x00000007fec00000</span>)</span><br><span class="line"> PSPermGen       total <span class="number">21504</span>K, used <span class="number">2986</span>K [<span class="number">0x00000007f7200000</span>, <span class="number">0x00000007f8700000</span>, <span class="number">0x00000007fc400000</span>)</span><br><span class="line">  object space <span class="number">21504</span>K, <span class="number">13</span>% used [<span class="number">0x00000007f7200000</span>,<span class="number">0x00000007f74eab58</span>,<span class="number">0x00000007f8700000</span>)</span><br></pre></td></tr></table></figure></div>
 
-<p>设置了堆空间最小 / 大为 60M，新生代与老年代之间的比例为 2:1，伊甸园区与幸存者区之间的比例为 8:1:1，打印 GC 日志详情。新生代（伊甸园区 16M + 两个幸存者区 2M*2）20M，老年代 40M，老年代已用空间 20M，由此可见，伊甸园区容纳不下 20M 的数组，分配的一个 20M 的数组直接进入了老年代。</p>
+<p>设置了堆空间最小 &#x2F; 大为 60M，新生代与老年代之间的比例为 2:1，伊甸园区与幸存者区之间的比例为 8:1:1，打印 GC 日志详情。新生代（伊甸园区 16M + 两个幸存者区 2M*2）20M，老年代 40M，老年代已用空间 20M，由此可见，伊甸园区容纳不下 20M 的数组，分配的一个 20M 的数组直接进入了老年代。</p>
 <hr>
 <h2 id="8-为对象分配内存：TLAB"><a href="#8-为对象分配内存：TLAB" class="headerlink" title="8 为对象分配内存：TLAB"></a>8 为对象分配内存：TLAB</h2><p><strong>为什么有 TLAB ( Thread Local Allocation Buffer )</strong> ?</p>
 <ul>
@@ -533,7 +533,7 @@
 <ul>
 <li>尽管不是所有的对象实例都能够在 TLAB 中成功分配内存 (因为空间很小)，但 <strong>JVM 确实是将 TLAB 作为内存分配的首选</strong> （使用命令 <code>jinfo -flag UseTLAB pid</code> 查看 TLAB 是否开启，默认是开启的）。</li>
 <li>在程序中，开发人员可以通过选项 “<code>-XX:UseTLAB</code>“ 设置是否开启 TLAB 空间。</li>
-<li>默认情况下，TLAB 空间的内存非常小，<strong>仅占有整个 Eden 空间的 1%</strong>，可以使用命令 <code>jinfo -flag TLABWasteTargetPercent pid</code> 查看 TLAB 占伊甸园区的百分比，当然我们可以通过选项 <a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html" target="_blank" rel="noopener">“<code>-XX:TLABWasteTargetPercent</code>“</a> 设置 TLAB 空间所占用 Eden 空间的百分比大小。</li>
+<li>默认情况下，TLAB 空间的内存非常小，**仅占有整个 Eden 空间的 1%**，可以使用命令 <code>jinfo -flag TLABWasteTargetPercent pid</code> 查看 TLAB 占伊甸园区的百分比，当然我们可以通过选项 <a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html" target="_blank" rel="noopener">“<code>-XX:TLABWasteTargetPercent</code>“</a> 设置 TLAB 空间所占用 Eden 空间的百分比大小。</li>
 <li>一旦对象在 TLAB 空间分配内存失败时，JVM 就会尝试着 <strong>通过使用加锁机制</strong> 确保数据操作的原子性，从而直接在 Eden 空间中分配内存。</li>
 </ul>
 <p><img src="/2020/07/11/JVM-04/TLAB.png" alt="对象分配过程：TLAB"></p>
@@ -543,11 +543,11 @@
 <ul>
 <li><code>-XX:+PrintFlagsInitial</code> : 查看所有的参数的默认初始值</li>
 <li><code>-XX:+PrintFlagsFinal</code> : 查看所有的参数的最终值 (可能会存在修改，不再是初始值)</li>
-<li><code>-Xms</code> : 初始堆空间内存 ( 默认为物理内存的 1/64)</li>
-<li><code>-Xmx</code> : 最大堆空间内存 ( 默认为物理内存的 1/4)</li>
+<li><code>-Xms</code> : 初始堆空间内存 ( 默认为物理内存的 1&#x2F;64)</li>
+<li><code>-Xmx</code> : 最大堆空间内存 ( 默认为物理内存的 1&#x2F;4)</li>
 <li><code>-Xmn</code> : 设置新生代的大小。(初始值及最大值)</li>
 <li><code>-XX:NewRatio</code> : 配置新生代与老年代在堆结构的占比</li>
-<li><code>-XX:SurvivorRatio</code> : 设置新生代中 Eden 和 S0/S1 空间的比例</li>
+<li><code>-XX:SurvivorRatio</code> : 设置新生代中 Eden 和 S0&#x2F;S1 空间的比例</li>
 <li><code>-XX:MaxTenuringThreshold</code> : 设置新生代垃圾的最大年龄</li>
 <li><code>-XX:+PrintGCDetails</code> : 输出详细的 GC 处理日志<ul>
 <li>➢ 打印 GC 简要信息: ① <code>-XX:+PrintGC</code> ② <code>-verbose:gc</code></li>
@@ -556,20 +556,20 @@
 <li><code>-XX:HandlePromotionFailure</code> : 是否设置空间分配担保</li>
 </ul>
 <p><strong>关于参数</strong> <code>-XX:SurvivorRatio</code></p>
-<p>年轻代中，若伊甸园区设置过大，幸存者区较小，则容易导致在 YGC / Minor GC 时，伊甸园区中剩余的对象直接晋升老年代，则分代的意义就不大了。</p>
-<p>若伊甸园区设置过小，幸存者区过大，则容易导致 YGC / Minor GC 的频率增加，更加频繁的垃圾回收会增加 STW 的总体时间，影响程序的性能。</p>
+<p>年轻代中，若伊甸园区设置过大，幸存者区较小，则容易导致在 YGC &#x2F; Minor GC 时，伊甸园区中剩余的对象直接晋升老年代，则分代的意义就不大了。</p>
+<p>若伊甸园区设置过小，幸存者区过大，则容易导致 YGC &#x2F; Minor GC 的频率增加，更加频繁的垃圾回收会增加 STW 的总体时间，影响程序的性能。</p>
 <p>从性能调优的角度，都应该降低 GC 的频率。</p>
 <p><strong>关于参数</strong> <code>-XX:HandlePromotionFailure</code></p>
 <p>在发生 Minor GC 之前，虚拟机会<strong>检查老年代最大可用的连续空间是否大于新生代所有对象的总空间</strong>。</p>
 <ul>
 <li>如果大于，则此次 Minor GC 是安全的</li>
 <li>如果小于，则虚拟机会查看 <code>-XX:HandlePromotionFailure</code> 设置值是否允许担保失败。<ul>
-<li>如果 <code>HandlePromotionFailure</code>=true， 那么会继续<strong>检查老年代最大可用连续空间是否大于历次晋升到老年代的对象的平均大小</strong>。<ul>
+<li>如果 <code>HandlePromotionFailure</code>&#x3D;true， 那么会继续<strong>检查老年代最大可用连续空间是否大于历次晋升到老年代的对象的平均大小</strong>。<ul>
 <li>如果大于，则尝试进行一次 Minor GC，但这次 Minor GC 依然是有风险的；</li>
 <li>如果小于，则改为进行一次 Full GC。</li>
 </ul>
 </li>
-<li>如果 <code>HandlePromotionFailure</code>=false， 则改为进行一次 Full GC。</li>
+<li>如果 <code>HandlePromotionFailure</code>&#x3D;false， 则改为进行一次 Full GC。</li>
 </ul>
 </li>
 </ul>
@@ -704,7 +704,7 @@
 <li>一个极端的例子，就是经过逃逸分析之后，发现没有一个对象是不逃逸的。那这个逃逸分析的过程就白白浪费掉了。</li>
 <li>虽然这项技术并不十分成熟，但是它也<strong>是即时编译器优化技术中一个十分重要的手段</strong>。</li>
 <li>注意到有一些观点，认为通过逃逸分析，JVM 会在栈上分配那些不会逃逸的对象，这在理论上是可行的，但是取决于 JVM 设计者的选择。据我所知，Oracle Hotspot JVM 中并未这么做，这一点在逃逸分析相关的文档里已经说明，所以可以明确所有的对象实例都是创建在堆上。<ul>
-<li>前面演示的程序之所以会有栈上分配的那种效果，可以理解为：逃逸分析 + 标量替换 =&gt; 栈上分配；基于逃逸分析和标量替换，某种程度上可以说是达到了栈上分配的效果。</li>
+<li>前面演示的程序之所以会有栈上分配的那种效果，可以理解为：逃逸分析 + 标量替换 &#x3D;&gt; 栈上分配；基于逃逸分析和标量替换，某种程度上可以说是达到了栈上分配的效果。</li>
 </ul>
 </li>
 <li>目前很多书籍还是基于 JDK 7 以前的版本，JDK 已经发生了很大变化，intern 字符串的缓存和静态变量曾经都被分配在永久代上，而永久代已经被元数据区取代。但是，intern 字符串缓存和静态变量并不是被转移到元数据区，而是直接在堆上分配，所以这一点同样符合前面一点的结论：对象实例都是分配在堆上。</li>
@@ -824,7 +824,7 @@ gitment.render('gitmentContainer')
   <div class="widget-box">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
     </div>
   </div>
 
@@ -834,7 +834,7 @@ gitment.render('gitmentContainer')
   <div class="widget-box">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.67px;">Git Bash</a> <a href="../../../../tags/Github/" style="font-size: 13.33px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/Hadoop/" style="font-size: 18.33px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/JVM/" style="font-size: 18.33px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 16.67px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 15px;">Linux</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.67px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="../../../../tags/SQL/" style="font-size: 13.33px;">SQL</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.67px;">Shell</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 10px;">WebSocket</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/hexo/" style="font-size: 11.67px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.67px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.67px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.67px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.67px;">竹云</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 13.33px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.67px;">Git Bash</a> <a href="../../../../tags/Github/" style="font-size: 13.33px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 11.67px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 18.33px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/JVM/" style="font-size: 18.33px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 16.67px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 15px;">Linux</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.67px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="../../../../tags/SQL/" style="font-size: 13.33px;">SQL</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.67px;">Shell</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 11.67px;">WebSocket</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/hexo/" style="font-size: 11.67px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.67px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.67px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.67px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.67px;">竹云</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 13.33px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
     </div>
   </div>
 
@@ -843,7 +843,7 @@ gitment.render('gitmentContainer')
   <div class="widget-box">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/12/">十二月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
     </div>
   </div>
 
@@ -859,10 +859,6 @@ gitment.render('gitmentContainer')
           </li>
         
           <li>
-            <a href="../../../../2023/02/09/SpringBoot%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E7%82%B9/">SpringBoot项目相关知识点</a>
-          </li>
-        
-          <li>
             <a href="../../../../2023/02/09/%E4%BD%9C%E4%B8%BA%E7%94%A8%E6%88%B7%EF%BC%8C%E4%BF%AE%E6%94%B9Cookie%E6%9C%89%E6%95%88%E6%9C%9F%EF%BC%8C%E5%BB%B6%E9%95%BFCookie%E6%9C%9F%E9%99%90/">作为用户，修改Cookie有效期，延长Cookie期限</a>
           </li>
         
@@ -872,6 +868,10 @@ gitment.render('gitmentContainer')
         
           <li>
             <a href="../../../../2023/01/18/Windows%E7%B3%BB%E7%BB%9FC%E7%9B%98%E6%B8%85%E7%90%86%E5%B7%A5%E5%85%B7FreeMove%E5%8F%8A%E6%96%87%E4%BB%B6%E5%8D%A0%E7%94%A8%E8%BF%9B%E7%A8%8B%E6%9F%A5%E7%9C%8B%E8%BD%AF%E4%BB%B6LockHunter%E9%85%8D%E5%90%88%E4%BD%BF%E7%94%A8/">Windows系统C盘清理工具FreeMove及文件占用进程查看软件LockHunter配合使用</a>
+          </li>
+        
+          <li>
+            <a href="../../../../2023/01/14/AutoReconnectWiFi/">检测断网自动重连WiFi脚本</a>
           </li>
         
       </ul>
@@ -901,7 +901,7 @@ gitment.render('gitmentContainer')
       </div>
       <footer id="footer">
   <div class="foot-box global-width center">
-    &copy; 2023 许嵩老公 &nbsp;&nbsp;
+    &copy; 2025 许嵩老公 &nbsp;&nbsp;
     Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
     &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
     <br>

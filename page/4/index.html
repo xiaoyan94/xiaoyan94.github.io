@@ -83,6 +83,240 @@
       <div id="middlecontent" title class="global-width sidebar-right">
         <section id="main">
   
+    <article id="post-JVM-06" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2020/08/08/JVM-06/">JVM 06 运行时数据区的总结与常见大厂面试题说明</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2020/08/08/JVM-06/" class="article-date">
+  <time datetime="2020-08-08T12:46:21.000Z" itemprop="datePublished">2020-08-08</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <p>常见面试题</p>
+        
+          <p class="article-more-link">
+            <a href="../../2020/08/08/JVM-06/#more">阅读全文</a>
+          </p>
+        
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-JVM-05" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2020/07/17/JVM-05/">JVM 05 运行时数据区之方法区 (MethodArea)</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2020/07/17/JVM-05/" class="article-date">
+  <time datetime="2020-07-17T06:36:32.000Z" itemprop="datePublished">2020-07-17</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <p>方法区概述</p>
+<ul>
+<li><a href="#1-%E6%A0%88%E5%92%8C%E5%A0%86%E5%92%8C%E6%96%B9%E6%B3%95%E5%8C%BA%E9%97%B4%E7%9A%84%E4%BA%A4%E4%BA%92%E5%85%B3%E7%B3%BB">1 栈和堆和方法区间的交互关系</a></li>
+<li><a href="#2-%E6%96%B9%E6%B3%95%E5%8C%BA%E7%9A%84%E7%90%86%E8%A7%A3">2 方法区的理解</a><ul>
+<li><a href="#%E6%96%B9%E6%B3%95%E5%8C%BA%E5%9C%A8%E5%93%AA%E9%87%8C">方法区在哪里</a></li>
+<li><a href="#HotSpot%E4%B8%AD%E6%96%B9%E6%B3%95%E5%8C%BA%E7%9A%84%E6%BC%94%E8%BF%9B">HotSpot中方法区的演进</a></li>
+</ul>
+</li>
+<li><a href="#3-%E8%AE%BE%E7%BD%AE%E6%96%B9%E6%B3%95%E5%8C%BA%E5%A4%A7%E5%B0%8F%E4%B8%8EOOM">3 设置方法区大小与OOM</a></li>
+<li><a href="#4-%E6%96%B9%E6%B3%95%E5%8C%BA%E7%9A%84%E5%86%85%E9%83%A8%E7%BB%93%E6%9E%84">4 方法区的内部结构</a><ul>
+<li><a href="#%E6%96%B9%E6%B3%95%E5%8C%BA-Method-Area-%E5%AD%98%E5%82%A8%E4%BB%80%E4%B9%88">方法区 (Method Area) 存储什么</a><ul>
+<li><a href="#%E7%B1%BB%E5%9E%8B%E4%BF%A1%E6%81%AF">类型信息</a></li>
+<li><a href="#%E5%9F%9F-Field-%E4%BF%A1%E6%81%AF">域 (Field) 信息</a></li>
+<li><a href="#%E6%96%B9%E6%B3%95-Method-%E4%BF%A1%E6%81%AF">方法 (Method) 信息</a></li>
+<li><a href="#%E5%AD%97%E8%8A%82%E7%A0%81%E8%A7%92%E5%BA%A6%E4%B8%BE%E4%BE%8B%E6%9F%A5%E7%9C%8B">字节码角度举例查看</a></li>
+</ul>
+</li>
+<li><a href="#non-final-%E7%9A%84%E7%B1%BB%E5%8F%98%E9%87%8F">non-final 的类变量</a></li>
+<li><a href="#%E8%A1%A5%E5%85%85%E8%AF%B4%E6%98%8E%E5%85%A8%E5%B1%80%E5%B8%B8%E9%87%8Ffinal-static">补充说明：全局常量：<code>final static</code></a></li>
+<li><a href="#class-%E6%96%87%E4%BB%B6%E4%B8%AD%E5%B8%B8%E9%87%8F%E6%B1%A0%E7%9A%84%E7%90%86%E8%A7%A3">class 文件中常量池的理解</a><ul>
+<li><a href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0-VS-%E5%B8%B8%E9%87%8F%E6%B1%A0">运行时常量池 VS 常量池</a></li>
+<li><a href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E5%B8%B8%E9%87%8F%E6%B1%A0">为什么需要常量池</a></li>
+<li><a href="#%E5%B8%B8%E9%87%8F%E6%B1%A0%E4%B8%AD%E6%9C%89%E4%BB%80%E4%B9%88">常量池中有什么</a></li>
+<li><a href="#%E5%B0%8F%E7%BB%93">小结</a></li>
+</ul>
+</li>
+<li><a href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0%E7%9A%84%E7%90%86%E8%A7%A3">运行时常量池的理解</a><ul>
+<li><a href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0">运行时常量池</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#5-%E6%96%B9%E6%B3%95%E5%8C%BA%E4%BD%BF%E7%94%A8%E4%B8%BE%E4%BE%8B">5 方法区使用举例</a></li>
+<li><a href="#6-%E6%96%B9%E6%B3%95%E5%8C%BA%E7%9A%84%E6%BC%94%E8%BF%9B%E7%BB%86%E8%8A%82">6 方法区的演进细节</a><ul>
+<li><a href="#%E6%B0%B8%E4%B9%85%E4%BB%A3%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E8%A2%AB%E5%85%83%E7%A9%BA%E9%97%B4%E6%9B%BF%E6%8D%A2">永久代为什么要被元空间替换</a></li>
+<li><a href="#StringTable%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E8%B0%83%E6%95%B4%E4%BD%8D%E7%BD%AE">StringTable为什么要调整位置</a></li>
+<li><a href="#%E5%A6%82%E4%BD%95%E8%AF%81%E6%98%8E%E9%9D%99%E6%80%81%E5%8F%98%E9%87%8F%E5%AD%98%E5%9C%A8%E5%93%AA">如何证明静态变量存在哪</a></li>
+</ul>
+</li>
+<li><a href="#7-%E6%96%B9%E6%B3%95%E5%8C%BA%E7%9A%84%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6">7 方法区的垃圾回收</a></li>
+<li><a href="#8-%E6%80%BB%E7%BB%93">8 总结</a></li>
+</ul>
+        
+          <p class="article-more-link">
+            <a href="../../2020/07/17/JVM-05/#more">阅读全文</a>
+          </p>
+        
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-JVM-04" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2020/07/11/JVM-04/">JVM 04 运行时数据区之堆 (Heap)</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2020/07/11/JVM-04/" class="article-date">
+  <time datetime="2020-07-11T09:02:59.000Z" itemprop="datePublished">2020-07-11</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <h2 id="1-堆的核心概述"><a href="#1-堆的核心概述" class="headerlink" title="1 堆的核心概述"></a>1 堆的核心概述</h2><ul>
+<li>● 一个 JVM 实例只存在一个堆内存，堆也是 Java 内存管理的核心区域。</li>
+<li>● Java 堆区在 JVM 启动的时候即被创建，其空间大小也就确定了。是 JVM 管理的最大一块内存空间。<ul>
+<li>➢ 堆内存的大小是可以调节的。</li>
+</ul>
+</li>
+<li>● 《Java 虚拟机规范》规定，堆可以处于物理上不连续的内存空间中，但在逻辑上它应该被视为连续的。</li>
+<li>● 所有的线程共享 Java 堆，在这里还可以划分线程私有的缓冲区 (ThreadLocal Allocation Buffer， TLAB)</li>
+</ul>
+<p>一个 JVM 实例对应一个进程，方法区和堆是一个进程一份，而程序计数器、本地方法栈、虚拟机栈是一个线程对应一份，一个进程中的所有线程共享方法区和堆（并不是完整的堆都一定是共享的，比如 TLAB）。</p>
+        
+          <p class="article-more-link">
+            <a href="../../2020/07/11/JVM-04/#more">阅读全文</a>
+          </p>
+        
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-JVM-03" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2020/07/05/JVM-03/">JVM 03 运行时数据区之虚拟机栈 (Stack)</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2020/07/05/JVM-03/" class="article-date">
+  <time datetime="2020-07-05T08:06:02.000Z" itemprop="datePublished">2020-07-05</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <ul>
+<li>1 虚拟机栈概述</li>
+<li>2 栈的存储单位</li>
+<li>3 局部变量表</li>
+<li>4 操作数栈</li>
+<li>5 代码追踪</li>
+<li>6 栈顶缓存技术</li>
+<li>7 动态链接</li>
+<li>8 方法的调用:解析与分派</li>
+<li>9 方法返回地址</li>
+<li>10 一些附加信息</li>
+<li>11 栈的相关面试题</li>
+</ul>
+        
+          <p class="article-more-link">
+            <a href="../../2020/07/05/JVM-03/#more">阅读全文</a>
+          </p>
+        
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
     <article id="post-JVM-02" class="article global-container article-type-post" itemscope itemprop="blogPost">
   
     <header class="article-header">
@@ -258,12 +492,12 @@
 <p>在NameNode节点的服务器上执行<code>netstat -nltp | grep LISTEN</code>命令之后发现几个重要端口如8088、8042等服务监听都正常，试着手动将浏览器url地址中的localhost改成服务器的公网ip地址，发现是能够打开Logs和Job History等页面的。所以推测是在生成jobtracker url的时候将hostname设置成了localhost。</p>
 <p>解决步骤： 在修改了<code>$HADOOP_HOME/etc/hadoop/mapred-site.xml</code> 和 <code>$HADOOP_HOME/etc/hadoop/yarn-site.xml</code> 两个配置文件中的几处address hostname为服务器的公网ip或者域名之后就正常了。<em>注意：不能填0.0.0.0！</em></p>
 <ul>
-<li>$HADOOP_HOME/etc/hadoop/mapred-site.xml</li>
+<li>$HADOOP_HOME&#x2F;etc&#x2F;hadoop&#x2F;mapred-site.xml</li>
 </ul>
 <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>mapreduce.framework.name<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>yarn<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">name</span>&gt;</span>mapreduce.jobhistory.address<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">value</span>&gt;</span>23.105.206.170:10020<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">name</span>&gt;</span>mapreduce.jobhistory.webapp.address<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">value</span>&gt;</span>23.105.206.170:19888<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">name</span>&gt;</span>mapreduce.jobhistory.done-dir<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">value</span>&gt;</span>/history/done<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">name</span>&gt;</span>mapreduce.jobhistory.intermediate-done-dir<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">value</span>&gt;</span>/history/done_intermediate<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">name</span>&gt;</span>mapreduce.jobtracker.address<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">value</span>&gt;</span>23.105.206.170<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
 
 <ul>
-<li>$HADOOP_HOME/etc/hadoop/yarn-site.xml</li>
+<li>$HADOOP_HOME&#x2F;etc&#x2F;hadoop&#x2F;yarn-site.xml</li>
 </ul>
 <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.nodemanager.aux-services<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>mapreduce_shuffle<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!--开启日志聚合--&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.log-aggregation-enable<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>true<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">source</span>&gt;</span>yarn-default.xml<span class="tag">&lt;/<span class="name">source</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"><span class="comment">&lt;!-- Site specific YARN configuration properties --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.nodemanager.bind-host<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>23.105.206.170<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.nodemanager.hostname<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>23.105.206.170<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.resourcemanager.webapp.address<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>23.105.206.170:8088<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
 
@@ -326,9 +560,7 @@
 </blockquote>
 </li>
 <li><p>解决方法：在 <code>pom.xml</code>文件中指定Maven编译所使用的JDK版本：</p>
- <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">project</span> <span class="attr">xmlns</span>=<span class="string">"http://maven.apache.org/POM/4.0.0"</span> <span class="attr">xmlns:xsi</span>=<span class="string">"http://www.w3.org/2001/XMLSchema-instance"</span> <span class="attr">xsi:schemaLocation</span>=<span class="string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">modelVersion</span>&gt;</span>4.0.0<span class="tag">&lt;/<span class="name">modelVersion</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.kumkee<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>UserAgentParser<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">version</span>&gt;</span>0.0.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">name</span>&gt;</span>User Agent Parser<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">             <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">             <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">             <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.8.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">             <span class="tag">&lt;<span class="name">scope</span>&gt;</span>test<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"><span class="comment">&lt;!-- 指定编译器版本和字符编码 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">project.build.sourceEncoding</span>&gt;</span>UTF-8<span class="tag">&lt;/<span class="name">project.build.sourceEncoding</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">maven.compiler.encoding</span>&gt;</span>UTF-8<span class="tag">&lt;/<span class="name">maven.compiler.encoding</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">java.version</span>&gt;</span>13<span class="tag">&lt;/<span class="name">java.version</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">maven.compiler.source</span>&gt;</span>13<span class="tag">&lt;/<span class="name">maven.compiler.source</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">maven.compiler.target</span>&gt;</span>13<span class="tag">&lt;/<span class="name">maven.compiler.target</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">project</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
-
-</li>
+ <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">project</span> <span class="attr">xmlns</span>=<span class="string">"http://maven.apache.org/POM/4.0.0"</span> <span class="attr">xmlns:xsi</span>=<span class="string">"http://www.w3.org/2001/XMLSchema-instance"</span> <span class="attr">xsi:schemaLocation</span>=<span class="string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">modelVersion</span>&gt;</span>4.0.0<span class="tag">&lt;/<span class="name">modelVersion</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.kumkee<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>UserAgentParser<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">version</span>&gt;</span>0.0.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">name</span>&gt;</span>User Agent Parser<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">             <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">             <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>junit<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">             <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.8.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">             <span class="tag">&lt;<span class="name">scope</span>&gt;</span>test<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"><span class="comment">&lt;!-- 指定编译器版本和字符编码 --&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">properties</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">project.build.sourceEncoding</span>&gt;</span>UTF-8<span class="tag">&lt;/<span class="name">project.build.sourceEncoding</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">maven.compiler.encoding</span>&gt;</span>UTF-8<span class="tag">&lt;/<span class="name">maven.compiler.encoding</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">java.version</span>&gt;</span>13<span class="tag">&lt;/<span class="name">java.version</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">maven.compiler.source</span>&gt;</span>13<span class="tag">&lt;/<span class="name">maven.compiler.source</span>&gt;</span></span><br><span class="line">     <span class="tag">&lt;<span class="name">maven.compiler.target</span>&gt;</span>13<span class="tag">&lt;/<span class="name">maven.compiler.target</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">properties</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">project</span>&gt;</span></span><br></pre></td></tr></table></figure></div></li>
 </ul>
 <p><a href="https://github.com/LeeKemp/UserAgentParser" target="_blank" rel="noopener">https://github.com/LeeKemp/UserAgentParser</a><br>通过<code>git clone</code>或者浏览器下载到本地后，使用命令行进入到其主目录下，然后通过maven命令对其进行打包并安装到本地仓库里：</p>
 <p><code>mvn clean package -DskipTest</code></p>
@@ -388,230 +620,11 @@
 </article>
 
   
-    <article id="post-MapReduce-Payload-core-of-the-job" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/06/27/MapReduce-Payload-core-of-the-job/">MapReduce用户接口Mapper、Reducer——job的核心</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/06/27/MapReduce-Payload-core-of-the-job/" class="article-date">
-  <time datetime="2020-06-27T12:40:01.000Z" itemprop="datePublished">2020-06-27</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        
-        <h2 id="作业的核心"><a href="#作业的核心" class="headerlink" title="作业的核心"></a>作业的核心</h2><p>应用程序通常实现<code>Mapper</code>和<code>Reducer</code>接口以提供<code>map</code>和<code>reduce</code>方法。 这些构成了<code>job</code>（作业）的核心。</p>
-<h3 id="Mapper"><a href="#Mapper" class="headerlink" title="Mapper"></a><code>Mapper</code></h3><p><code>Mapper</code>将输入的键/值对<code>key/value</code>映射为一组中间键/值对<code>key/value</code>。映射是将输入记录转换为中间记录的单个任务。 转换后的中间记录不必与输入记录具有相同的类型。 给定的输入对可能映射为零或许多输出对。</p>
-<p>Hadoop MapReduce框架为每个InputSplit生成一个map任务。InputSplit是由InputFormat生成的。</p>
-<p>总体而言，<code>Mapper</code> 的实现类要传递给 <code>Job</code> 使用，须调用 <code>Job.setMapperClass(Class)</code> 方法设置job的map函数；然后，MP框架为该任务的 <code>InputSplit</code> 中的每个键/值对调用<code>map(WritableComparable,Writable,Context)</code>方法。 然后，应用程序可以重写<code>cleanup(Context)</code>方法来执行任何必需的清理。</p>
-<p><code>map函数</code>的输出对的类型不一定要与输入对的类型一样。 给定的输入对可能 map 映射为零或许多个输出对。 通过调用 <code>context.write(WritableComparable, Writable)</code> 方法来收集输出对。</p>
-<p><code>Application应用程序</code>可以使用<code>Counter</code>来报告它的统计信息。</p>
-<p>与给定输出键 <code>key</code> 相关联的所有中间值 <code>values</code> 随后被MR框架分组，然后传递给 <code>Reducer</code> 以得到最终输出。用户可以通过 <code>Job.setGroupingCompatorClass(Class)</code> 方法指定一个 <code>Comparator</code> 来控制分组。</p>
-<p>对<code>Mapper</code>的输出进行排序，然后按每个<code>Reducer</code>进行划分（<code>partition</code>）。分区(<code>partitions</code>) 的总数与作业（<code>job</code>）的<code>reduce</code>任务数相同。</p>
-<p>用户可以通过实现自定义的 <code>Partitioner</code> 类来控制哪些键 <code>key</code> (以及记录 <code>records</code> )进入哪个<code>Reducer</code>进行处理。</p>
-<p>用户还可以通过 <code>Job.setCombinerClass(Class)</code> 方法指定一个 <code>Combiner</code> ，以在本地执行中间输出的聚合（local aggregation）操作，这样可以减少<code>Mapper</code>到<code>Reducer</code>之间的数据传输量。实际上就是在<code>map</code>操作之后，在本地再执行一次 <code>reduce</code>操作，可以参考前面写的<code>PartitionApp</code>类的代码。</p>
-<p>The intermediate, sorted outputs are always stored in a simple (key-len, key, value-len, value) format. Applications can control if, and how, the intermediate outputs are to be compressed and the <a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/api/org/apache/hadoop/io/compress/CompressionCodec.html" target="_blank" rel="noopener"><code>CompressionCodec</code></a> to be used via the <code>Configuration</code>.</p>
-<blockquote>
-<p>原文是这样，这句话不是很理解。</p>
-</blockquote>
-<h4 id="多少个-Map"><a href="#多少个-Map" class="headerlink" title="多少个 Map"></a>多少个 <code>Map</code></h4><p><code>map</code> 的数量通常由输入的总大小（即输入文件的块总数 <code>the total number of blocks of the input files</code>）决定。</p>
-<p><code>map</code> 的正确并行度似乎是每个节点大约10-100个 <code>map</code> ，尽管已经为 <code>very cpu-light map</code>（<em>CPU非常轻的任务</em>）任务设置了300个<code>map</code>。 因为任务的设置需要一段时间，所以执行<code>map</code>的时间最好满足至少一分钟。</p>
-<p>因此，如果您期望的输入数据大小为10TB，块大小为128MB，那么最终将获得82,000个映射<code>map</code>, （<code>10 * 1024 * 1024 ÷ 128 = 81920</code>），除非使用 <code>Configuration.set(MRJobConfig.NUM_MAPS, int)</code>(它只给框架提供了一个提示 <code>hint</code>)将其设置得更高。</p>
-<h3 id="Reducer"><a href="#Reducer" class="headerlink" title="Reducer"></a><code>Reducer</code></h3><p><a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/api/org/apache/hadoop/mapreduce/Reducer.html" target="_blank" rel="noopener"><code>Reducer</code></a> 将同一个 <code>key</code> 对应的一组中间值的集合归约为一个更小的<code>values</code>的集合。</p>
-<p>用户通过 <code>Job.setNumReduceTasks(int)</code> 方法设置作业的 <code>reduce</code>的数量。</p>
-<p>相似地，<code>Reducer</code> 的实现类要传递给 <code>Job</code> 使用，须调用 <code>Job.setReducerClass(Class)</code> 方法设置job的<code>reduce</code>函数；然后，MP框架为分组输入（grouped inputs）中的每个键/值对调用<code>reduce(WritableComparable, Iterable&lt;Writable&gt;, Context)</code>方法。 然后，应用程序可以重写<code>cleanup(Context)</code>方法来执行任何必需的清理。</p>
-<p><code>Reducer</code> 主要有三个主要阶段：<code>shuffle</code>, <code>sort</code> 和 <code>reduce</code>。</p>
-<h4 id="Shuffle"><a href="#Shuffle" class="headerlink" title="Shuffle"></a><code>Shuffle</code></h4><p><code>Reducer</code> 的输入是 <code>Mapper</code> 的排序输出。在这个阶段，MP框架通过HTTP获取所有<code>mapper</code>输出的相关的分区（relevant partition）。</p>
-<h4 id="Sort"><a href="#Sort" class="headerlink" title="Sort"></a><code>Sort</code></h4><p>在此阶段，框架按键 <code>key</code>对Reducer的输入进行分组(因为不同的<code>mapper</code>可能输出相同的键<code>key</code>)。<code>shuffle</code>和<code>sort</code>阶段同时发生；当获取mapper的输出时，它们被合并。</p>
-<h4 id="Secondary-Sort"><a href="#Secondary-Sort" class="headerlink" title="Secondary Sort"></a><code>Secondary Sort</code></h4><p>如果 <em>将中间键分组的等价规则</em> 与 <em>归约前的键分组的等价规则</em> 需要不同，则可以通过 <code>Job.setSortCompatorClass(Class)</code> 指定一个 <code>Comparator</code>。由于 <code>Job.setGroupingComparatorClass(Class)</code>能够用来控制中间键（intermediate keys）的分组方式，这些可以被结合起来以模拟对值<code>values</code>的二次排序 <code>secondary sort</code>。</p>
-<h4 id="Reduce"><a href="#Reduce" class="headerlink" title="Reduce"></a><code>Reduce</code></h4><p>在这个阶段对分组输入中的所有<code>&lt;key, (list of values)&gt; pair</code>调用 <code>reduce(WritableComparable, Iterable&lt;Writable&gt;, Context)</code>方法。</p>
-<p><code>reduce</code>任务的输出通常通过 <code>Context.write(WritableComparable,Writable)</code>写入HDFS文件系统（<a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/api/org/apache/hadoop/fs/FileSystem.html" target="_blank" rel="noopener"><code>FileSystem</code></a>）。</p>
-<p>和<code>Map</code>一样，<code>Applications</code>可以使用<code>Counter</code>来报告它的统计信息。</p>
-<p><code>Reducer</code>的输出是没有经过排序的。</p>
-<h4 id="多少个-Reduce"><a href="#多少个-Reduce" class="headerlink" title="多少个 Reduce"></a>多少个 <code>Reduce</code></h4><p>正确的 <code>reduce</code> 数似乎是 <code>0.95或1.75乘以(&lt;no.of nodes&gt; * &lt;no.of maximum containers per node&gt;)</code> 。</p>
-<p>对于0.95，所有的<code>reduce</code>都可以立即启动，并在<code>map</code>完成时开始传输<code>map</code>输出。对于1.75，速度更快的节点将完成他们的第一轮<code>reduce</code>，并启动第二轮<code>reduce</code>，在负载均衡方面做得更好。</p>
-<p>增加<code>reduce</code>的数量，会增加框架的开销，但是也增加了负载均衡和降低了故障成本。</p>
-<p>上面的缩放因子（如0.95,1.95）略小于整数 ( <a href="https://www.mathsisfun.com/whole-numbers.html" target="_blank" rel="noopener"><code>whole numbers</code></a> )，以便在框架中为推测性任务和失败任务保留少部分的<code>reduce</code>插槽（<em>reduce slots</em>）。</p>
-<h4 id="Reducer-NONE"><a href="#Reducer-NONE" class="headerlink" title="Reducer NONE"></a>Reducer NONE</h4><p>如果不需要归约是可以将reduce tasks的数量设置为0的。</p>
-<p>在这种情况下，map tasks的输出将直接写到FileSystem，输出的路径是通过 <code>FileOutputFormat.setOutputPath(Job, Path)</code>方法设置的路径。框架不会在将map的输出写到FileSystem之前对它们进行排序。</p>
-<h3 id="Partitioner"><a href="#Partitioner" class="headerlink" title="Partitioner"></a><code>Partitioner</code></h3><p><code>Partitioner</code>对<code>key</code>空间进行划分。</p>
-<p><code>Partitioner</code>控制map的中间输出的keys的划分。key或key的子集通常通过hash散列函数得到划分分区（partitions）。partitions的总数与<code>reduce</code>任务数相同。因此，这控制了中间<code>key</code>(以及记录<code>record</code>)被发送到m个reduce任务中哪一个reduce任务进行归约操作。</p>
-<p><a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/api/org/apache/hadoop/mapreduce/lib/partition/HashPartitioner.html" target="_blank" rel="noopener"><code>HashPertitioner</code></a>是默认的<code>Partitioner</code>。</p>
-<h3 id="Counter"><a href="#Counter" class="headerlink" title="Counter"></a><code>Counter</code></h3><p><a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/api/org/apache/hadoop/mapreduce/Counter.html" target="_blank" rel="noopener"><code>Counter</code></a>是MapReduce应用程序报告其统计信息的工具。<code>Mapper</code>和<code>Reducer</code>的实现类可以使用<code>Counter</code>报告统计信息。</p>
-<p>Hadoop Mapreduce提供了一个library，<a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/api/org/apache/hadoop/mapreduce/package-summary.html" target="_blank" rel="noopener"><code>org.apache.hadoop.mapreduce</code></a>包含有用的 mappers, reducers, partitioners。</p>
-
-          
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
-    <article id="post-Java-import-static" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/06/27/Java-import-static/">Java中的静态导入import static（导入类的静态成员）</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/06/27/Java-import-static/" class="article-date">
-  <time datetime="2020-06-27T07:27:22.000Z" itemprop="datePublished">2020-06-27</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <h2 id="import-static-是什么"><a href="#import-static-是什么" class="headerlink" title="import static 是什么"></a>import static 是什么</h2><p><code>import static</code>是静态导入的声明。静态导入声明 <code>import static</code> 类似于普通导入声明 <code>import</code> 。 普通的导入声明从包中导入类，从而允许在没有包限定的情况下使用类，而静态导入声明从类中导入静态成员，从而允许在没有类限定的情况下使用静态成员。</p>
-<p>使用<code>import static</code>用法，可以导入<code>class</code>中的静态成员。</p>
-        
-          <p class="article-more-link">
-            <a href="../../2020/06/27/Java-import-static/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
-    <article id="post-First-MapReduce-example-WordCount" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/06/26/First-MapReduce-example-WordCount/">Hadoop入门案例（一）: WordCount</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/06/26/First-MapReduce-example-WordCount/" class="article-date">
-  <time datetime="2020-06-26T09:01:36.000Z" itemprop="datePublished">2020-06-26</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <h2 id="MapReduce作业的输入与输出"><a href="#MapReduce作业的输入与输出" class="headerlink" title="MapReduce作业的输入与输出"></a>MapReduce作业的输入与输出</h2><p>MapRecude计算框架是在键值对&lt;key, value&gt;上进行操作的。MapReduce计算框架将作业的输入视为一组&lt;key，value&gt;对，并生成一组&lt;key, value&gt;对作为其输出，可能是不同类型的。&lt;key, value&gt;中：</p>
-<ul>
-<li>key和value的类都要由框架实现序列化，所以都需要实现<code>org.apache.hadoop.io.Writable</code>接口；</li>
-<li>除此之外key的类还需要实现<code>org.apache.hadoop.io.WritableComparable</code>接口，因为在map操作之后还需要对key进行排序操作。</li>
-</ul>
-<p>MapReduce作业的输入和输出类型：</p>
-<blockquote>
-<p>(input) &lt;k1, v1&gt; -&gt; <strong>map</strong> -&gt; &lt;k2, v2&gt; -&gt; <strong>combine</strong> -&gt; &lt;k2, v2&gt; -&gt; <strong>reduce</strong> -&gt; &lt;k3, v3&gt; (output)</p>
-</blockquote>
-        
-          <p class="article-more-link">
-            <a href="../../2020/06/26/First-MapReduce-example-WordCount/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
-    <article id="post-Linux-macOS-Shell终端快捷键" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/06/25/Linux-macOS-Shell%E7%BB%88%E7%AB%AF%E5%BF%AB%E6%8D%B7%E9%94%AE/">Linux/macOS Shell终端快捷键</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/06/25/Linux-macOS-Shell%E7%BB%88%E7%AB%AF%E5%BF%AB%E6%8D%B7%E9%94%AE/" class="article-date">
-  <time datetime="2020-06-25T02:59:14.000Z" itemprop="datePublished">2020-06-25</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Linux/" rel="tag">Linux</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/macOS/" rel="tag">macOS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <p>1。有时候调用历史命令，都是很长的那种，然后发现并不是自己想要的，需要重新输入，如何快速删除已有/已输入的命令/内容？</p>
-<p>Ctrl + C</p>
-<p>2。Linux/moacOS 终端命令行输入的常用快捷键。</p>
-        
-          <p class="article-more-link">
-            <a href="../../2020/06/25/Linux-macOS-Shell%E7%BB%88%E7%AB%AF%E5%BF%AB%E6%8D%B7%E9%94%AE/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
 
 
   <nav id="page-nav">
     <!--  -->
-    <a class="extend prev" rel="prev" href="../3/">&lt;&lt; 上一页</a><a class="page-number" href="../../">1</a><a class="page-number" href="../2/">2</a><a class="page-number" href="../3/">3</a><span class="page-number current">4</span><a class="page-number" href="../5/">5</a><a class="extend next" rel="next" href="../5/">下一页 &gt;&gt;</a>
+    <a class="extend prev" rel="prev" href="../3/">&lt;&lt; 上一页</a><a class="page-number" href="../../">1</a><a class="page-number" href="../2/">2</a><a class="page-number" href="../3/">3</a><span class="page-number current">4</span><a class="page-number" href="../5/">5</a><a class="page-number" href="../6/">6</a><a class="extend next" rel="next" href="../5/">下一页 &gt;&gt;</a>
   </nav>
 
 
@@ -641,7 +654,7 @@
   <div class="widget-box">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
     </div>
   </div>
 
@@ -651,7 +664,7 @@
   <div class="widget-box">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../tags/Git-Bash/" style="font-size: 11.67px;">Git Bash</a> <a href="../../tags/Github/" style="font-size: 13.33px;">Github</a> <a href="../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../tags/Hadoop/" style="font-size: 18.33px;">Hadoop</a> <a href="../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../tags/JVM/" style="font-size: 18.33px;">JVM</a> <a href="../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../tags/JavaScript/" style="font-size: 16.67px;">JavaScript</a> <a href="../../tags/Linux/" style="font-size: 15px;">Linux</a> <a href="../../tags/MapReduce/" style="font-size: 11.67px;">MapReduce</a> <a href="../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="../../tags/SQL/" style="font-size: 13.33px;">SQL</a> <a href="../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../tags/Shell/" style="font-size: 11.67px;">Shell</a> <a href="../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../tags/WebSocket/" style="font-size: 10px;">WebSocket</a> <a href="../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../tags/hexo/" style="font-size: 11.67px;">hexo</a> <a href="../../tags/macOS/" style="font-size: 11.67px;">macOS</a> <a href="../../tags/ssh/" style="font-size: 11.67px;">ssh</a> <a href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.67px;">电脑</a> <a href="../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.67px;">竹云</a> <a href="../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 13.33px;">终端</a> <a href="../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
+      <a href="../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../tags/Git-Bash/" style="font-size: 11.67px;">Git Bash</a> <a href="../../tags/Github/" style="font-size: 13.33px;">Github</a> <a href="../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../tags/HTTP/" style="font-size: 11.67px;">HTTP</a> <a href="../../tags/Hadoop/" style="font-size: 18.33px;">Hadoop</a> <a href="../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../tags/JVM/" style="font-size: 18.33px;">JVM</a> <a href="../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../tags/JavaScript/" style="font-size: 16.67px;">JavaScript</a> <a href="../../tags/Linux/" style="font-size: 15px;">Linux</a> <a href="../../tags/MapReduce/" style="font-size: 11.67px;">MapReduce</a> <a href="../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="../../tags/SQL/" style="font-size: 13.33px;">SQL</a> <a href="../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../tags/Shell/" style="font-size: 11.67px;">Shell</a> <a href="../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../tags/WebSocket/" style="font-size: 11.67px;">WebSocket</a> <a href="../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../tags/hexo/" style="font-size: 11.67px;">hexo</a> <a href="../../tags/macOS/" style="font-size: 11.67px;">macOS</a> <a href="../../tags/ssh/" style="font-size: 11.67px;">ssh</a> <a href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.67px;">电脑</a> <a href="../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.67px;">竹云</a> <a href="../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 13.33px;">终端</a> <a href="../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
     </div>
   </div>
 
@@ -660,7 +673,7 @@
   <div class="widget-box">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/12/">十二月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/06/">六月 2020</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/06/">六月 2020</a></li></ul>
     </div>
   </div>
 
@@ -676,10 +689,6 @@
           </li>
         
           <li>
-            <a href="../../2023/02/09/SpringBoot%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E7%82%B9/">SpringBoot项目相关知识点</a>
-          </li>
-        
-          <li>
             <a href="../../2023/02/09/%E4%BD%9C%E4%B8%BA%E7%94%A8%E6%88%B7%EF%BC%8C%E4%BF%AE%E6%94%B9Cookie%E6%9C%89%E6%95%88%E6%9C%9F%EF%BC%8C%E5%BB%B6%E9%95%BFCookie%E6%9C%9F%E9%99%90/">作为用户，修改Cookie有效期，延长Cookie期限</a>
           </li>
         
@@ -689,6 +698,10 @@
         
           <li>
             <a href="../../2023/01/18/Windows%E7%B3%BB%E7%BB%9FC%E7%9B%98%E6%B8%85%E7%90%86%E5%B7%A5%E5%85%B7FreeMove%E5%8F%8A%E6%96%87%E4%BB%B6%E5%8D%A0%E7%94%A8%E8%BF%9B%E7%A8%8B%E6%9F%A5%E7%9C%8B%E8%BD%AF%E4%BB%B6LockHunter%E9%85%8D%E5%90%88%E4%BD%BF%E7%94%A8/">Windows系统C盘清理工具FreeMove及文件占用进程查看软件LockHunter配合使用</a>
+          </li>
+        
+          <li>
+            <a href="../../2023/01/14/AutoReconnectWiFi/">检测断网自动重连WiFi脚本</a>
           </li>
         
       </ul>
@@ -718,7 +731,7 @@
       </div>
       <footer id="footer">
   <div class="foot-box global-width center">
-    &copy; 2023 许嵩老公 &nbsp;&nbsp;
+    &copy; 2025 许嵩老公 &nbsp;&nbsp;
     Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
     &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
     <br>

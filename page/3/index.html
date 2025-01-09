@@ -83,25 +83,137 @@
       <div id="middlecontent" title class="global-width sidebar-right">
         <section id="main">
   
-    <article id="post-mermaid测试" class="article global-container article-type-post" itemscope itemprop="blogPost">
+    <article id="post-Vue-js学习笔记" class="article global-container article-type-post" itemscope itemprop="blogPost">
   
     <header class="article-header">
       
   
     <h1 itemprop="name">
-      <a class="article-title" href="../../2022/08/18/mermaid%E6%B5%8B%E8%AF%95/">mermaid测试</a>
+      <a class="article-title" href="../../2021/12/05/Vue-js%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">Vue.js学习笔记</a>
     </h1>
   
 
     </header>
   
   <div class="article-meta">
-    <a href="../../2022/08/18/mermaid%E6%B5%8B%E8%AF%95/" class="article-date">
-  <time datetime="2022-08-18T00:42:25.000Z" itemprop="datePublished">2022-08-18</time>
+    <a href="../../2021/12/05/Vue-js%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="article-date">
+  <time datetime="2021-12-05T13:11:33.000Z" itemprop="datePublished">2021-12-05</time>
 </a>
     
     
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Markdown/" rel="tag">Markdown</a></li></ul>
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Hexo/" rel="tag">Hexo</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Node/" rel="tag">Node</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Vue/" rel="tag">Vue</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <h2 id="nvm"><a href="#nvm" class="headerlink" title="nvm"></a>nvm</h2><h3 id="windows环境安装nvm"><a href="#windows环境安装nvm" class="headerlink" title="windows环境安装nvm"></a>windows环境安装nvm</h3><p>安装 <a href="https://github.com/coreybutler/nvm-windows/releases" target="_blank" rel="noopener">nvm-setup.exe</a></p>
+<p><em>安装路径不能包含空格</em>。</p>
+<ol>
+<li>NVM安装路径设置为 <strong><code>D:\nvm</code></strong></li>
+<li>Node.js Symlink路径设置为 <strong><code>D:\nvm\node.js</code></strong></li>
+</ol>
+<p>安装nvm前不必卸载之前已安装的node.js环境，安装nvm时会提示“是否允许nvm控制已安装的node.js版本？”，点同意即可。nvm会自动把已安装的Node.js文件夹移动到设置好的Node.js Symlink路径，即 <code>**D:\nvm\node.js**</code>。</p>
+<p><img src="/2021/12/05/Vue-js%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/nvm%E5%AE%89%E8%A3%85%E6%96%87%E4%BB%B6%E5%A4%B9.png" alt="nvm安装文件夹"></p>
+<h3 id="使用nvm解决nodejs版本不兼容造成的hexo警告信息"><a href="#使用nvm解决nodejs版本不兼容造成的hexo警告信息" class="headerlink" title="使用nvm解决nodejs版本不兼容造成的hexo警告信息"></a>使用nvm解决nodejs版本不兼容造成的hexo警告信息</h3><p><a href="https://hexo.io/docs/#Required-Node-js-version" target="_blank" rel="noopener">根据Hexo官网介绍，不同版本的Hexo依赖不同版本的Node.js</a></p>
+<p>If you are stuck with older Node.js, you can consider installing a past version of Hexo.</p>
+<p>Please note we do not provide bugfixes to past versions of Hexo.</p>
+<p>We highly recommend to always install the <a href="https://www.npmjs.com/package/hexo?activeTab=versions" target="_blank" rel="noopener">latest version</a> of Hexo and the <a href="https://hexo.io/docs/#Requirements" target="_blank" rel="noopener">recommended version</a> of Node.js, whenever possible.</p>
+<table>
+<thead>
+<tr>
+<th>Hexo version</th>
+<th>Minimum (Node.js version)</th>
+<th>Less than (Node.js version)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>6.2+</td>
+<td>12.13.0</td>
+<td>latest</td>
+</tr>
+<tr>
+<td>6.0+</td>
+<td>12.13.0</td>
+<td>18.5.0</td>
+</tr>
+<tr>
+<td>5.0+</td>
+<td>10.13.0</td>
+<td>12.0.0</td>
+</tr>
+<tr>
+<td>4.1 - 4.2</td>
+<td>8.10</td>
+<td>10.0.0</td>
+</tr>
+<tr>
+<td>4.0</td>
+<td>8.6</td>
+<td>8.10.0</td>
+</tr>
+<tr>
+<td>3.3 - 3.9</td>
+<td>6.9</td>
+<td>8.0.0</td>
+</tr>
+<tr>
+<td>3.2 - 3.3</td>
+<td>0.12</td>
+<td>unknown</td>
+</tr>
+<tr>
+<td>3.0 - 3.1</td>
+<td>0.10 or iojs</td>
+<td>unknown</td>
+</tr>
+<tr>
+<td>0.0.1 - 2.8</td>
+<td>0.10</td>
+<td>unknown</td>
+</tr>
+</tbody></table>
+<p>hexo在较高版本的node.js环境下运行时的警告：</p>
+<p><img src="/2021/12/05/Vue-js%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/2023-02-09-14-10-27.png" alt="hexo在较高版本的node.js环境下运行时的警告"></p>
+<p>使用nvm命令安装（<code>nvm install v12</code>）并使用<code>nvm use</code>命令切换node.js版本为v12，警告消失：</p>
+<p><img src="/2021/12/05/Vue-js%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/2023-02-09-14-11-09.png" alt="hexo在切换node.js版本后运行警告消失"></p>
+        
+          <p class="article-more-link">
+            <a href="../../2021/12/05/Vue-js%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/#more">阅读全文</a>
+          </p>
+        
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-ES6新语法中的Promise" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2021/02/28/ES6%E6%96%B0%E8%AF%AD%E6%B3%95%E4%B8%AD%E7%9A%84Promise/">ES6新语法中的Promise</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2021/02/28/ES6%E6%96%B0%E8%AF%AD%E6%B3%95%E4%B8%AD%E7%9A%84Promise/" class="article-date">
+  <time datetime="2021-02-28T11:16:00.000Z" itemprop="datePublished">2021-02-28</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/ES6/" rel="tag">ES6</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JavaScript/" rel="tag">JavaScript</a></li></ul>
 
   </div>
   
@@ -111,91 +223,62 @@
     <div class="article-content article-content-cloud" itemprop="articleBody">
       
         
-        <h2 id="mermaid-流程图"><a href="#mermaid-流程图" class="headerlink" title="mermaid 流程图"></a>mermaid 流程图</h2><p><img src="/2022/08/18/mermaid%E6%B5%8B%E8%AF%95/2022-08-18-10-05-35.png" alt="写法不同"></p>
-<h3 id="graph测试"><a href="#graph测试" class="headerlink" title="graph测试"></a>graph测试</h3><p>垂直流程图 <code>graph TD</code>：</p>
-<pre class="mermaid">graph TD;
-    好好摸鱼-->辞职;
-    好好摸鱼-->跑路;
-    跑路-->赚钱;
-    辞职-->赚钱;
-    跑路-->高薪;
-    辞职-->高薪;
-    赚钱-->人生巅峰;
-    高薪-->人生巅峰;        
-    人生巅峰-->好好摸鱼;</pre>
+        <h2 id="Promise"><a href="#Promise" class="headerlink" title="Promise"></a>Promise</h2><h3 id="1-Promise-的定义和使用"><a href="#1-Promise-的定义和使用" class="headerlink" title="1 Promise 的定义和使用"></a>1 Promise 的定义和使用</h3><p><strong>Promise</strong> 是 ES6 引入的异步编程的新解决方案，语法上 Promise 是一个构造函数，用来封装异步操作并可以获取其成功或失败的结果</p>
+<p>一个 Promise 必然处于以下几种状态之一</p>
+<ul>
+<li>待定 pending：初始状态，既没有被兑现，也没有被拒绝</li>
+<li>已兑现 fulfilled：意味着操作成功完成</li>
+<li>已拒绝 rejected：意味着操作失败</li>
+</ul>
+<p>Promise 的使用</p>
+<ul>
+<li>Promise 构造函数new Promise((resolve, reject) &#x3D;&gt; {})</li>
+<li>Promise.prototype.then()方法</li>
+<li>Promise.prototype.catch()方法</li>
+</ul>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> p = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="keyword">function</span> (<span class="params">resolve, reject</span>) </span>&#123;</span><br><span class="line">    <span class="comment">// 使用 setTimeout 模拟请求数据库数据操作</span></span><br><span class="line">    setTimeout(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">let</span> isRight = <span class="literal">true</span>; <span class="comment">// 这个异步请求数据库数据操作是否正确返回数据</span></span><br><span class="line">        <span class="keyword">if</span> (isRight) &#123;</span><br><span class="line">            <span class="keyword">let</span> data = <span class="string">'数据库中的数据'</span>;</span><br><span class="line">            resolve(data); <span class="comment">// 设置 Promise 对象的状态为操作成功</span></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">let</span> err = <span class="string">'数据读取失败！'</span></span><br><span class="line">            reject(err); <span class="comment">// 设置 Promise 对象的状态为操作失败</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;, <span class="number">1000</span>);</span><br><span class="line">&#125;);</span><br><span class="line">p.then(<span class="function"><span class="keyword">function</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(value);</span><br><span class="line">&#125;, <span class="function"><span class="keyword">function</span> (<span class="params">reason</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.error(reason);</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure></div>
 
-<p>水平流程图</p>
-<pre class="mermaid">graph LR;
-    A-->B;
-    A-->C;
-    B-->D;
-    C-->D;</pre>
+<h3 id="2-Promise-封装读取文件"><a href="#2-Promise-封装读取文件" class="headerlink" title="2 Promise 封装读取文件"></a>2 Promise 封装读取文件</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 使用 nodejs 的 fs 读取文件模块</span></span><br><span class="line"><span class="keyword">const</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> p = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="keyword">function</span> (<span class="params">resolve, reject</span>) </span>&#123;</span><br><span class="line">    fs.readFile(<span class="string">'./resources/为学.txt'</span>, (err, data) =&gt; &#123;</span><br><span class="line">        <span class="keyword">if</span> (err) reject(err); <span class="comment">// err 是一个异常对象</span></span><br><span class="line">        resolve(data);</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line">p.then(<span class="function"><span class="keyword">function</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(value.toString()); <span class="comment">// 转为字符串输出</span></span><br><span class="line">&#125;, <span class="function"><span class="keyword">function</span> (<span class="params">reason</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'读取失败!!'</span>);</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure></div>
 
-<pre class="mermaid">graph TD;
-    A-->B;
-    A-->C;
-    B-->D;
-    C-->D;</pre>
+<h3 id="3-Promise-封装-Ajax-请求"><a href="#3-Promise-封装-Ajax-请求" class="headerlink" title="3 Promise 封装 Ajax 请求"></a>3 Promise 封装 Ajax 请求</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> p = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">const</span> xhr = <span class="keyword">new</span> XMLHttpRequest();</span><br><span class="line">    xhr.open(<span class="string">'get'</span>, <span class="string">'https://api.apiopen.top/getJoke'</span>);</span><br><span class="line">    xhr.send();</span><br><span class="line">    xhr.onreadystatechange = <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (xhr.readyState === <span class="number">4</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (xhr.status &gt;= <span class="number">200</span> &amp;&amp; xhr.status &lt; <span class="number">300</span>) &#123;</span><br><span class="line">                resolve(xhr.response); <span class="comment">// 成功</span></span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                reject(xhr.status); <span class="comment">// 失败</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 指定回调</span></span><br><span class="line">p.then(<span class="function"><span class="keyword">function</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(value);</span><br><span class="line">&#125;, <span class="function"><span class="keyword">function</span> (<span class="params">reason</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.error(reason);</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure></div>
 
-<hr>
-<p>flowchart 测试</p>
-<pre class="mermaid">gantt
-    title A Gantt Diagram
-    dateFormat  YYYY-MM-DD
-    section Section
-    A task           :a1, 2014-01-01, 30d
-    Another task     :after a1  , 20d
-    section Another
-    Task in sec      :2014-01-12  , 12d
-    another task      : 24d</pre>
+<h3 id="4-Promise-prototype-then-方法"><a href="#4-Promise-prototype-then-方法" class="headerlink" title="4 Promise.prototype.then 方法"></a>4 Promise.prototype.then 方法</h3><p>Promise.prototype.then 方法返回的结果依然是 Promise 对象，对象状态由回调函数的执行结果决定</p>
+<p>具体情况如下</p>
+<ul>
+<li>若 then 方法写返回值，则 then 方法返回的对象的状态值为成功 fulfilled，返回结果值为 undefined</li>
+</ul>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> p = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">    setTimeout(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">        <span class="comment">// resolve('用户数据')</span></span><br><span class="line">        reject(<span class="string">'出错了'</span>);</span><br><span class="line">    &#125;, <span class="number">1000</span>);</span><br><span class="line">&#125;)</span><br><span class="line"><span class="comment">// 未设定返回值</span></span><br><span class="line"><span class="keyword">const</span> res = p.then(<span class="function">(<span class="params">value</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(value);</span><br><span class="line">&#125;, (reason) =&gt; &#123;</span><br><span class="line">    <span class="built_in">console</span>.warn(reason);</span><br><span class="line">&#125;)</span><br><span class="line"><span class="comment">// 打印 then 方法的返回值</span></span><br><span class="line"><span class="built_in">console</span>.log(res);</span><br></pre></td></tr></table></figure></div>
 
-<pre class="mermaid">graph TB
-    id1(圆角矩形)--普通线-->id2[矩形]
-    subgraph 子图表
-        id2==粗线==>id3{菱形}
-        id3-.虚线.->id4>右向旗帜]
-        id3--无箭头---id5((圆形))
-    end
-    style id1 fill:#f9f,stroke:#333,stroke-width:4px</pre>
+<ul>
+<li>如果回调函数中返回的结果是非 Promise 类型的属性，则 then 方法返回的对象，其状态为成功 fulfilled，返回结果值取决于 then 方法所执行的是哪个函数（resolve 或 reject）</li>
+</ul>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> p = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">    setTimeout(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">        <span class="comment">// resolve('用户数据')</span></span><br><span class="line">        reject(<span class="string">'出错了'</span>);</span><br><span class="line">    &#125;, <span class="number">1000</span>);</span><br><span class="line">&#125;)</span><br><span class="line"> <span class="comment">// 返回的非 Promise 对象</span></span><br><span class="line"><span class="keyword">const</span> res = p.then(<span class="function">(<span class="params">value</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(value);</span><br><span class="line">    <span class="keyword">return</span> <span class="string">'成功了！！'</span>;</span><br><span class="line">&#125;, (reason) =&gt; &#123;</span><br><span class="line">    <span class="built_in">console</span>.warn(reason);</span><br><span class="line">    <span class="keyword">return</span> <span class="string">'出错啦！！'</span></span><br><span class="line">&#125;)</span><br><span class="line"><span class="comment">// 打印 then 方法的返回值</span></span><br><span class="line"><span class="built_in">console</span>.log(res);</span><br></pre></td></tr></table></figure></div>
 
-<pre class="mermaid">sequenceDiagram
-    participant z as 张
-    participant l as 刘
-    loop 中秋三天假
-        z->>l: 吃了吗您呐？
-        l-->>z: 没吃，您呢？
-        activate z
-        Note left of z: 想了一下
-        alt 还没吃
-            z-xl: 还没呢，正准备回去吃
-        else 已经吃了
-            z-xl: 我也吃过了，哈哈
-        end
-        opt 大过节的
-            l-->z: 祝您中秋快乐啊
-        end
-    end</pre>
+<ul>
+<li>如果回调函数中返回的结果是 Promise 类型 return new Promise()，则 then 方法返回的 Promise 对象状态与该返回结果的状态相同，返回值也相同</li>
+</ul>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> p = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">    setTimeout(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">        resolve(<span class="string">'用户数据'</span>)</span><br><span class="line">        <span class="comment">// reject('出错了');</span></span><br><span class="line">    &#125;, <span class="number">1000</span>);</span><br><span class="line">&#125;)</span><br><span class="line"><span class="keyword">const</span> res = p.then(<span class="function">(<span class="params">value</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(value);</span><br><span class="line">    <span class="comment">// 返回 Promise 对象</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">        resolve(<span class="string">'（1）成功了！！！'</span>);</span><br><span class="line">        <span class="comment">// reject('（1）出错了！！！')</span></span><br><span class="line">    &#125;)</span><br><span class="line">&#125;, (reason) =&gt; &#123;</span><br><span class="line">    <span class="built_in">console</span>.warn(reason);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">        <span class="comment">// resolve('（2）成功了！！！');</span></span><br><span class="line">        reject(<span class="string">'（2）出错了！！！'</span>)</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;)</span><br><span class="line"><span class="comment">// 打印 then 方法的返回值</span></span><br><span class="line"><span class="built_in">console</span>.log(res);</span><br></pre></td></tr></table></figure></div>
 
-<hr>
-<pre class="mermaid">sequenceDiagram
-    Alice->>+John: Hello John, how are you?
-    Alice->>+John: John, can you hear me?
-    John-->>-Alice: Hi Alice, I can hear you!
-    John-->>-Alice: I feel great!</pre>
+<ul>
+<li>如果回调函数中返回的结果是 throw 语句抛出异常，则 then 方法的对象的状态值为 rejected，返回结果值为 throw 抛出的字面量或者 Error 对象</li>
+</ul>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> p = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">    setTimeout(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">        resolve(<span class="string">'用户数据'</span>);</span><br><span class="line">    &#125;, <span class="number">1000</span>);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="keyword">const</span> res = p.then(<span class="function">(<span class="params">value</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(value);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="built_in">Error</span>(<span class="string">'错误了！！'</span>);</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;);</span><br><span class="line"><span class="comment">// 打印结果</span></span><br><span class="line"><span class="built_in">console</span>.log(res);</span><br></pre></td></tr></table></figure></div>
 
-<hr>
-<p>sequenceDiagram测试</p>
-<pre class="mermaid">sequenceDiagram;
-Alice->>John: Hello John, how are you?
-loop Healthcheck
-    John->>John: Fight against hypochondria
-end
-Note right of John: Rational thoughts!
-John-->>Alice: Great!
-John->>Bob: How about you?
-Bob-->>John: Jolly good!</pre>
+<h3 id="4-链式调用"><a href="#4-链式调用" class="headerlink" title="4 链式调用"></a>4 链式调用</h3><p>Promise.prototype.then 方法返回的结果还是 Promise 对象，这意味着我们可以继续在该结果上使用 then 方法，也就是链式调用，杜绝回调地狱</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> p = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="params">resolve</span>=&gt;</span>&#123;&#125;, reject=&gt;&#123;&#125;);</span><br><span class="line">p.then(<span class="function"><span class="params">value</span>=&gt;</span>&#123;&#125;, reason=&gt;&#123;&#125;)</span><br><span class="line">.then(<span class="function"><span class="params">value</span>=&gt;</span>&#123;&#125;, reason=&gt;&#123;&#125;)</span><br><span class="line">.then(<span class="function"><span class="params">value</span>=&gt;</span>&#123;&#125;, reason=&gt;&#123;&#125;)</span><br><span class="line">...</span><br></pre></td></tr></table></figure></div>
 
-<hr>
+<h3 id="5-Promise-prototype-catch"><a href="#5-Promise-prototype-catch" class="headerlink" title="5 Promise.prototype.catch"></a>5 Promise.prototype.catch</h3><p>catch() 方法返回一个 Promise，并且处理拒绝的情况<br>它的行为与调用 Promise.prototype.then(undefined, onRejected) 相同</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">obj.catch(onRejected);</span><br><span class="line">等同于</span><br><span class="line">obj.then(<span class="literal">undefined</span>, onRejected);</span><br></pre></td></tr></table></figure></div>
+
+<p>语法</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JS"><figure class="iseeu highlight /js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">p.catch(onRejected);</span><br><span class="line"></span><br><span class="line">p.catch(<span class="function"><span class="keyword">function</span>(<span class="params">reason</span>) </span>&#123;</span><br><span class="line">   <span class="comment">// 拒绝</span></span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></div>
+
+<p>举例</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JS"><figure class="iseeu highlight /js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> p1 = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="keyword">function</span> (<span class="params">resolve, reject</span>) </span>&#123;</span><br><span class="line">    resolve(<span class="string">'Success'</span>);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">p1.then(<span class="function"><span class="keyword">function</span> (<span class="params">value</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(value); <span class="comment">// "Success!"</span></span><br><span class="line">    <span class="keyword">throw</span> <span class="string">'oh, no!'</span>;</span><br><span class="line">&#125;).catch(<span class="function"><span class="keyword">function</span> (<span class="params">e</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(e); <span class="comment">// "oh, no!"</span></span><br><span class="line">&#125;).then(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'有 catch 捕获异常，所以这句输出'</span>);</span><br><span class="line">&#125;, <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'没有 catch 捕获异常，这句将不会输出'</span>);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 结果</span></span><br><span class="line">Success</span><br><span class="line">oh, no!</span><br><span class="line">有 <span class="keyword">catch</span> 捕获异常，所以这句输出</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="6-链式调用练习-多个文件读取"><a href="#6-链式调用练习-多个文件读取" class="headerlink" title="6 链式调用练习-多个文件读取"></a>6 链式调用练习-多个文件读取</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JS"><figure class="iseeu highlight /js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> fs = <span class="built_in">require</span>(<span class="string">'fs'</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 回调方式</span></span><br><span class="line">fs.readFile(<span class="string">'./resources/为学.md'</span>, (err, data1)=&gt;&#123;</span><br><span class="line">    fs.readFile(<span class="string">'./resources/插秧诗.md'</span>, (err, data2)=&gt;&#123;</span><br><span class="line">        fs.readFile(<span class="string">'./resources/观书有感.md'</span>, (err, data3)=&gt;&#123;</span><br><span class="line">            <span class="keyword">let</span> result = data1 + <span class="string">'\r\n'</span> +data2  +<span class="string">'\r\n'</span>+ data3;</span><br><span class="line">            <span class="built_in">console</span>.log(result);</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="comment">// promise 方式</span></span><br><span class="line"><span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">    fs.readFile(<span class="string">'./resources/users.md'</span>, (err, data) =&gt; &#123;</span><br><span class="line">        resolve(data); <span class="comment">// 设置状态</span></span><br><span class="line">    &#125;)</span><br><span class="line">&#125;).then(<span class="function"><span class="params">value</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">        <span class="comment">// value 为第一次读取的文件数据，data 为第二次（当前）读取的数据</span></span><br><span class="line">        fs.readFile(<span class="string">'./resources/orders.md'</span>, (err, data) =&gt; &#123;</span><br><span class="line">            resolve([value, data]); <span class="comment">// 将上轮读取结果和本轮合并传到下一轮轮读取操作</span></span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;).then(<span class="function"><span class="params">value</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">        fs.readFile(<span class="string">'./resources/goods.md'</span>, (err, data) =&gt; &#123;</span><br><span class="line">            <span class="comment">// value 为上一轮传递过来的文件数据数组</span></span><br><span class="line">            value.push(data);</span><br><span class="line">            <span class="comment">// 传给下一轮操作</span></span><br><span class="line">            resolve(value);</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;).then(<span class="function"><span class="params">value</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="comment">// 合并数组元素，输出</span></span><br><span class="line">    <span class="built_in">console</span>.log(value.join(<span class="string">'\r\n'</span>));</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></div>
+
+<p>以上只是 Promise 的入门，更多还要进一步深入学习</p>
 
           
       
@@ -208,25 +291,25 @@ Bob-->>John: Jolly good!</pre>
 </article>
 
   
-    <article id="post-2022测试" class="article global-container article-type-post" itemscope itemprop="blogPost">
+    <article id="post-一点关于WebSocket" class="article global-container article-type-post" itemscope itemprop="blogPost">
   
     <header class="article-header">
       
   
     <h1 itemprop="name">
-      <a class="article-title" href="../../2022/08/16/2022%E6%B5%8B%E8%AF%95/">Hexo 使用教程</a>
+      <a class="article-title" href="../../2021/02/23/%E4%B8%80%E7%82%B9%E5%85%B3%E4%BA%8EWebSocket/">一点关于WebSocket</a>
     </h1>
   
 
     </header>
   
   <div class="article-meta">
-    <a href="../../2022/08/16/2022%E6%B5%8B%E8%AF%95/" class="article-date">
-  <time datetime="2022-08-16T13:37:52.000Z" itemprop="datePublished">2022-08-16</time>
+    <a href="../../2021/02/23/%E4%B8%80%E7%82%B9%E5%85%B3%E4%BA%8EWebSocket/" class="article-date">
+  <time datetime="2021-02-23T10:51:41.000Z" itemprop="datePublished">2021-02-23</time>
 </a>
     
     
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Github/" rel="tag">Github</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/hexo/" rel="tag">hexo</a></li></ul>
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/HTTP/" rel="tag">HTTP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/WebSocket/" rel="tag">WebSocket</a></li></ul>
 
   </div>
   
@@ -235,14 +318,225 @@ Bob-->>John: Jolly good!</pre>
     
     <div class="article-content article-content-cloud" itemprop="articleBody">
       
-        <h2 id="Hexo-使用教程"><a href="#Hexo-使用教程" class="headerlink" title="Hexo 使用教程"></a>Hexo 使用教程</h2><h3 id="1-新建页面"><a href="#1-新建页面" class="headerlink" title="1.新建页面"></a>1.新建页面</h3><p>命令：<code>hexo new post 2022测试</code></p>
-<p>添加 Tags：修改 tags 内容为<code>tags: [Github,hexo]</code></p>
-<h3 id="2-添加图片"><a href="#2-添加图片" class="headerlink" title="2.添加图片"></a>2.添加图片</h3><p><img src="/2022/08/16/2022%E6%B5%8B%E8%AF%95/test%20img.jpeg" alt="引用方法 1"></p>
+        
+        <p>HTTP协议本身不是为了长连接而开发的。所谓长连接，指的是TCP连接建立之后，长时间持续保持连接状态并进行通讯。</p>
+<p>虽然HTTP协议后来引入的<code>Connection: keep-alive</code>机制有保持连接的效果，但设计初衷却是为了在几个连续的HTTP请求之间共享TCP连接以加快页面加载速度。</p>
+<p>而在浏览器中实现类似于TCP长连接的需求，进行实时双向通讯，是有着诸多实际需要的。这催生了WebSocket的产生。</p>
+<h2 id="WebSocket连接的建立"><a href="#WebSocket连接的建立" class="headerlink" title="WebSocket连接的建立"></a>WebSocket连接的建立</h2><p>客户端向Web服务器发起HTTP请求，寻求Upgrade为WebSocket。</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="MAKEFILE"><figure class="iseeu highlight /makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">GET /chat HTTP/1.1</span><br><span class="line"><span class="section">Host: example.com:8000</span></span><br><span class="line"><span class="section">Upgrade: websocket</span></span><br><span class="line"><span class="section">Connection: Upgrade</span></span><br><span class="line"><span class="section">Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==</span></span><br><span class="line"><span class="section">Sec-WebSocket-Version: 13</span></span><br></pre></td></tr></table></figure></div>
+
+<p>如果服务器支持并允许这个WebSocket请求的话，返回一个类似于下面这样的HTTP相应：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="MAKEFILE"><figure class="iseeu highlight /makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 101 Switching Protocols</span><br><span class="line"><span class="section">Upgrade: websocket</span></span><br><span class="line"><span class="section">Connection: Upgrade</span></span><br><span class="line"><span class="section">Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=</span></span><br></pre></td></tr></table></figure></div>
+
+<p>(以上示例来源于 <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers" target="_blank" rel="noopener">Writing WebSocket Servers</a>)</p>
+<p>接下来，客户端和服务器端开始根据WebSocket协议进行数据传送和接收。</p>
+<h3 id="握手过程中的“口令”"><a href="#握手过程中的“口令”" class="headerlink" title="握手过程中的“口令”"></a>握手过程中的“口令”</h3><p>上面的握手过程中，客户端通过”Sec-WebSocket-Key”发送了一个随机字符串。</p>
+<p>服务器端返回的验证字段”Sec-WebSocket-Accept”的计算过程如下：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="TCL"><figure class="iseeu highlight /tcl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> key    [web::request <span class="string">"Sec-WebSocket-Key"</span>]</span><br><span class="line"><span class="keyword">set</span> magic  <span class="string">"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"</span></span><br><span class="line"><span class="keyword">set</span> secret [::base64::encode [sha1::sha1 -bin <span class="string">"$key$magic"</span>]]</span><br><span class="line">web::response -<span class="keyword">set</span> <span class="string">"Sec-WebSocket-Accept"</span> $secret</span><br></pre></td></tr></table></figure></div>
+
+<h2 id="浏览器里的WebSocket"><a href="#浏览器里的WebSocket" class="headerlink" title="浏览器里的WebSocket"></a>浏览器里的WebSocket</h2><p>浏览器里的WebSocket主要作为客户端。其接口本身倒并不复杂，主要是建立连接，监听处理4个事件，发送消息，和关闭连接这几个操作。</p>
+<ul>
+<li><code>new WebSocket(url)</code> # 建立连接</li>
+<li><code>onopen</code> # 连接建立时的回调函数</li>
+<li><code>onmessage</code> # 收到消息时的回调函数</li>
+<li><code>onclose</code> # 连接关闭时的回调函数</li>
+<li><code>onerror</code> # 发生错误时的回调函数</li>
+<li><code>send(message)</code> # 发送消息</li>
+<li><code>close(code?, reason?)</code> # 关闭连接</li>
+</ul>
+<p>相关文档可以参考 <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebSocket" target="_blank" rel="noopener">WebSocket @ Mozilla Web Docs</a></p>
+<p>代码轮廓如下：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JS"><figure class="iseeu highlight /js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> socket = <span class="keyword">new</span> WebSocket(<span class="string">'ws://some.host.com:8080/'</span>);</span><br><span class="line"></span><br><span class="line">socket.onopen = <span class="function"><span class="keyword">function</span> (<span class="params">event</span>) </span>&#123;</span><br><span class="line">    socket.send(<span class="string">'Hello Server!'</span>);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">socket.onmessage = <span class="function"><span class="keyword">function</span> (<span class="params">event</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'Message from server'</span>, event.data);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">socket.onclose = <span class="function"><span class="keyword">function</span> (<span class="params">event</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'Good Bye Server!'</span>, event.data);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">socket.onerror = <span class="function"><span class="keyword">function</span> (<span class="params">event</span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'Oh! Some Error!'</span>, event.data);</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">socket.send(<span class="string">"Message to server"</span>);</span><br><span class="line"></span><br><span class="line">socket.close();</span><br></pre></td></tr></table></figure></div>
+
+<h2 id="为什么不用HTTP的keep-alive机制"><a href="#为什么不用HTTP的keep-alive机制" class="headerlink" title="为什么不用HTTP的keep-alive机制"></a>为什么不用HTTP的keep-alive机制</h2><ul>
+<li>Web服务器对于<code>keep-alive</code>很多时候有timeout限制。</li>
+<li>每次HTTP请求“冗余”的头部信息也是一种传输负担。</li>
+<li>HTTP请求依赖于客户端的”Pull”。</li>
+<li>服务器端的主动”Push”无法实现。需要客户端通过轮询（polling）来变通。</li>
+</ul>
+<h2 id="相关资源"><a href="#相关资源" class="headerlink" title="相关资源"></a>相关资源</h2><ul>
+<li><a href="https://tools.ietf.org/html/rfc6455" target="_blank" rel="noopener">rfc6455: The WebSocket Protocol</a></li>
+<li><a href="https://tools.ietf.org/html/rfc2616" target="_blank" rel="noopener">rfc2616: Hypertext Transfer Protocol – HTTP&#x2F;1.1</a></li>
+</ul>
+
+          
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-TCP和HTTP握手" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2021/02/20/TCP%E5%92%8CHTTP%E6%8F%A1%E6%89%8B/">TCP握手和HTTP/HTTPS建立连接流程，HTTP/1.1和HTTP/2的区别</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2021/02/20/TCP%E5%92%8CHTTP%E6%8F%A1%E6%89%8B/" class="article-date">
+  <time datetime="2021-02-20T13:40:28.000Z" itemprop="datePublished">2021-02-20</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/HTTP/" rel="tag">HTTP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/TCP/" rel="tag">TCP</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <h2 id="TCP和HTTP握手"><a href="#TCP和HTTP握手" class="headerlink" title="TCP和HTTP握手"></a>TCP和HTTP握手</h2><h3 id="TCP三次握手建立连接"><a href="#TCP三次握手建立连接" class="headerlink" title="TCP三次握手建立连接"></a>TCP三次握手建立连接</h3><p>TCP 是传输控制协议（Transmission Control Protocol）的缩写，用于在计算机之间可靠地传输数据。在建立 TCP 连接时，需要进行三次握手，即客户端发送 SYN 报文，服务器返回 SYN-ACK 报文，客户端再发送 ACK 报文，从而建立连接。这个过程的目的是确保双方都能够接收和发送数据，以保证数据传输的可靠性和完整性。</p>
+<p>具体来说，TCP 连接的三次握手过程如下：</p>
+<ol>
+<li>客户端发送 SYN 报文：客户端向服务器发送 SYN（同步）报文，请求建立连接，并选择一个随机的初始序列号（sequence number）。</li>
+<li>服务器返回 SYN-ACK 报文：服务器收到客户端的 SYN 报文后，向客户端发送 SYN-ACK（同步-确认）报文，表示已收到客户端的请求，并确认客户端的初始序列号。服务器同时也选择一个随机的初始序列号。</li>
+<li>客户端发送 ACK 报文：客户端收到服务器的 SYN-ACK 报文后，向服务器发送 ACK（确认）报文，确认收到了服务器的确认，并发送自己的初始序列号。此时，TCP 连接已建立。</li>
+</ol>
+<p>以下是 TCP 连接三次握手的 Mermaid 代码和图示：</p>
+<pre class="mermaid">sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: SYN(同步报文)
+    Server->>Client: SYN-ACK(同步-确认报文)
+    Client->>Server: ACK(确认报文)</pre>
+
+<h3 id="基于TCP的HTTP"><a href="#基于TCP的HTTP" class="headerlink" title="基于TCP的HTTP"></a>基于TCP的HTTP</h3>
         
           <p class="article-more-link">
-            <a href="../../2022/08/16/2022%E6%B5%8B%E8%AF%95/#more">阅读全文</a>
+            <a href="../../2021/02/20/TCP%E5%92%8CHTTP%E6%8F%A1%E6%89%8B/#more">阅读全文</a>
           </p>
         
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-SpringBoot相关知识点" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2021/02/09/SpringBoot%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E7%82%B9/">SpringBoot项目相关知识点</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2021/02/09/SpringBoot%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E7%82%B9/" class="article-date">
+  <time datetime="2021-02-09T06:22:09.000Z" itemprop="datePublished">2021-02-09</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/SpringBoot/" rel="tag">SpringBoot</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <h2 id="Spring与SpringBoot"><a href="#Spring与SpringBoot" class="headerlink" title="Spring与SpringBoot"></a>Spring与SpringBoot</h2><p>Spring框架，它的主要功能包括IoC容器、AOP支持、事务支持、MVC开发以及强大的第三方集成功能等。</p>
+<p>那么，Spring Boot又是什么？<strong>它和Spring是什么关系</strong>？</p>
+<p><a href="https://spring.io/projects/spring-boot" target="_blank" rel="noopener">Spring Boot</a>是一个基于Spring的套件，它帮我们预组装了Spring的一系列组件，以便以尽可能少的代码和配置来开发基于Spring的Java应用程序。</p>
+        
+          <p class="article-more-link">
+            <a href="../../2021/02/09/SpringBoot%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E7%82%B9/#more">阅读全文</a>
+          </p>
+        
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-浏览器window对象中的本地存储和会话存储" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2021/01/20/%E6%B5%8F%E8%A7%88%E5%99%A8window%E5%AF%B9%E8%B1%A1%E4%B8%AD%E7%9A%84%E6%9C%AC%E5%9C%B0%E5%AD%98%E5%82%A8%E5%92%8C%E4%BC%9A%E8%AF%9D%E5%AD%98%E5%82%A8/">浏览器window对象中的本地存储和会话存储</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2021/01/20/%E6%B5%8F%E8%A7%88%E5%99%A8window%E5%AF%B9%E8%B1%A1%E4%B8%AD%E7%9A%84%E6%9C%AC%E5%9C%B0%E5%AD%98%E5%82%A8%E5%92%8C%E4%BC%9A%E8%AF%9D%E5%AD%98%E5%82%A8/" class="article-date">
+  <time datetime="2021-01-20T11:00:33.000Z" itemprop="datePublished">2021-01-20</time>
+</a>
+    
+    
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <p>为了满足各种各样的需求，会经常性在本地存储大量的数据，HTML5规范提出了相关解决方案<br>本地存储特性。</p>
+<ul>
+<li>1 数据存储在用户浏览器中</li>
+<li>2 设置、读取方便、甚至页面刷新不丢失数据</li>
+<li>3 容量较大，sessionStorage约5M、localStorage约20M</li>
+<li>4 只能存储字符串，可以将对象JSON.stringify() 编码后存储</li>
+</ul>
+<h2 id="1-window-sessionStorage"><a href="#1-window-sessionStorage" class="headerlink" title="1 window.sessionStorage"></a>1 window.sessionStorage</h2><p>方法：</p>
+<ul>
+<li>存储数据 ： sessionStorage.setItem(key, value)</li>
+<li>获取数据 ： sessionStorage.getItem(key)</li>
+<li>删除数据 ： sessionStorage.removeItem(key)</li>
+<li>删除所有数据 ： sessionStorage.clear()</li>
+</ul>
+<ol>
+<li>生命周期为关闭浏览器窗口</li>
+<li>在同一个窗口（页面）下数据可以共享</li>
+<li>以键值对的形式存储使用</li>
+</ol>
+<p>例子：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="HTML"><figure class="iseeu highlight /html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"text"</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">button</span> <span class="attr">class</span>=<span class="string">"set"</span>&gt;</span>存储数据<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">button</span> <span class="attr">class</span>=<span class="string">"get"</span>&gt;</span>获取数据<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">button</span> <span class="attr">class</span>=<span class="string">"remove"</span>&gt;</span>删除数据<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">button</span> <span class="attr">class</span>=<span class="string">"del"</span>&gt;</span>清空所有数据<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="built_in">console</span>.log(localStorage.getItem(<span class="string">'username'</span>));</span></span><br><span class="line"></span><br><span class="line"><span class="javascript">  <span class="keyword">var</span> ipt = <span class="built_in">document</span>.querySelector(<span class="string">'input'</span>);</span></span><br><span class="line"><span class="actionscript">  <span class="keyword">var</span> <span class="keyword">set</span> = document.querySelector(<span class="string">'.set'</span>);</span></span><br><span class="line"><span class="actionscript">  <span class="keyword">var</span> <span class="keyword">get</span> = document.querySelector(<span class="string">'.get'</span>);</span></span><br><span class="line"><span class="javascript">  <span class="keyword">var</span> remove = <span class="built_in">document</span>.querySelector(<span class="string">'.remove'</span>);</span></span><br><span class="line"><span class="javascript">  <span class="keyword">var</span> del = <span class="built_in">document</span>.querySelector(<span class="string">'.del'</span>);</span></span><br><span class="line"><span class="actionscript">  <span class="keyword">set</span>.addEventListener(<span class="string">'click'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    <span class="comment">// 点击之后，可以把表单里面的值存储起来</span></span></span><br><span class="line"><span class="actionscript">    <span class="keyword">var</span> val = ipt.value;</span></span><br><span class="line"><span class="actionscript">    sessionStorage.setItem(<span class="string">'uname'</span>, val);</span></span><br><span class="line"><span class="actionscript">    <span class="comment">// sessionStorage.setItem('pwd', val);</span></span></span><br><span class="line">  &#125;);</span><br><span class="line"><span class="actionscript">  <span class="keyword">get</span>.addEventListener(<span class="string">'click'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    <span class="comment">// 当我们点击了之后，就可以把表单里面的值获取过来</span></span></span><br><span class="line"><span class="javascript">    <span class="built_in">console</span>.log(sessionStorage.getItem(<span class="string">'uname'</span>));</span></span><br><span class="line">  &#125;);</span><br><span class="line"><span class="actionscript">  remove.addEventListener(<span class="string">'click'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    sessionStorage.removeItem(<span class="string">'uname'</span>);</span></span><br><span class="line">  &#125;);</span><br><span class="line"><span class="actionscript">  del.addEventListener(<span class="string">'click'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    sessionStorage.clear(); <span class="comment">// 清除所有的</span></span></span><br><span class="line">  &#125;);</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+<h2 id="2-window-localStorage"><a href="#2-window-localStorage" class="headerlink" title="2 window.localStorage"></a>2 window.localStorage</h2><ul>
+<li>存储数据 ： localStorage.setItem(key, value)</li>
+<li>获取数据 ： localStorage.getItem(key)</li>
+<li>删除数据 ： localStorage.removeItem(key)</li>
+<li>删除所有数据 ： localStorage.clear()</li>
+</ul>
+<ol>
+<li>声明周期永久生效，除非手动删除 否则关闭页面也会存在</li>
+<li>可以多窗口（页面）共享（同一浏览器可以共享）</li>
+<li>以键值对的形式存储使用</li>
+</ol>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="HTML"><figure class="iseeu highlight /html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"text"</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">button</span> <span class="attr">class</span>=<span class="string">"set"</span>&gt;</span>存储数据<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">button</span> <span class="attr">class</span>=<span class="string">"get"</span>&gt;</span>获取数据<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">button</span> <span class="attr">class</span>=<span class="string">"remove"</span>&gt;</span>删除数据<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">button</span> <span class="attr">class</span>=<span class="string">"del"</span>&gt;</span>清空所有数据<span class="tag">&lt;/<span class="name">button</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="keyword">var</span> ipt = <span class="built_in">document</span>.querySelector(<span class="string">'input'</span>);</span></span><br><span class="line"><span class="actionscript">  <span class="keyword">var</span> <span class="keyword">set</span> = document.querySelector(<span class="string">'.set'</span>);</span></span><br><span class="line"><span class="actionscript">  <span class="keyword">var</span> <span class="keyword">get</span> = document.querySelector(<span class="string">'.get'</span>);</span></span><br><span class="line"><span class="javascript">  <span class="keyword">var</span> remove = <span class="built_in">document</span>.querySelector(<span class="string">'.remove'</span>);</span></span><br><span class="line"><span class="javascript">  <span class="keyword">var</span> del = <span class="built_in">document</span>.querySelector(<span class="string">'.del'</span>);</span></span><br><span class="line"><span class="actionscript">  <span class="keyword">set</span>.addEventListener(<span class="string">'click'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    <span class="keyword">var</span> val = ipt.value;</span></span><br><span class="line"><span class="actionscript">    localStorage.setItem(<span class="string">'username'</span>, val);</span></span><br><span class="line">  &#125;)</span><br><span class="line"><span class="actionscript">  <span class="keyword">get</span>.addEventListener(<span class="string">'click'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="javascript">    <span class="built_in">console</span>.log(localStorage.getItem(<span class="string">'username'</span>));</span></span><br><span class="line">  &#125;)</span><br><span class="line"><span class="actionscript">  remove.addEventListener(<span class="string">'click'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    localStorage.removeItem(<span class="string">'username'</span>);</span></span><br><span class="line">  &#125;)</span><br><span class="line"><span class="actionscript">  del.addEventListener(<span class="string">'click'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line">    localStorage.clear();</span><br><span class="line">  &#125;)</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="HTML"><figure class="iseeu highlight /html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"text"</span> <span class="attr">id</span>=<span class="string">"username"</span>&gt;</span> <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"checkbox"</span> <span class="attr">name</span>=<span class="string">""</span> <span class="attr">id</span>=<span class="string">"remember"</span>&gt;</span> 记住用户名</span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="javascript">  <span class="keyword">var</span> username = <span class="built_in">document</span>.querySelector(<span class="string">'#username'</span>);</span></span><br><span class="line"><span class="javascript">  <span class="keyword">var</span> remember = <span class="built_in">document</span>.querySelector(<span class="string">'#remember'</span>);</span></span><br><span class="line"><span class="actionscript">  <span class="keyword">if</span> (localStorage.getItem(<span class="string">'username'</span>)) &#123;</span></span><br><span class="line"><span class="actionscript">    username.value = localStorage.getItem(<span class="string">'username'</span>);</span></span><br><span class="line"><span class="actionscript">    remember.checked = <span class="literal">true</span>;</span></span><br><span class="line">  &#125;</span><br><span class="line"><span class="actionscript">  remember.addEventListener(<span class="string">'change'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> </span>&#123;</span></span><br><span class="line"><span class="actionscript">    <span class="keyword">if</span> (<span class="keyword">this</span>.checked) &#123;</span></span><br><span class="line"><span class="actionscript">      localStorage.setItem(<span class="string">'username'</span>, username.value)</span></span><br><span class="line"><span class="actionscript">    &#125; <span class="keyword">else</span> &#123;</span></span><br><span class="line"><span class="actionscript">      localStorage.removeItem(<span class="string">'username'</span>);</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;)</span><br><span class="line"><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+          
       
     </div>
     
@@ -425,7 +719,7 @@ Bob-->>John: Jolly good!</pre>
 <li><code>new</code><ul>
 <li><code>new</code> 最常见的方式</li>
 <li>变形 1 : Xxx 的静态方法</li>
-<li>变形 2 : XxxBuilder/XxxFactory 的静态方法</li>
+<li>变形 2 : XxxBuilder&#x2F;XxxFactory 的静态方法</li>
 </ul>
 </li>
 <li>Class 的 <code>newInstance()</code><ul>
@@ -448,8 +742,8 @@ Bob-->>John: Jolly good!</pre>
 </ul>
 </li>
 <li>创建对象的步骤<ol>
-<li>判断对象对应的类是否加载、链接、初始化<br><em>虚拟机遇到一条 <code>new</code> 指令 ，首先去检查这个指令的参数能否在 Metaspace 的常量池中定位到一个类的符号引用，并且检查这个符号引用代表的类是否已经被加载、解忻和初始化。( 即判断类元信息是否存在)。如果没有，那么在双亲委派模式下，使用当前类加载器以 <code>ClassLoader+包名+类名</code> 为 Key 进行查找对应的 .class 文件。如果没有找到文件，则抛出 <code>ClassNotFoundException</code> 异常，如果找到，则进行类加载，并生成对应的 <code>Class</code> 类对象</em></li>
-<li>为对象分配内存<br><em>首先计算对象占用空间大小，接着在堆中划分一块内存给新对象。如果实例成员变量是引用变量，仅分配引用变量空间即可，即4个字节大小。</em><ol>
+<li>判断对象对应的类是否加载、链接、初始化<br> <em>虚拟机遇到一条 <code>new</code> 指令 ，首先去检查这个指令的参数能否在 Metaspace 的常量池中定位到一个类的符号引用，并且检查这个符号引用代表的类是否已经被加载、解忻和初始化。( 即判断类元信息是否存在)。如果没有，那么在双亲委派模式下，使用当前类加载器以 <code>ClassLoader+包名+类名</code> 为 Key 进行查找对应的 .class 文件。如果没有找到文件，则抛出 <code>ClassNotFoundException</code> 异常，如果找到，则进行类加载，并生成对应的 <code>Class</code> 类对象</em></li>
+<li>为对象分配内存<br> <em>首先计算对象占用空间大小，接着在堆中划分一块内存给新对象。如果实例成员变量是引用变量，仅分配引用变量空间即可，即4个字节大小。</em><ol>
 <li>如果内存规整<ol>
 <li>指针碰撞</li>
 </ol>
@@ -492,245 +786,11 @@ Bob-->>John: Jolly good!</pre>
 </article>
 
   
-    <article id="post-JVM-06" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/08/08/JVM-06/">JVM 06 运行时数据区的总结与常见大厂面试题说明</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/08/08/JVM-06/" class="article-date">
-  <time datetime="2020-08-08T12:46:21.000Z" itemprop="datePublished">2020-08-08</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <p>常见面试题</p>
-        
-          <p class="article-more-link">
-            <a href="../../2020/08/08/JVM-06/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
-    <article id="post-JVM-05" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/07/17/JVM-05/">JVM 05 运行时数据区之方法区 (MethodArea)</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/07/17/JVM-05/" class="article-date">
-  <time datetime="2020-07-17T06:36:32.000Z" itemprop="datePublished">2020-07-17</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <p>方法区概述</p>
-<ul>
-<li><a href="#1-栈和堆和方法区间的交互关系">1 栈和堆和方法区间的交互关系</a></li>
-<li><a href="#2-方法区的理解">2 方法区的理解</a><ul>
-<li><a href="#方法区在哪里">方法区在哪里</a></li>
-<li><a href="#HotSpot中方法区的演进">HotSpot中方法区的演进</a></li>
-</ul>
-</li>
-<li><a href="#3-设置方法区大小与OOM">3 设置方法区大小与OOM</a></li>
-<li><a href="#4-方法区的内部结构">4 方法区的内部结构</a><ul>
-<li><a href="#方法区-Method-Area-存储什么">方法区 (Method Area) 存储什么</a><ul>
-<li><a href="#类型信息">类型信息</a></li>
-<li><a href="#域-Field-信息">域 (Field) 信息</a></li>
-<li><a href="#方法-Method-信息">方法 (Method) 信息</a></li>
-<li><a href="#字节码角度举例查看">字节码角度举例查看</a></li>
-</ul>
-</li>
-<li><a href="#non-final-的类变量">non-final 的类变量</a></li>
-<li><a href="#补充说明全局常量final-static">补充说明：全局常量：<code>final static</code></a></li>
-<li><a href="#class-文件中常量池的理解">class 文件中常量池的理解</a><ul>
-<li><a href="#运行时常量池-VS-常量池">运行时常量池 VS 常量池</a></li>
-<li><a href="#为什么需要常量池">为什么需要常量池</a></li>
-<li><a href="#常量池中有什么">常量池中有什么</a></li>
-<li><a href="#小结">小结</a></li>
-</ul>
-</li>
-<li><a href="#运行时常量池的理解">运行时常量池的理解</a><ul>
-<li><a href="#运行时常量池">运行时常量池</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a href="#5-方法区使用举例">5 方法区使用举例</a></li>
-<li><a href="#6-方法区的演进细节">6 方法区的演进细节</a><ul>
-<li><a href="#永久代为什么要被元空间替换">永久代为什么要被元空间替换</a></li>
-<li><a href="#StringTable为什么要调整位置">StringTable为什么要调整位置</a></li>
-<li><a href="#如何证明静态变量存在哪">如何证明静态变量存在哪</a></li>
-</ul>
-</li>
-<li><a href="#7-方法区的垃圾回收">7 方法区的垃圾回收</a></li>
-<li><a href="#8-总结">8 总结</a></li>
-</ul>
-        
-          <p class="article-more-link">
-            <a href="../../2020/07/17/JVM-05/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
-    <article id="post-JVM-04" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/07/11/JVM-04/">JVM 04 运行时数据区之堆 (Heap)</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/07/11/JVM-04/" class="article-date">
-  <time datetime="2020-07-11T09:02:59.000Z" itemprop="datePublished">2020-07-11</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <h2 id="1-堆的核心概述"><a href="#1-堆的核心概述" class="headerlink" title="1 堆的核心概述"></a>1 堆的核心概述</h2><ul>
-<li>● 一个 JVM 实例只存在一个堆内存，堆也是 Java 内存管理的核心区域。</li>
-<li>● Java 堆区在 JVM 启动的时候即被创建，其空间大小也就确定了。是 JVM 管理的最大一块内存空间。<ul>
-<li>➢ 堆内存的大小是可以调节的。</li>
-</ul>
-</li>
-<li>● 《Java 虚拟机规范》规定，堆可以处于物理上不连续的内存空间中，但在逻辑上它应该被视为连续的。</li>
-<li>● 所有的线程共享 Java 堆，在这里还可以划分线程私有的缓冲区 (ThreadLocal Allocation Buffer， TLAB)</li>
-</ul>
-<p>一个 JVM 实例对应一个进程，方法区和堆是一个进程一份，而程序计数器、本地方法栈、虚拟机栈是一个线程对应一份，一个进程中的所有线程共享方法区和堆（并不是完整的堆都一定是共享的，比如 TLAB）。</p>
-        
-          <p class="article-more-link">
-            <a href="../../2020/07/11/JVM-04/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
-    <article id="post-JVM-03" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/07/05/JVM-03/">JVM 03 运行时数据区之虚拟机栈 (Stack)</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/07/05/JVM-03/" class="article-date">
-  <time datetime="2020-07-05T08:06:02.000Z" itemprop="datePublished">2020-07-05</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <ul>
-<li>1 虚拟机栈概述</li>
-<li>2 栈的存储单位</li>
-<li>3 局部变量表</li>
-<li>4 操作数栈</li>
-<li>5 代码追踪</li>
-<li>6 栈顶缓存技术</li>
-<li>7 动态链接</li>
-<li>8 方法的调用:解析与分派</li>
-<li>9 方法返回地址</li>
-<li>10 一些附加信息</li>
-<li>11 栈的相关面试题</li>
-</ul>
-        
-          <p class="article-more-link">
-            <a href="../../2020/07/05/JVM-03/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
 
 
   <nav id="page-nav">
     <!--  -->
-    <a class="extend prev" rel="prev" href="../2/">&lt;&lt; 上一页</a><a class="page-number" href="../../">1</a><a class="page-number" href="../2/">2</a><span class="page-number current">3</span><a class="page-number" href="../4/">4</a><a class="page-number" href="../5/">5</a><a class="extend next" rel="next" href="../4/">下一页 &gt;&gt;</a>
+    <a class="extend prev" rel="prev" href="../2/">&lt;&lt; 上一页</a><a class="page-number" href="../../">1</a><a class="page-number" href="../2/">2</a><span class="page-number current">3</span><a class="page-number" href="../4/">4</a><a class="page-number" href="../5/">5</a><a class="page-number" href="../6/">6</a><a class="extend next" rel="next" href="../4/">下一页 &gt;&gt;</a>
   </nav>
 
 
@@ -760,7 +820,7 @@ Bob-->>John: Jolly good!</pre>
   <div class="widget-box">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
     </div>
   </div>
 
@@ -770,7 +830,7 @@ Bob-->>John: Jolly good!</pre>
   <div class="widget-box">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../tags/Git-Bash/" style="font-size: 11.67px;">Git Bash</a> <a href="../../tags/Github/" style="font-size: 13.33px;">Github</a> <a href="../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../tags/Hadoop/" style="font-size: 18.33px;">Hadoop</a> <a href="../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../tags/JVM/" style="font-size: 18.33px;">JVM</a> <a href="../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../tags/JavaScript/" style="font-size: 16.67px;">JavaScript</a> <a href="../../tags/Linux/" style="font-size: 15px;">Linux</a> <a href="../../tags/MapReduce/" style="font-size: 11.67px;">MapReduce</a> <a href="../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="../../tags/SQL/" style="font-size: 13.33px;">SQL</a> <a href="../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../tags/Shell/" style="font-size: 11.67px;">Shell</a> <a href="../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../tags/WebSocket/" style="font-size: 10px;">WebSocket</a> <a href="../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../tags/hexo/" style="font-size: 11.67px;">hexo</a> <a href="../../tags/macOS/" style="font-size: 11.67px;">macOS</a> <a href="../../tags/ssh/" style="font-size: 11.67px;">ssh</a> <a href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.67px;">电脑</a> <a href="../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.67px;">竹云</a> <a href="../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 13.33px;">终端</a> <a href="../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
+      <a href="../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../tags/Git-Bash/" style="font-size: 11.67px;">Git Bash</a> <a href="../../tags/Github/" style="font-size: 13.33px;">Github</a> <a href="../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../tags/HTTP/" style="font-size: 11.67px;">HTTP</a> <a href="../../tags/Hadoop/" style="font-size: 18.33px;">Hadoop</a> <a href="../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../tags/JVM/" style="font-size: 18.33px;">JVM</a> <a href="../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../tags/JavaScript/" style="font-size: 16.67px;">JavaScript</a> <a href="../../tags/Linux/" style="font-size: 15px;">Linux</a> <a href="../../tags/MapReduce/" style="font-size: 11.67px;">MapReduce</a> <a href="../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="../../tags/SQL/" style="font-size: 13.33px;">SQL</a> <a href="../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../tags/Shell/" style="font-size: 11.67px;">Shell</a> <a href="../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../tags/WebSocket/" style="font-size: 11.67px;">WebSocket</a> <a href="../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../tags/hexo/" style="font-size: 11.67px;">hexo</a> <a href="../../tags/macOS/" style="font-size: 11.67px;">macOS</a> <a href="../../tags/ssh/" style="font-size: 11.67px;">ssh</a> <a href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.67px;">电脑</a> <a href="../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.67px;">竹云</a> <a href="../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 13.33px;">终端</a> <a href="../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
     </div>
   </div>
 
@@ -779,7 +839,7 @@ Bob-->>John: Jolly good!</pre>
   <div class="widget-box">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/12/">十二月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/06/">六月 2020</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/06/">六月 2020</a></li></ul>
     </div>
   </div>
 
@@ -795,10 +855,6 @@ Bob-->>John: Jolly good!</pre>
           </li>
         
           <li>
-            <a href="../../2023/02/09/SpringBoot%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E7%82%B9/">SpringBoot项目相关知识点</a>
-          </li>
-        
-          <li>
             <a href="../../2023/02/09/%E4%BD%9C%E4%B8%BA%E7%94%A8%E6%88%B7%EF%BC%8C%E4%BF%AE%E6%94%B9Cookie%E6%9C%89%E6%95%88%E6%9C%9F%EF%BC%8C%E5%BB%B6%E9%95%BFCookie%E6%9C%9F%E9%99%90/">作为用户，修改Cookie有效期，延长Cookie期限</a>
           </li>
         
@@ -808,6 +864,10 @@ Bob-->>John: Jolly good!</pre>
         
           <li>
             <a href="../../2023/01/18/Windows%E7%B3%BB%E7%BB%9FC%E7%9B%98%E6%B8%85%E7%90%86%E5%B7%A5%E5%85%B7FreeMove%E5%8F%8A%E6%96%87%E4%BB%B6%E5%8D%A0%E7%94%A8%E8%BF%9B%E7%A8%8B%E6%9F%A5%E7%9C%8B%E8%BD%AF%E4%BB%B6LockHunter%E9%85%8D%E5%90%88%E4%BD%BF%E7%94%A8/">Windows系统C盘清理工具FreeMove及文件占用进程查看软件LockHunter配合使用</a>
+          </li>
+        
+          <li>
+            <a href="../../2023/01/14/AutoReconnectWiFi/">检测断网自动重连WiFi脚本</a>
           </li>
         
       </ul>
@@ -837,7 +897,7 @@ Bob-->>John: Jolly good!</pre>
       </div>
       <footer id="footer">
   <div class="foot-box global-width center">
-    &copy; 2023 许嵩老公 &nbsp;&nbsp;
+    &copy; 2025 许嵩老公 &nbsp;&nbsp;
     Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
     &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
     <br>

@@ -83,6 +83,225 @@
       <div id="middlecontent" title class="global-width sidebar-right">
         <section id="main">
   
+    <article id="post-MapReduce-Payload-core-of-the-job" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2020/06/27/MapReduce-Payload-core-of-the-job/">MapReduce用户接口Mapper、Reducer——job的核心</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2020/06/27/MapReduce-Payload-core-of-the-job/" class="article-date">
+  <time datetime="2020-06-27T12:40:01.000Z" itemprop="datePublished">2020-06-27</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <h2 id="作业的核心"><a href="#作业的核心" class="headerlink" title="作业的核心"></a>作业的核心</h2><p>应用程序通常实现<code>Mapper</code>和<code>Reducer</code>接口以提供<code>map</code>和<code>reduce</code>方法。 这些构成了<code>job</code>（作业）的核心。</p>
+<h3 id="Mapper"><a href="#Mapper" class="headerlink" title="Mapper"></a><code>Mapper</code></h3><p><code>Mapper</code>将输入的键&#x2F;值对<code>key/value</code>映射为一组中间键&#x2F;值对<code>key/value</code>。映射是将输入记录转换为中间记录的单个任务。 转换后的中间记录不必与输入记录具有相同的类型。 给定的输入对可能映射为零或许多输出对。</p>
+<p>Hadoop MapReduce框架为每个InputSplit生成一个map任务。InputSplit是由InputFormat生成的。</p>
+<p>总体而言，<code>Mapper</code> 的实现类要传递给 <code>Job</code> 使用，须调用 <code>Job.setMapperClass(Class)</code> 方法设置job的map函数；然后，MP框架为该任务的 <code>InputSplit</code> 中的每个键&#x2F;值对调用<code>map(WritableComparable,Writable,Context)</code>方法。 然后，应用程序可以重写<code>cleanup(Context)</code>方法来执行任何必需的清理。</p>
+<p><code>map函数</code>的输出对的类型不一定要与输入对的类型一样。 给定的输入对可能 map 映射为零或许多个输出对。 通过调用 <code>context.write(WritableComparable, Writable)</code> 方法来收集输出对。</p>
+<p><code>Application应用程序</code>可以使用<code>Counter</code>来报告它的统计信息。</p>
+<p>与给定输出键 <code>key</code> 相关联的所有中间值 <code>values</code> 随后被MR框架分组，然后传递给 <code>Reducer</code> 以得到最终输出。用户可以通过 <code>Job.setGroupingCompatorClass(Class)</code> 方法指定一个 <code>Comparator</code> 来控制分组。</p>
+<p>对<code>Mapper</code>的输出进行排序，然后按每个<code>Reducer</code>进行划分（<code>partition</code>）。分区(<code>partitions</code>) 的总数与作业（<code>job</code>）的<code>reduce</code>任务数相同。</p>
+<p>用户可以通过实现自定义的 <code>Partitioner</code> 类来控制哪些键 <code>key</code> (以及记录 <code>records</code> )进入哪个<code>Reducer</code>进行处理。</p>
+<p>用户还可以通过 <code>Job.setCombinerClass(Class)</code> 方法指定一个 <code>Combiner</code> ，以在本地执行中间输出的聚合（local aggregation）操作，这样可以减少<code>Mapper</code>到<code>Reducer</code>之间的数据传输量。实际上就是在<code>map</code>操作之后，在本地再执行一次 <code>reduce</code>操作，可以参考前面写的<code>PartitionApp</code>类的代码。</p>
+<p>The intermediate, sorted outputs are always stored in a simple (key-len, key, value-len, value) format. Applications can control if, and how, the intermediate outputs are to be compressed and the <a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/api/org/apache/hadoop/io/compress/CompressionCodec.html" target="_blank" rel="noopener"><code>CompressionCodec</code></a> to be used via the <code>Configuration</code>.</p>
+<blockquote>
+<p>原文是这样，这句话不是很理解。</p>
+</blockquote>
+<h4 id="多少个-Map"><a href="#多少个-Map" class="headerlink" title="多少个 Map"></a>多少个 <code>Map</code></h4><p><code>map</code> 的数量通常由输入的总大小（即输入文件的块总数 <code>the total number of blocks of the input files</code>）决定。</p>
+<p><code>map</code> 的正确并行度似乎是每个节点大约10-100个 <code>map</code> ，尽管已经为 <code>very cpu-light map</code>（<em>CPU非常轻的任务</em>）任务设置了300个<code>map</code>。 因为任务的设置需要一段时间，所以执行<code>map</code>的时间最好满足至少一分钟。</p>
+<p>因此，如果您期望的输入数据大小为10TB，块大小为128MB，那么最终将获得82,000个映射<code>map</code>, （<code>10 * 1024 * 1024 ÷ 128 = 81920</code>），除非使用 <code>Configuration.set(MRJobConfig.NUM_MAPS, int)</code>(它只给框架提供了一个提示 <code>hint</code>)将其设置得更高。</p>
+<h3 id="Reducer"><a href="#Reducer" class="headerlink" title="Reducer"></a><code>Reducer</code></h3><p><a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/api/org/apache/hadoop/mapreduce/Reducer.html" target="_blank" rel="noopener"><code>Reducer</code></a> 将同一个 <code>key</code> 对应的一组中间值的集合归约为一个更小的<code>values</code>的集合。</p>
+<p>用户通过 <code>Job.setNumReduceTasks(int)</code> 方法设置作业的 <code>reduce</code>的数量。</p>
+<p>相似地，<code>Reducer</code> 的实现类要传递给 <code>Job</code> 使用，须调用 <code>Job.setReducerClass(Class)</code> 方法设置job的<code>reduce</code>函数；然后，MP框架为分组输入（grouped inputs）中的每个键&#x2F;值对调用<code>reduce(WritableComparable, Iterable&lt;Writable&gt;, Context)</code>方法。 然后，应用程序可以重写<code>cleanup(Context)</code>方法来执行任何必需的清理。</p>
+<p><code>Reducer</code> 主要有三个主要阶段：<code>shuffle</code>, <code>sort</code> 和 <code>reduce</code>。</p>
+<h4 id="Shuffle"><a href="#Shuffle" class="headerlink" title="Shuffle"></a><code>Shuffle</code></h4><p><code>Reducer</code> 的输入是 <code>Mapper</code> 的排序输出。在这个阶段，MP框架通过HTTP获取所有<code>mapper</code>输出的相关的分区（relevant partition）。</p>
+<h4 id="Sort"><a href="#Sort" class="headerlink" title="Sort"></a><code>Sort</code></h4><p>在此阶段，框架按键 <code>key</code>对Reducer的输入进行分组(因为不同的<code>mapper</code>可能输出相同的键<code>key</code>)。<code>shuffle</code>和<code>sort</code>阶段同时发生；当获取mapper的输出时，它们被合并。</p>
+<h4 id="Secondary-Sort"><a href="#Secondary-Sort" class="headerlink" title="Secondary Sort"></a><code>Secondary Sort</code></h4><p>如果 <em>将中间键分组的等价规则</em> 与 <em>归约前的键分组的等价规则</em> 需要不同，则可以通过 <code>Job.setSortCompatorClass(Class)</code> 指定一个 <code>Comparator</code>。由于 <code>Job.setGroupingComparatorClass(Class)</code>能够用来控制中间键（intermediate keys）的分组方式，这些可以被结合起来以模拟对值<code>values</code>的二次排序 <code>secondary sort</code>。</p>
+<h4 id="Reduce"><a href="#Reduce" class="headerlink" title="Reduce"></a><code>Reduce</code></h4><p>在这个阶段对分组输入中的所有<code>&lt;key, (list of values)&gt; pair</code>调用 <code>reduce(WritableComparable, Iterable&lt;Writable&gt;, Context)</code>方法。</p>
+<p><code>reduce</code>任务的输出通常通过 <code>Context.write(WritableComparable,Writable)</code>写入HDFS文件系统（<a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/api/org/apache/hadoop/fs/FileSystem.html" target="_blank" rel="noopener"><code>FileSystem</code></a>）。</p>
+<p>和<code>Map</code>一样，<code>Applications</code>可以使用<code>Counter</code>来报告它的统计信息。</p>
+<p><code>Reducer</code>的输出是没有经过排序的。</p>
+<h4 id="多少个-Reduce"><a href="#多少个-Reduce" class="headerlink" title="多少个 Reduce"></a>多少个 <code>Reduce</code></h4><p>正确的 <code>reduce</code> 数似乎是 <code>0.95或1.75乘以(&lt;no.of nodes&gt; * &lt;no.of maximum containers per node&gt;)</code> 。</p>
+<p>对于0.95，所有的<code>reduce</code>都可以立即启动，并在<code>map</code>完成时开始传输<code>map</code>输出。对于1.75，速度更快的节点将完成他们的第一轮<code>reduce</code>，并启动第二轮<code>reduce</code>，在负载均衡方面做得更好。</p>
+<p>增加<code>reduce</code>的数量，会增加框架的开销，但是也增加了负载均衡和降低了故障成本。</p>
+<p>上面的缩放因子（如0.95,1.95）略小于整数 ( <a href="https://www.mathsisfun.com/whole-numbers.html" target="_blank" rel="noopener"><code>whole numbers</code></a> )，以便在框架中为推测性任务和失败任务保留少部分的<code>reduce</code>插槽（<em>reduce slots</em>）。</p>
+<h4 id="Reducer-NONE"><a href="#Reducer-NONE" class="headerlink" title="Reducer NONE"></a>Reducer NONE</h4><p>如果不需要归约是可以将reduce tasks的数量设置为0的。</p>
+<p>在这种情况下，map tasks的输出将直接写到FileSystem，输出的路径是通过 <code>FileOutputFormat.setOutputPath(Job, Path)</code>方法设置的路径。框架不会在将map的输出写到FileSystem之前对它们进行排序。</p>
+<h3 id="Partitioner"><a href="#Partitioner" class="headerlink" title="Partitioner"></a><code>Partitioner</code></h3><p><code>Partitioner</code>对<code>key</code>空间进行划分。</p>
+<p><code>Partitioner</code>控制map的中间输出的keys的划分。key或key的子集通常通过hash散列函数得到划分分区（partitions）。partitions的总数与<code>reduce</code>任务数相同。因此，这控制了中间<code>key</code>(以及记录<code>record</code>)被发送到m个reduce任务中哪一个reduce任务进行归约操作。</p>
+<p><a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/api/org/apache/hadoop/mapreduce/lib/partition/HashPartitioner.html" target="_blank" rel="noopener"><code>HashPertitioner</code></a>是默认的<code>Partitioner</code>。</p>
+<h3 id="Counter"><a href="#Counter" class="headerlink" title="Counter"></a><code>Counter</code></h3><p><a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/api/org/apache/hadoop/mapreduce/Counter.html" target="_blank" rel="noopener"><code>Counter</code></a>是MapReduce应用程序报告其统计信息的工具。<code>Mapper</code>和<code>Reducer</code>的实现类可以使用<code>Counter</code>报告统计信息。</p>
+<p>Hadoop Mapreduce提供了一个library，<a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/api/org/apache/hadoop/mapreduce/package-summary.html" target="_blank" rel="noopener"><code>org.apache.hadoop.mapreduce</code></a>包含有用的 mappers, reducers, partitioners。</p>
+
+          
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-Java-import-static" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2020/06/27/Java-import-static/">Java中的静态导入import static（导入类的静态成员）</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2020/06/27/Java-import-static/" class="article-date">
+  <time datetime="2020-06-27T07:27:22.000Z" itemprop="datePublished">2020-06-27</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <h2 id="import-static-是什么"><a href="#import-static-是什么" class="headerlink" title="import static 是什么"></a>import static 是什么</h2><p><code>import static</code>是静态导入的声明。静态导入声明 <code>import static</code> 类似于普通导入声明 <code>import</code> 。 普通的导入声明从包中导入类，从而允许在没有包限定的情况下使用类，而静态导入声明从类中导入静态成员，从而允许在没有类限定的情况下使用静态成员。</p>
+<p>使用<code>import static</code>用法，可以导入<code>class</code>中的静态成员。</p>
+        
+          <p class="article-more-link">
+            <a href="../../2020/06/27/Java-import-static/#more">阅读全文</a>
+          </p>
+        
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-First-MapReduce-example-WordCount" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2020/06/26/First-MapReduce-example-WordCount/">Hadoop入门案例（一）: WordCount</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2020/06/26/First-MapReduce-example-WordCount/" class="article-date">
+  <time datetime="2020-06-26T09:01:36.000Z" itemprop="datePublished">2020-06-26</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <h2 id="MapReduce作业的输入与输出"><a href="#MapReduce作业的输入与输出" class="headerlink" title="MapReduce作业的输入与输出"></a>MapReduce作业的输入与输出</h2><p>MapRecude计算框架是在键值对&lt;key, value&gt;上进行操作的。MapReduce计算框架将作业的输入视为一组&lt;key，value&gt;对，并生成一组&lt;key, value&gt;对作为其输出，可能是不同类型的。&lt;key, value&gt;中：</p>
+<ul>
+<li>key和value的类都要由框架实现序列化，所以都需要实现<code>org.apache.hadoop.io.Writable</code>接口；</li>
+<li>除此之外key的类还需要实现<code>org.apache.hadoop.io.WritableComparable</code>接口，因为在map操作之后还需要对key进行排序操作。</li>
+</ul>
+<p>MapReduce作业的输入和输出类型：</p>
+<blockquote>
+<p>(input) &lt;k1, v1&gt; -&gt; <strong>map</strong> -&gt; &lt;k2, v2&gt; -&gt; <strong>combine</strong> -&gt; &lt;k2, v2&gt; -&gt; <strong>reduce</strong> -&gt; &lt;k3, v3&gt; (output)</p>
+</blockquote>
+        
+          <p class="article-more-link">
+            <a href="../../2020/06/26/First-MapReduce-example-WordCount/#more">阅读全文</a>
+          </p>
+        
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-Linux-macOS-Shell终端快捷键" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="../../2020/06/25/Linux-macOS-Shell%E7%BB%88%E7%AB%AF%E5%BF%AB%E6%8D%B7%E9%94%AE/">Linux/macOS Shell终端快捷键</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="../../2020/06/25/Linux-macOS-Shell%E7%BB%88%E7%AB%AF%E5%BF%AB%E6%8D%B7%E9%94%AE/" class="article-date">
+  <time datetime="2020-06-25T02:59:14.000Z" itemprop="datePublished">2020-06-25</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Linux/" rel="tag">Linux</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/macOS/" rel="tag">macOS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        <p>1。有时候调用历史命令，都是很长的那种，然后发现并不是自己想要的，需要重新输入，如何快速删除已有&#x2F;已输入的命令&#x2F;内容？</p>
+<p>Ctrl + C</p>
+<p>2。Linux&#x2F;moacOS 终端命令行输入的常用快捷键。</p>
+        
+          <p class="article-more-link">
+            <a href="../../2020/06/25/Linux-macOS-Shell%E7%BB%88%E7%AB%AF%E5%BF%AB%E6%8D%B7%E9%94%AE/#more">阅读全文</a>
+          </p>
+        
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
     <article id="post-ssh远程登录" class="article global-container article-type-post" itemscope itemprop="blogPost">
   
     <header class="article-header">
@@ -179,9 +398,9 @@
     手动推送更新至hexobackup仓库触发Actions-->3(Actions等待工作流中配置的部署GiteePages作业被触发执行)-->自动部署GiteePages-->完成同步更新;
     完成_config.yml文件的deploy配置-->1;</pre>
 
-<p>Something about Continuously Integrity / Continuously Deploy…</p>
+<p>Something about Continuously Integrity &#x2F; Continuously Deploy…</p>
 <p>Github Actions.</p>
-<p>.github/workflows/main.yml文件代码：</p>
+<p>.github&#x2F;workflows&#x2F;main.yml文件代码：</p>
 <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="YML"><figure class="iseeu highlight /yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">name:</span> <span class="string">Sync</span></span><br><span class="line"></span><br><span class="line"><span class="attr">on:</span></span><br><span class="line">  <span class="attr">push:</span></span><br><span class="line">    <span class="attr">branches:</span> <span class="string">[master]</span></span><br><span class="line">  <span class="attr">workflow_dispatch:</span></span><br><span class="line"></span><br><span class="line"><span class="attr">jobs:</span></span><br><span class="line">  <span class="attr">build:</span></span><br><span class="line">    <span class="attr">runs-on:</span> <span class="string">ubuntu-latest</span></span><br><span class="line">    <span class="attr">steps:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">Build</span> <span class="string">Gitee</span> <span class="string">Pages</span></span><br><span class="line">        <span class="attr">uses:</span> <span class="string">yanglbme/gitee-pages-action@main</span></span><br><span class="line">        <span class="attr">with:</span></span><br><span class="line">          <span class="comment"># 注意替换为你的 Gitee 用户名</span></span><br><span class="line">          <span class="attr">gitee-username:</span> <span class="string">xy94</span></span><br><span class="line">          <span class="comment"># 注意在 Settings-&gt;Secrets 配置 GITEE_PASSWORD</span></span><br><span class="line">          <span class="attr">gitee-password:</span> <span class="string">$&#123;&#123;</span> <span class="string">secrets.GITEE_PASSWORD</span> <span class="string">&#125;&#125;</span></span><br><span class="line">          <span class="comment"># 注意替换为你的 Gitee 仓库，仓库名严格区分大小写，请准确填写，否则会出错</span></span><br><span class="line">          <span class="attr">gitee-repo:</span> <span class="string">xy94/xy94</span></span><br><span class="line">          <span class="comment"># 要部署的分支，默认是 master，若是其他分支，则需要指定（指定的分支必须存在）</span></span><br><span class="line">          <span class="attr">branch:</span> <span class="string">master</span></span><br></pre></td></tr></table></figure></div>
 
 <p>SSH</p>
@@ -231,13 +450,13 @@
 <p><strong>解决方法</strong>：  </p>
 <ol>
 <li>下载并安装字体<br>在Windows上安装上述字体，点击 <a href="https://github.com/powerline/fonts/raw/master/Meslo%20Dotted/Meslo%20LG%20L%20DZ%20Regular%20for%20Powerline.ttf" target="_blank" rel="noopener">Meslo LG L DZ Regular for Powerline</a> 下载字体至本地，双击下载的字体文件，安装字体。</li>
-<li>修改Git Bash配置文件使用安装好的字体<br>在Git Bash的Option中的Text选项卡也能设置字体，但是它的字体列表显示的不完全，很多Windows上已有的和上述新安装的Powerline字体在Git bash的设置里面都找不到。解决方法是直接修改Git Bash的配置文件，一般这个配置文件都是用户目录下的.minttyrc文件，即<code>~/.minttyrc</code>，如果没有这个文件也不影响下面的操作，会自动创建。在<code>~/.minttyrc</code>文件中填写以下配置：  </li>
+<li>修改Git Bash配置文件使用安装好的字体<br>在Git Bash的Option中的Text选项卡也能设置字体，但是它的字体列表显示的不完全，很多Windows上已有的和上述新安装的Powerline字体在Git bash的设置里面都找不到。解决方法是直接修改Git Bash的配置文件，一般这个配置文件都是用户目录下的.minttyrc文件，即<code>~/.minttyrc</code>，如果没有这个文件也不影响下面的操作，会自动创建。在<code>~/.minttyrc</code>文件中填写以下配置：</li>
 </ol>
 <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">Font&#x3D;Meslo LG L DZ Regular for Powerline</span><br><span class="line">FontHeight&#x3D;14</span><br><span class="line">ForegroundColour&#x3D;131,148,150</span><br><span class="line">BackgroundColour&#x3D;0,43,54</span><br><span class="line">CursorColour&#x3D;222,222,0</span><br><span class="line"></span><br><span class="line">Black&#x3D;7,54,66</span><br><span class="line">BoldBlack&#x3D;0,43,54</span><br><span class="line">Red&#x3D;220,50,47</span><br><span class="line">BoldRed&#x3D;203,75,22</span><br><span class="line">Green&#x3D;133,153,0</span><br><span class="line">BoldGreen&#x3D;88,110,117</span><br><span class="line">Yellow&#x3D;181,137,0</span><br><span class="line">BoldYellow&#x3D;101,123,131</span><br><span class="line">Blue&#x3D;38,139,210</span><br><span class="line">BoldBlue&#x3D;131,148,150</span><br><span class="line">Magenta&#x3D;211,54,130</span><br><span class="line">BoldMagenta&#x3D;108,113,196</span><br><span class="line">Cyan&#x3D;42,161,152</span><br><span class="line">BoldCyan&#x3D;147,161,161</span><br><span class="line">White&#x3D;238,232,213</span><br><span class="line">BoldWhite&#x3D;253,246,227</span><br><span class="line">Locale&#x3D;zh_CN </span><br><span class="line">Charset&#x3D;UTF-8</span><br><span class="line">CursorType&#x3D;block</span><br></pre></td></tr></table></figure></div>
 
 <h3 id="主题配色和隐藏用户主机名"><a href="#主题配色和隐藏用户主机名" class="headerlink" title="主题配色和隐藏用户主机名"></a>主题配色和隐藏用户主机名</h3><ol>
 <li>主题美化：<br>主题美化很简单，事实上已经配置完成了。以上配置文件中已经配置了字体<code>Font</code>和字体大小<code>FontHeight</code>，同时也配置了MinGW的主题配色为<a href="https://github.com/mavnn/mintty-colors-solarized" target="_blank" rel="noopener">mintty-colors-solarized</a>。重启Git Bash就能看到新的主题配色和字体。  </li>
-<li>隐藏命令提示符前的 ‘用户名@主机名’：<br>打开Git Bash，输入命令<code>vi ~/.profile</code>打开.profile文件，按<code>i</code>进入<code>INSERT</code>模式，在文件末尾添加一行<code>export PS1=&quot;\W\[\033[32m\]\$(parse_git_branch)\[\033[00m\] $ &quot;</code> ，按<code>ESC</code>，输入<code>:wq</code>保存退出。再次重启Git Bash，用户名和主机名都不会显示啦。如果想只显示用户名而不显示电脑主机名，就把输入的那一行改为<del>改成啥来着，忘了，百度一下吧</del>。  </li>
+<li>隐藏命令提示符前的 ‘用户名@主机名’：<br>打开Git Bash，输入命令<code>vi ~/.profile</code>打开.profile文件，按<code>i</code>进入<code>INSERT</code>模式，在文件末尾添加一行<code>export PS1=&quot;\W\[\033[32m\]\$(parse_git_branch)\[\033[00m\] $ &quot;</code> ，按<code>ESC</code>，输入<code>:wq</code>保存退出。再次重启Git Bash，用户名和主机名都不会显示啦。如果想只显示用户名而不显示电脑主机名，就把输入的那一行改为<del>改成啥来着，忘了，百度一下吧</del>。</li>
 </ol>
 <hr>
 <h2 id="使用ssh远程连接时中文乱码"><a href="#使用ssh远程连接时中文乱码" class="headerlink" title="使用ssh远程连接时中文乱码"></a>使用ssh远程连接时中文乱码</h2><p><strong>问题描述</strong>：<br>在本地Windows系统的Git Bash上使用ssh连接至远程的macOS服务器（Linux同理），中文还是乱码。  </p>
@@ -245,7 +464,7 @@
 <ol>
 <li>在Windows上编辑<code>~/.minttyrc</code>文件，填入<code>Locale=zh_CN</code>和<code>Charset=UTF-8</code>这两行（上面修改主题部分给出的配置中已经有了这两行，没有就添加）以修改字符集为UTF-8；  </li>
 <li>在<code>ssh username@host</code>连接上远程服务器之后，输入<code>export LANG=&quot;zh_CN.UTF-8&quot;</code>，中文即可显示正常。  </li>
-<li>第2点的命令只对本次连接有效，下次使用ssh重新连接远程服务器时还是会出现中文乱码。为使之永久生效，可以将上述export命令添加到远程主机（macOS/Linux）的环境变量中。  </li>
+<li>第2点的命令只对本次连接有效，下次使用ssh重新连接远程服务器时还是会出现中文乱码。为使之永久生效，可以将上述export命令添加到远程主机（macOS&#x2F;Linux）的环境变量中。</li>
 </ol>
 <hr>
 <p>写完才发现我远程oh-my-zsh（<a href="https://www.ioiox.com/archives/34.html" target="_blank" rel="noopener">macOS上</a>）使用的字体是 <a href="https://github.com/abertsch/Menlo-for-Powerline" target="_blank" rel="noopener">Menlo-for-Powerline</a> ，虽然Windows本地的Git Bash上配置的字体和远程终端不一样，但是也不影响，因为两者都是支持非ASCII字符显示的Powerline字体。  </p>
@@ -298,7 +517,7 @@
     
     <div class="article-content article-content-cloud" itemprop="articleBody">
       
-        <h2 id="Linux-macOS终端命令，如何从包含完整路径的文件名-获取-不包含文件夹路径只包含文件名的-基本名称"><a href="#Linux-macOS终端命令，如何从包含完整路径的文件名-获取-不包含文件夹路径只包含文件名的-基本名称" class="headerlink" title="Linux/macOS终端命令，如何从包含完整路径的文件名 获取 不包含文件夹路径只包含文件名的 基本名称"></a>Linux/macOS终端命令，如何从包含完整路径的文件名 获取 不包含文件夹路径只包含文件名的 基本名称</h2><p>一个简单的提示，如果你正在编写一个 Linux shell 脚本，并且需要从一个完整的(规范的)目录 / 文件路径中获取文件名，你可以像这样使用 Linux basename 命令:</p>
+        <h2 id="Linux-x2F-macOS终端命令，如何从包含完整路径的文件名-获取-不包含文件夹路径只包含文件名的-基本名称"><a href="#Linux-x2F-macOS终端命令，如何从包含完整路径的文件名-获取-不包含文件夹路径只包含文件名的-基本名称" class="headerlink" title="Linux&#x2F;macOS终端命令，如何从包含完整路径的文件名 获取 不包含文件夹路径只包含文件名的 基本名称"></a>Linux&#x2F;macOS终端命令，如何从包含完整路径的文件名 获取 不包含文件夹路径只包含文件名的 基本名称</h2><p>一个简单的提示，如果你正在编写一个 Linux shell 脚本，并且需要从一个完整的(规范的)目录 &#x2F; 文件路径中获取文件名，你可以像这样使用 Linux basename 命令:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ basename /foo/bar/baz/foo.txt</span><br><span class="line">foo.txt</span><br></pre></td></tr></table></figure>
         
           <p class="article-more-link">
@@ -400,112 +619,11 @@
 </article>
 
   
-    <article id="post-Hadoop-HDFS-JAVA-API操作" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/06/18/Hadoop-HDFS-JAVA-API%E6%93%8D%E4%BD%9C/">Hadoop HDFS JAVA API操作</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/06/18/Hadoop-HDFS-JAVA-API%E6%93%8D%E4%BD%9C/" class="article-date">
-  <time datetime="2020-06-18T02:48:47.000Z" itemprop="datePublished">2020-06-18</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/HDFS/" rel="tag">HDFS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <h2 id="1-环境搭建"><a href="#1-环境搭建" class="headerlink" title="1. 环境搭建"></a>1. 环境搭建</h2><ul>
-<li>IntelliJ IDEA 新建 Maven 项目<ul>
-<li>勾选 <code>Create from archetype</code></li>
-<li>选择 <code>org.apache.maven.archetypes:maven-archetype-quickstart</code>,点击<code>Next</code></li>
-<li>Maven home directory可以默认，也可以选择自己安装的Maven目录</li>
-<li>User settings file勾选<code>Override</code>，选择用户自定义的<code>~/.m2/settings.xml</code>文件</li>
-</ul>
-</li>
-<li><code>pom.xml</code> 配置</li>
-</ul>
-        
-          <p class="article-more-link">
-            <a href="../../2020/06/18/Hadoop-HDFS-JAVA-API%E6%93%8D%E4%BD%9C/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
-    <article id="post-CDH-Hadoop安装过程" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="../../2020/06/08/CDH-Hadoop%E5%AE%89%E8%A3%85%E8%BF%87%E7%A8%8B/">CDH Hadoop安装过程</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="../../2020/06/08/CDH-Hadoop%E5%AE%89%E8%A3%85%E8%BF%87%E7%A8%8B/" class="article-date">
-  <time datetime="2020-06-08T10:56:47.000Z" itemprop="datePublished">2020-06-08</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <h2 id="1-安装环境"><a href="#1-安装环境" class="headerlink" title="1. 安装环境"></a>1. 安装环境</h2><ul>
-<li>操作系统：Ubuntu 18.04 64位</li>
-<li><a href="https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/HdfsDesign.html" target="_blank" rel="noopener">Hadoop</a>版本：hadoop-2.6.0-cdh5.7.0.tar.gz</li>
-<li>JDK版本：jdk-8u241-linux-x64.tar.gz</li>
-</ul>
-<h2 id="2-Hadoop伪分布式安装"><a href="#2-Hadoop伪分布式安装" class="headerlink" title="2. Hadoop伪分布式安装"></a>2. <a href="https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0/hadoop-project-dist/hadoop-common/SingleCluster.html" target="_blank" rel="noopener">Hadoop伪分布式安装</a></h2><p>操作环境：macOS终端 <code>ssh</code> 远程连接Ubuntu  </p>
-<h3 id="2-1-下载地址"><a href="#2-1-下载地址" class="headerlink" title="2.1. 下载地址"></a>2.1. 下载地址</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wget https://archive.cloudera.com/cdh5/cdh/5/hadoop-2.6.0-cdh5.7.0.tar.gz <span class="comment">#Hadoop安装包</span></span><br><span class="line">wget http://enos.itcollege.ee/~jpoial/allalaadimised/jdk8/jdk-8u241-linux-x64.tar.gz <span class="comment">#JDK安装包</span></span><br></pre></td></tr></table></figure>
-        
-          <p class="article-more-link">
-            <a href="../../2020/06/08/CDH-Hadoop%E5%AE%89%E8%A3%85%E8%BF%87%E7%A8%8B/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
 
 
   <nav id="page-nav">
     <!--  -->
-    <a class="extend prev" rel="prev" href="../4/">&lt;&lt; 上一页</a><a class="page-number" href="../../">1</a><span class="space">&hellip;</span><a class="page-number" href="../3/">3</a><a class="page-number" href="../4/">4</a><span class="page-number current">5</span>
+    <a class="extend prev" rel="prev" href="../4/">&lt;&lt; 上一页</a><a class="page-number" href="../../">1</a><span class="space">&hellip;</span><a class="page-number" href="../3/">3</a><a class="page-number" href="../4/">4</a><span class="page-number current">5</span><a class="page-number" href="../6/">6</a><a class="extend next" rel="next" href="../6/">下一页 &gt;&gt;</a>
   </nav>
 
 
@@ -535,7 +653,7 @@
   <div class="widget-box">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
     </div>
   </div>
 
@@ -545,7 +663,7 @@
   <div class="widget-box">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../tags/Git-Bash/" style="font-size: 11.67px;">Git Bash</a> <a href="../../tags/Github/" style="font-size: 13.33px;">Github</a> <a href="../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../tags/Hadoop/" style="font-size: 18.33px;">Hadoop</a> <a href="../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../tags/JVM/" style="font-size: 18.33px;">JVM</a> <a href="../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../tags/JavaScript/" style="font-size: 16.67px;">JavaScript</a> <a href="../../tags/Linux/" style="font-size: 15px;">Linux</a> <a href="../../tags/MapReduce/" style="font-size: 11.67px;">MapReduce</a> <a href="../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="../../tags/SQL/" style="font-size: 13.33px;">SQL</a> <a href="../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../tags/Shell/" style="font-size: 11.67px;">Shell</a> <a href="../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../tags/WebSocket/" style="font-size: 10px;">WebSocket</a> <a href="../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../tags/hexo/" style="font-size: 11.67px;">hexo</a> <a href="../../tags/macOS/" style="font-size: 11.67px;">macOS</a> <a href="../../tags/ssh/" style="font-size: 11.67px;">ssh</a> <a href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.67px;">电脑</a> <a href="../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.67px;">竹云</a> <a href="../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 13.33px;">终端</a> <a href="../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
+      <a href="../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../tags/Git-Bash/" style="font-size: 11.67px;">Git Bash</a> <a href="../../tags/Github/" style="font-size: 13.33px;">Github</a> <a href="../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../tags/HTTP/" style="font-size: 11.67px;">HTTP</a> <a href="../../tags/Hadoop/" style="font-size: 18.33px;">Hadoop</a> <a href="../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../tags/JVM/" style="font-size: 18.33px;">JVM</a> <a href="../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../tags/JavaScript/" style="font-size: 16.67px;">JavaScript</a> <a href="../../tags/Linux/" style="font-size: 15px;">Linux</a> <a href="../../tags/MapReduce/" style="font-size: 11.67px;">MapReduce</a> <a href="../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="../../tags/SQL/" style="font-size: 13.33px;">SQL</a> <a href="../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../tags/Shell/" style="font-size: 11.67px;">Shell</a> <a href="../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../tags/WebSocket/" style="font-size: 11.67px;">WebSocket</a> <a href="../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../tags/hexo/" style="font-size: 11.67px;">hexo</a> <a href="../../tags/macOS/" style="font-size: 11.67px;">macOS</a> <a href="../../tags/ssh/" style="font-size: 11.67px;">ssh</a> <a href="../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.67px;">电脑</a> <a href="../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.67px;">竹云</a> <a href="../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 13.33px;">终端</a> <a href="../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
     </div>
   </div>
 
@@ -554,7 +672,7 @@
   <div class="widget-box">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/12/">十二月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/06/">六月 2020</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../archives/2020/06/">六月 2020</a></li></ul>
     </div>
   </div>
 
@@ -570,10 +688,6 @@
           </li>
         
           <li>
-            <a href="../../2023/02/09/SpringBoot%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E7%82%B9/">SpringBoot项目相关知识点</a>
-          </li>
-        
-          <li>
             <a href="../../2023/02/09/%E4%BD%9C%E4%B8%BA%E7%94%A8%E6%88%B7%EF%BC%8C%E4%BF%AE%E6%94%B9Cookie%E6%9C%89%E6%95%88%E6%9C%9F%EF%BC%8C%E5%BB%B6%E9%95%BFCookie%E6%9C%9F%E9%99%90/">作为用户，修改Cookie有效期，延长Cookie期限</a>
           </li>
         
@@ -583,6 +697,10 @@
         
           <li>
             <a href="../../2023/01/18/Windows%E7%B3%BB%E7%BB%9FC%E7%9B%98%E6%B8%85%E7%90%86%E5%B7%A5%E5%85%B7FreeMove%E5%8F%8A%E6%96%87%E4%BB%B6%E5%8D%A0%E7%94%A8%E8%BF%9B%E7%A8%8B%E6%9F%A5%E7%9C%8B%E8%BD%AF%E4%BB%B6LockHunter%E9%85%8D%E5%90%88%E4%BD%BF%E7%94%A8/">Windows系统C盘清理工具FreeMove及文件占用进程查看软件LockHunter配合使用</a>
+          </li>
+        
+          <li>
+            <a href="../../2023/01/14/AutoReconnectWiFi/">检测断网自动重连WiFi脚本</a>
           </li>
         
       </ul>
@@ -612,7 +730,7 @@
       </div>
       <footer id="footer">
   <div class="foot-box global-width center">
-    &copy; 2023 许嵩老公 &nbsp;&nbsp;
+    &copy; 2025 许嵩老公 &nbsp;&nbsp;
     Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
     &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
     <br>

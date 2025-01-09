@@ -25,12 +25,12 @@
   <meta name="description" content="Spring与SpringBootSpring框架，它的主要功能包括IoC容器、AOP支持、事务支持、MVC开发以及强大的第三方集成功能等。 那么，Spring Boot又是什么？它和Spring是什么关系？ Spring Boot是一个基于Spring的套件，它帮我们预组装了Spring的一系列组件，以便以尽可能少的代码和配置来开发基于Spring的Java应用程序。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SpringBoot项目相关知识点">
-<meta property="og:url" content="https://xiaoyan94.github.io/2023/02/09/SpringBoot%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E7%82%B9/index.html">
+<meta property="og:url" content="https://xiaoyan94.github.io/2021/02/09/SpringBoot%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E7%82%B9/index.html">
 <meta property="og:site_name" content="空城盼故人">
 <meta property="og:description" content="Spring与SpringBootSpring框架，它的主要功能包括IoC容器、AOP支持、事务支持、MVC开发以及强大的第三方集成功能等。 那么，Spring Boot又是什么？它和Spring是什么关系？ Spring Boot是一个基于Spring的套件，它帮我们预组装了Spring的一系列组件，以便以尽可能少的代码和配置来开发基于Spring的Java应用程序。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2023-02-09T06:22:09.000Z">
-<meta property="article:modified_time" content="2023-02-10T01:53:06.824Z">
+<meta property="article:published_time" content="2021-02-09T06:22:09.000Z">
+<meta property="article:modified_time" content="2023-02-25T00:19:06.000Z">
 <meta property="article:author" content="许嵩老公">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="SpringBoot">
@@ -98,7 +98,7 @@
   
   <div class="article-meta">
     <a href="" class="article-date">
-  <time datetime="2023-02-09T06:22:09.000Z" itemprop="datePublished">2023-02-09</time>
+  <time datetime="2021-02-09T06:22:09.000Z" itemprop="datePublished">2021-02-09</time>
 </a>
     
     
@@ -122,36 +122,36 @@
 <a id="more"></a>
 
 <ul>
-<li><a href="#spring与springboot">Spring与SpringBoot</a></li>
-<li><a href="#springboot配置">springboot配置</a><ul>
-<li><a href="#配置文件格式">配置文件格式</a></li>
-<li><a href="#自动配置和自动扫描">自动配置和自动扫描</a></li>
-<li><a href="#springboot自动重新加载">springboot自动重新加载</a><ul>
-<li><a href="#解决idea中自动重启不生效">解决idea中自动重启不生效</a></li>
+<li><a href="#spring%E4%B8%8Espringboot">Spring与SpringBoot</a></li>
+<li><a href="#springboot%E9%85%8D%E7%BD%AE">springboot配置</a><ul>
+<li><a href="#%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F">配置文件格式</a></li>
+<li><a href="#%E8%87%AA%E5%8A%A8%E9%85%8D%E7%BD%AE%E5%92%8C%E8%87%AA%E5%8A%A8%E6%89%AB%E6%8F%8F">自动配置和自动扫描</a></li>
+<li><a href="#springboot%E8%87%AA%E5%8A%A8%E9%87%8D%E6%96%B0%E5%8A%A0%E8%BD%BD">springboot自动重新加载</a><ul>
+<li><a href="#%E8%A7%A3%E5%86%B3idea%E4%B8%AD%E8%87%AA%E5%8A%A8%E9%87%8D%E5%90%AF%E4%B8%8D%E7%94%9F%E6%95%88">解决idea中自动重启不生效</a></li>
 </ul>
 </li>
-<li><a href="#打包springboot应用">打包springboot应用</a><ul>
-<li><a href="#打jar包和运行jar包">打jar包和运行jar包</a></li>
-<li><a href="#打包时排除开发者工具">打包时排除开发者工具</a></li>
-<li><a href="#指定打包文件名称">指定打包文件名称</a></li>
+<li><a href="#%E6%89%93%E5%8C%85springboot%E5%BA%94%E7%94%A8">打包springboot应用</a><ul>
+<li><a href="#%E6%89%93jar%E5%8C%85%E5%92%8C%E8%BF%90%E8%A1%8Cjar%E5%8C%85">打jar包和运行jar包</a></li>
+<li><a href="#%E6%89%93%E5%8C%85%E6%97%B6%E6%8E%92%E9%99%A4%E5%BC%80%E5%8F%91%E8%80%85%E5%B7%A5%E5%85%B7">打包时排除开发者工具</a></li>
+<li><a href="#%E6%8C%87%E5%AE%9A%E6%89%93%E5%8C%85%E6%96%87%E4%BB%B6%E5%90%8D%E7%A7%B0">指定打包文件名称</a></li>
 </ul>
 </li>
-<li><a href="#瘦身打包应用减小jar包体积"><strong>瘦身打包</strong>应用减小jar包体积</a><ul>
-<li><a href="#打包后体积过大问题原因">打包后体积过大问题原因</a></li>
-<li><a href="#瘦身打包配置"><strong>瘦身打包配置</strong></a></li>
-<li><a href="#瘦身打包插件原理">瘦身打包插件原理</a><ul>
-<li><a href="#瘦身打包预热">瘦身打包——预热</a></li>
+<li><a href="#%E7%98%A6%E8%BA%AB%E6%89%93%E5%8C%85%E5%BA%94%E7%94%A8%E5%87%8F%E5%B0%8Fjar%E5%8C%85%E4%BD%93%E7%A7%AF"><strong>瘦身打包</strong>应用减小jar包体积</a><ul>
+<li><a href="#%E6%89%93%E5%8C%85%E5%90%8E%E4%BD%93%E7%A7%AF%E8%BF%87%E5%A4%A7%E9%97%AE%E9%A2%98%E5%8E%9F%E5%9B%A0">打包后体积过大问题原因</a></li>
+<li><a href="#%E7%98%A6%E8%BA%AB%E6%89%93%E5%8C%85%E9%85%8D%E7%BD%AE"><strong>瘦身打包配置</strong></a></li>
+<li><a href="#%E7%98%A6%E8%BA%AB%E6%89%93%E5%8C%85%E6%8F%92%E4%BB%B6%E5%8E%9F%E7%90%86">瘦身打包插件原理</a><ul>
+<li><a href="#%E7%98%A6%E8%BA%AB%E6%89%93%E5%8C%85%E9%A2%84%E7%83%AD">瘦身打包——预热</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#使用环境变量">使用环境变量</a></li>
-<li><a href="#使用profiles进行不同环境的配置">使用profiles进行不同环境的配置</a><ul>
-<li><a href="#使用profiles进行条件装配">使用profiles进行条件装配</a></li>
+<li><a href="#%E4%BD%BF%E7%94%A8%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F">使用环境变量</a></li>
+<li><a href="#%E4%BD%BF%E7%94%A8profiles%E8%BF%9B%E8%A1%8C%E4%B8%8D%E5%90%8C%E7%8E%AF%E5%A2%83%E7%9A%84%E9%85%8D%E7%BD%AE">使用profiles进行不同环境的配置</a><ul>
+<li><a href="#%E4%BD%BF%E7%94%A8profiles%E8%BF%9B%E8%A1%8C%E6%9D%A1%E4%BB%B6%E8%A3%85%E9%85%8D">使用profiles进行条件装配</a></li>
 </ul>
 </li>
-<li><a href="#使用conditional进行条件装配">使用conditional进行条件装配</a></li>
-<li><a href="#加载配置到bean中">加载配置到bean中</a></li>
+<li><a href="#%E4%BD%BF%E7%94%A8conditional%E8%BF%9B%E8%A1%8C%E6%9D%A1%E4%BB%B6%E8%A3%85%E9%85%8D">使用conditional进行条件装配</a></li>
+<li><a href="#%E5%8A%A0%E8%BD%BD%E9%85%8D%E7%BD%AE%E5%88%B0bean%E4%B8%AD">加载配置到bean中</a></li>
 </ul>
 </li>
 </ul>
@@ -171,8 +171,8 @@
 </tr>
 <tr>
 <td>JDK版本</td>
-<td>&gt;= 1.8</td>
-<td>&gt;= 17</td>
+<td>&gt;&#x3D; 1.8</td>
+<td>&gt;&#x3D; 17</td>
 </tr>
 <tr>
 <td>Tomcat版本</td>
@@ -259,7 +259,7 @@
 <h5 id="瘦身打包——预热"><a href="#瘦身打包——预热" class="headerlink" title="瘦身打包——预热"></a>瘦身打包——预热</h5><p>把79KB大小的<code>awesome-app.jar</code>直接扔到服务器执行，上传过程就非常快。但是，第一次在服务器上运行<code>awesome-app.jar</code>时，仍需要从Maven中央仓库下载大量的jar包，所以，<code>spring-boot-thin-launcher</code>还提供了一个<code>dryrun</code>选项，专门用来下载依赖项而不执行实际代码：</p>
 <div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SHELL"><figure class="iseeu highlight /shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -Dthin.dryrun=true -Dthin.root=. -jar awesome-app.jar</span><br></pre></td></tr></table></figure></div>
 
-<p><strong><em>如果执行报错，可能是版本的原因，换个版本试试</em></strong>。</p>
+<p><em><strong>如果执行报错，可能是版本的原因，换个版本试试</strong></em>。</p>
 <p>执行上述代码会在当前目录创建<code>repository</code>目录，并下载所有依赖项，但并不会运行我们编写的<code>main()</code>方法。此过程称之为“预热”（warm up）。</p>
 <p>如果服务器由于安全限制不允许从外网下载文件，那么可以在本地预热，然后把<code>awesome-app.jar</code>和<code>repository</code>目录上传到服务器。只要依赖项没有变化，后续改动只需要上传<code>awesome-app.jar</code>即可。</p>
 <h3 id="使用环境变量"><a href="#使用环境变量" class="headerlink" title="使用环境变量"></a>使用环境变量</h3><p>在配置文件中，我们经常使用如下的格式对某个key进行配置：</p>
@@ -312,11 +312,11 @@
 <nav id="article-nav">
   <div class="article-nav-block">
     
-      <a href="../../13/%E4%BD%BF%E7%94%A8Node-js%E5%90%8E%E5%8F%B0%E8%AF%BB%E5%8F%96%E4%B8%B2%E5%8F%A3%E6%95%B0%E6%8D%AE%E5%B9%B6%E9%80%9A%E8%BF%87WebSocket%E5%AE%9E%E6%97%B6%E6%98%BE%E7%A4%BA%E5%9C%A8%E7%BD%91%E9%A1%B5%E4%B8%8A/" id="article-nav-newer" class="article-nav-link-wrap">
+      <a href="../../20/TCP%E5%92%8CHTTP%E6%8F%A1%E6%89%8B/" id="article-nav-newer" class="article-nav-link-wrap">
         <strong class="article-nav-caption"></strong>
         <div class="article-nav-title">
           
-            使用Node.js后台读取串口数据并通过WebSocket实时显示在网页上
+            TCP握手和HTTP/HTTPS建立连接流程，HTTP/1.1和HTTP/2的区别
           
         </div>
       </a>
@@ -324,8 +324,8 @@
   </div>
   <div class="article-nav-block">
     
-      <a href="../%E4%BD%9C%E4%B8%BA%E7%94%A8%E6%88%B7%EF%BC%8C%E4%BF%AE%E6%94%B9Cookie%E6%9C%89%E6%95%88%E6%9C%9F%EF%BC%8C%E5%BB%B6%E9%95%BFCookie%E6%9C%9F%E9%99%90/" id="article-nav-older" class="article-nav-link-wrap">
-        <div class="article-nav-title">作为用户，修改Cookie有效期，延长Cookie期限</div>
+      <a href="../../../01/20/%E6%B5%8F%E8%A7%88%E5%99%A8window%E5%AF%B9%E8%B1%A1%E4%B8%AD%E7%9A%84%E6%9C%AC%E5%9C%B0%E5%AD%98%E5%82%A8%E5%92%8C%E4%BC%9A%E8%AF%9D%E5%AD%98%E5%82%A8/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">浏览器window对象中的本地存储和会话存储</div>
         <strong class="article-nav-caption"></strong>
       </a>
     
@@ -406,7 +406,7 @@ gitment.render('gitmentContainer')
   <div class="widget-box">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
     </div>
   </div>
 
@@ -416,7 +416,7 @@ gitment.render('gitmentContainer')
   <div class="widget-box">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.67px;">Git Bash</a> <a href="../../../../tags/Github/" style="font-size: 13.33px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/Hadoop/" style="font-size: 18.33px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/JVM/" style="font-size: 18.33px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 16.67px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 15px;">Linux</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.67px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="../../../../tags/SQL/" style="font-size: 13.33px;">SQL</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.67px;">Shell</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 10px;">WebSocket</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/hexo/" style="font-size: 11.67px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.67px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.67px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.67px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.67px;">竹云</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 13.33px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.67px;">Git Bash</a> <a href="../../../../tags/Github/" style="font-size: 13.33px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 11.67px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 18.33px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/JVM/" style="font-size: 18.33px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 16.67px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 15px;">Linux</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.67px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="../../../../tags/SQL/" style="font-size: 13.33px;">SQL</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.67px;">Shell</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 11.67px;">WebSocket</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/hexo/" style="font-size: 11.67px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.67px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.67px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.67px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.67px;">竹云</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 13.33px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
     </div>
   </div>
 
@@ -425,7 +425,7 @@ gitment.render('gitmentContainer')
   <div class="widget-box">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/12/">十二月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
     </div>
   </div>
 
@@ -437,23 +437,23 @@ gitment.render('gitmentContainer')
       <ul>
         
           <li>
-            <a href="../../13/%E4%BD%BF%E7%94%A8Node-js%E5%90%8E%E5%8F%B0%E8%AF%BB%E5%8F%96%E4%B8%B2%E5%8F%A3%E6%95%B0%E6%8D%AE%E5%B9%B6%E9%80%9A%E8%BF%87WebSocket%E5%AE%9E%E6%97%B6%E6%98%BE%E7%A4%BA%E5%9C%A8%E7%BD%91%E9%A1%B5%E4%B8%8A/">使用Node.js后台读取串口数据并通过WebSocket实时显示在网页上</a>
+            <a href="../../../../2023/02/13/%E4%BD%BF%E7%94%A8Node-js%E5%90%8E%E5%8F%B0%E8%AF%BB%E5%8F%96%E4%B8%B2%E5%8F%A3%E6%95%B0%E6%8D%AE%E5%B9%B6%E9%80%9A%E8%BF%87WebSocket%E5%AE%9E%E6%97%B6%E6%98%BE%E7%A4%BA%E5%9C%A8%E7%BD%91%E9%A1%B5%E4%B8%8A/">使用Node.js后台读取串口数据并通过WebSocket实时显示在网页上</a>
           </li>
         
           <li>
-            <a href="">SpringBoot项目相关知识点</a>
+            <a href="../../../../2023/02/09/%E4%BD%9C%E4%B8%BA%E7%94%A8%E6%88%B7%EF%BC%8C%E4%BF%AE%E6%94%B9Cookie%E6%9C%89%E6%95%88%E6%9C%9F%EF%BC%8C%E5%BB%B6%E9%95%BFCookie%E6%9C%9F%E9%99%90/">作为用户，修改Cookie有效期，延长Cookie期限</a>
           </li>
         
           <li>
-            <a href="../%E4%BD%9C%E4%B8%BA%E7%94%A8%E6%88%B7%EF%BC%8C%E4%BF%AE%E6%94%B9Cookie%E6%9C%89%E6%95%88%E6%9C%9F%EF%BC%8C%E5%BB%B6%E9%95%BFCookie%E6%9C%9F%E9%99%90/">作为用户，修改Cookie有效期，延长Cookie期限</a>
+            <a href="../../../../2023/02/08/%E7%BB%88%E7%AB%AF%E5%91%BD%E4%BB%A4%E4%BB%A3%E7%90%86/">终端命令网络设置</a>
           </li>
         
           <li>
-            <a href="../../08/%E7%BB%88%E7%AB%AF%E5%91%BD%E4%BB%A4%E4%BB%A3%E7%90%86/">终端命令网络设置</a>
+            <a href="../../../../2023/01/18/Windows%E7%B3%BB%E7%BB%9FC%E7%9B%98%E6%B8%85%E7%90%86%E5%B7%A5%E5%85%B7FreeMove%E5%8F%8A%E6%96%87%E4%BB%B6%E5%8D%A0%E7%94%A8%E8%BF%9B%E7%A8%8B%E6%9F%A5%E7%9C%8B%E8%BD%AF%E4%BB%B6LockHunter%E9%85%8D%E5%90%88%E4%BD%BF%E7%94%A8/">Windows系统C盘清理工具FreeMove及文件占用进程查看软件LockHunter配合使用</a>
           </li>
         
           <li>
-            <a href="../../../01/18/Windows%E7%B3%BB%E7%BB%9FC%E7%9B%98%E6%B8%85%E7%90%86%E5%B7%A5%E5%85%B7FreeMove%E5%8F%8A%E6%96%87%E4%BB%B6%E5%8D%A0%E7%94%A8%E8%BF%9B%E7%A8%8B%E6%9F%A5%E7%9C%8B%E8%BD%AF%E4%BB%B6LockHunter%E9%85%8D%E5%90%88%E4%BD%BF%E7%94%A8/">Windows系统C盘清理工具FreeMove及文件占用进程查看软件LockHunter配合使用</a>
+            <a href="../../../../2023/01/14/AutoReconnectWiFi/">检测断网自动重连WiFi脚本</a>
           </li>
         
       </ul>
@@ -483,7 +483,7 @@ gitment.render('gitmentContainer')
       </div>
       <footer id="footer">
   <div class="foot-box global-width center">
-    &copy; 2023 许嵩老公 &nbsp;&nbsp;
+    &copy; 2025 许嵩老公 &nbsp;&nbsp;
     Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
     &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
     <br>

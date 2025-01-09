@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>TCP握手和HTTP/HTTPS建立连接流程，HTTP/1.1和HTTP/2的区别 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="TCP和HTTP握手TCP三次握手建立连接TCP 是传输控制协议（Transmission Control Protocol）的缩写，用于在计算机之间可靠地传输数据。在建立 TCP 连接时，需要进行三次握手，即客户端发送 SYN 报文，服务器返回 SYN-ACK 报文，客户端再发送 ACK 报文，从而建立连接。这个过程的目的是确保双方都能够接收和发送数据，以保证数据传输的可靠性和完整性。 具体来说">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TCP握手和HTTP&#x2F;HTTPS建立连接流程，HTTP&#x2F;1.1和HTTP&#x2F;2的区别">
+<meta property="og:url" content="https://xiaoyan94.github.io/2021/02/20/TCP%E5%92%8CHTTP%E6%8F%A1%E6%89%8B/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="TCP和HTTP握手TCP三次握手建立连接TCP 是传输控制协议（Transmission Control Protocol）的缩写，用于在计算机之间可靠地传输数据。在建立 TCP 连接时，需要进行三次握手，即客户端发送 SYN 报文，服务器返回 SYN-ACK 报文，客户端再发送 ACK 报文，从而建立连接。这个过程的目的是确保双方都能够接收和发送数据，以保证数据传输的可靠性和完整性。 具体来说">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-02-20T13:40:28.000Z">
+<meta property="article:modified_time" content="2023-02-25T00:19:06.000Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="HTTP">
+<meta property="article:tag" content="TCP">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-TCP和HTTP握手" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      TCP握手和HTTP/HTTPS建立连接流程，HTTP/1.1和HTTP/2的区别
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2021-02-20T13:40:28.000Z" itemprop="datePublished">2021-02-20</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <h2 id="TCP和HTTP握手"><a href="#TCP和HTTP握手" class="headerlink" title="TCP和HTTP握手"></a>TCP和HTTP握手</h2><h3 id="TCP三次握手建立连接"><a href="#TCP三次握手建立连接" class="headerlink" title="TCP三次握手建立连接"></a>TCP三次握手建立连接</h3><p>TCP 是传输控制协议（Transmission Control Protocol）的缩写，用于在计算机之间可靠地传输数据。在建立 TCP 连接时，需要进行三次握手，即客户端发送 SYN 报文，服务器返回 SYN-ACK 报文，客户端再发送 ACK 报文，从而建立连接。这个过程的目的是确保双方都能够接收和发送数据，以保证数据传输的可靠性和完整性。</p>
+<p>具体来说，TCP 连接的三次握手过程如下：</p>
+<ol>
+<li>客户端发送 SYN 报文：客户端向服务器发送 SYN（同步）报文，请求建立连接，并选择一个随机的初始序列号（sequence number）。</li>
+<li>服务器返回 SYN-ACK 报文：服务器收到客户端的 SYN 报文后，向客户端发送 SYN-ACK（同步-确认）报文，表示已收到客户端的请求，并确认客户端的初始序列号。服务器同时也选择一个随机的初始序列号。</li>
+<li>客户端发送 ACK 报文：客户端收到服务器的 SYN-ACK 报文后，向服务器发送 ACK（确认）报文，确认收到了服务器的确认，并发送自己的初始序列号。此时，TCP 连接已建立。</li>
+</ol>
+<p>以下是 TCP 连接三次握手的 Mermaid 代码和图示：</p>
+<pre class="mermaid">sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: SYN(同步报文)
+    Server->>Client: SYN-ACK(同步-确认报文)
+    Client->>Server: ACK(确认报文)</pre>
+
+<h3 id="基于TCP的HTTP"><a href="#基于TCP的HTTP" class="headerlink" title="基于TCP的HTTP"></a>基于TCP的HTTP</h3><a id="more"></a>
+
+<p>HTTP 是超文本传输协议（Hypertext Transfer Protocol）的缩写，用于在 Web 上传输数据。HTTP 建立在 TCP 上，因此 HTTP 的建立过程需要先建立 TCP 连接。因此，HTTP 连接的建立过程包含了 TCP 连接的三次握手过程。</p>
+<p>在 HTTP&#x2F;1.1 中，每个连接只能处理一个请求和响应，也就是说，在处理完一个请求和响应后，连接会立即关闭。因此，在 HTTP&#x2F;1.1 中，每个连接都需要进行一次完整的三次握手和四次挥手。HTTP&#x2F;2 引入了多路复用机制，可以在一个连接上同时处理多个请求和响应，从而减少了建立和关闭连接的开销。</p>
+<p>以下是 HTTP 连接建立过程的 Mermaid 代码和图示：</p>
+<pre class="mermaid">sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: SYN
+    Server->>Client: SYN-ACK
+    Client->>Server: ACK
+    Client->>Server: HTTP Request
+    Server->>Client: HTTP Response
+    Client->>Server: FIN
+    Server->>Client: ACK
+    Server->>Client: FIN
+    Client->>Server: ACK</pre>
+
+<h3 id="TCP四次挥手关闭连接"><a href="#TCP四次挥手关闭连接" class="headerlink" title="TCP四次挥手关闭连接"></a>TCP四次挥手关闭连接</h3><p>TCP 连接的四次挥手（Four-way handshake）用于关闭已建立的 TCP 连接，以确保数据的可靠传输。四次挥手的过程如下：</p>
+<ol>
+<li>客户端发送 FIN 报文：客户端请求关闭连接，向服务器发送 FIN（结束）报文。</li>
+<li>服务器返回 ACK 报文：服务器收到客户端的 FIN 报文后，向客户端发送 ACK（确认）报文，表示已收到关闭请求。</li>
+<li>服务器发送 FIN 报文：服务器确认可以关闭连接后，向客户端发送 FIN 报文，请求关闭连接。</li>
+<li>客户端返回 ACK 报文：客户端收到服务器的 FIN 报文后，向服务器发送 ACK 报文，表示已收到服务器的关闭请求，并确认可以关闭连接。此时，TCP 连接关闭。</li>
+</ol>
+<p>以下是 TCP 连接四次挥手的 Mermaid 代码和图示：</p>
+<pre class="mermaid">sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: FIN
+    Server->>Client: ACK
+    Server->>Client: FIN
+    Client->>Server: ACK</pre>
+
+<h3 id="HTTP协议版本"><a href="#HTTP协议版本" class="headerlink" title="HTTP协议版本"></a>HTTP协议版本</h3><p><strong>HTTP&#x2F;1.1</strong> 和 <strong>HTTP&#x2F;2</strong> 都是应用层协议，用于在 Web 上传输数据。它们的主要区别在于传输数据的方式和性能方面。</p>
+<h4 id="HTTP-x2F-1-1-和-HTTP-x2F-2-的区别"><a href="#HTTP-x2F-1-1-和-HTTP-x2F-2-的区别" class="headerlink" title="HTTP&#x2F;1.1 和 HTTP&#x2F;2 的区别"></a><strong>HTTP&#x2F;1.1</strong> 和 <strong>HTTP&#x2F;2</strong> 的区别</h4><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>HTTP&#x2F;1.1</th>
+<th>HTTP&#x2F;2</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>多路复用</td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>二进制分帧</td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>首部压缩</td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>服务器推送</td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>安全性</td>
+<td>需要 TLS&#x2F;SSL</td>
+<td>需要 TLS&#x2F;SSL</td>
+</tr>
+<tr>
+<td>建立连接</td>
+<td>需要三次握手</td>
+<td>需要TLS&#x2F;SSL的加密握手</td>
+</tr>
+<tr>
+<td>请求优先级</td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>语义</td>
+<td>每个请求都需要一个新的 TCP 连接</td>
+<td>多个请求可以共享一个 TCP 连接</td>
+</tr>
+<tr>
+<td>性能</td>
+<td>每个请求都需要一个新的 TCP 连接，带来了较高的延迟和消耗</td>
+<td>可以在同一个连接中同时处理多个请求，降低了延迟和消耗</td>
+</tr>
+</tbody></table>
+<p><strong>HTTP&#x2F;1.1</strong> 是顺序传输的，每个请求和响应都需要建立一个 TCP 连接，而且每个连接只能处理一个请求和响应。因此，每个请求和响应都需要经过完整的 HTTP&#x2F;1.1 的三次握手和四次挥手的过程。这样的方式导致了以下问题：</p>
+<ul>
+<li>每次连接的建立和关闭都需要时间，增加了网络延迟。</li>
+<li>每个连接都需要消耗服务器和客户端的资源，限制了并发请求的数量。</li>
+<li>每个请求都需要发送一些重复的数据，例如请求头，增加了数据传输的开销。</li>
+</ul>
+<p><strong>HTTP&#x2F;2</strong> 引入了多路复用机制，可以在一个连接上同时处理多个请求和响应。HTTP&#x2F;2 使用二进制协议，将请求和响应的数据划分为多个帧，每个帧都有一个独立的 ID，可以根据 ID 重新组装数据。这种方式的好处包括：</p>
+<ul>
+<li>可以复用连接，减少建立和关闭连接的开销。</li>
+<li>可以在一个连接上同时处理多个请求和响应，提高并发性能。</li>
+<li>可以发送多个请求和响应的数据帧，减少了数据传输的开销。</li>
+</ul>
+<h4 id="HTTP-x2F-1-1和HTTP-x2F-2建立连接流程图"><a href="#HTTP-x2F-1-1和HTTP-x2F-2建立连接流程图" class="headerlink" title="HTTP&#x2F;1.1和HTTP&#x2F;2建立连接流程图"></a>HTTP&#x2F;1.1和HTTP&#x2F;2建立连接流程图</h4><p>下面是使用 Mermaid 绘制的 HTTP&#x2F;1.1 从建立 TCP 连接到关闭 TCP 连接的流程图：</p>
+<pre class="mermaid">sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: SYN
+    Server->>Client: SYN-ACK
+    Client->>Server: ACK
+    Client->>Server: HTTP Request
+    Server->>Client: HTTP Response
+    Client->>Server: FIN
+    Server->>Client: ACK
+    Server->>Client: FIN
+    Client->>Server: ACK</pre>
+
+<p>HTTP&#x2F;1.1 的流程图可以分为三个主要阶段：建立连接、发送请求和关闭连接。在建立连接阶段，客户端向服务器发送一个 SYN 报文，服务器收到后会回复一个 SYN-ACK 报文，客户端再回复一个 ACK 报文，建立起 TCP 连接。在发送请求阶段，客户端向服务器发送一个 HTTP 请求报文，服务器收到后会回复一个 HTTP 响应报文。在关闭连接阶段，客户端发送一个 FIN 报文表示不再发送数据，服务器回复一个 ACK 报文确认，然后服务器也发送一个 FIN 报文表示不再发送数据，客户端再回复一个 ACK 报文确认。这样连接就被完全关闭了。</p>
+<p>下面是使用 Mermaid 绘制的 HTTP&#x2F;2 的流程图：</p>
+<pre class="mermaid">sequenceDiagram
+    participant Client
+    participant Server
+    Client->>Server: ClientHello
+    Server->>Client: ServerHello
+    Client->>Server: Settings
+    Server->>Client: Settings
+    Client->>Server: Request 1
+    Client->>Server: Request 2
+    Server->>Client: Response 1
+    Server->>Client: Response 2</pre>
+
+<p>HTTP&#x2F;2 的流程图也可以分为三个主要阶段：建立连接、发送请求和关闭连接。但是 HTTP&#x2F;2 的建立连接阶段和 HTTP&#x2F;1.1 不同，需要进行 TLS&#x2F;SSL 加密握手，建立安全的连接。在发送请求阶段，客户端可以同时发送多个请求，在同一个连接中进行多路复用。在接收请求阶段，服务器可以同时发送多个响应，在同一个连接中进行多路复用。在关闭连接阶段，客户端和服务器都可以发送一个 GOAWAY 帧来关闭连接。</p>
+<p>以下是 HTTP&#x2F;2 的建立连接阶段的流程图，使用 Mermaid 语法：</p>
+<pre class="mermaid">sequenceDiagram
+    participant Client
+    participant Server
+
+    Client->>Server: ClientHello
+    Server->>Client: ServerHello, Certificate, ServerHelloDone
+    Client->>Server: ClientKeyExchange, ChangeCipherSpec, Finished
+    Server->>Client: ChangeCipherSpec, Finished</pre>
+
+<p>解释如下：</p>
+<ul>
+<li>首先，客户端向服务器发送 <code>ClientHello</code> 报文，其中包含客户端支持的协议版本、加密套件、压缩算法等信息。</li>
+<li>服务器收到 <code>ClientHello</code> 报文后，会回复一个 <code>ServerHello</code> 报文，其中包含协商好的协议版本、加密套件、压缩算法等信息，以及服务器的数字证书和一个 <code>ServerHelloDone</code> 报文。</li>
+<li>客户端收到 <code>ServerHello</code> 报文后，会向服务器发送 <code>ClientKeyExchange</code> 报文，该报文中包含一个随机数、加密协议中使用的密钥等信息。接着，客户端会发送一个 <code>ChangeCipherSpec</code> 报文，告诉服务器接下来的通信会使用协商好的密钥。最后，客户端发送一个 <code>Finished</code> 报文，其中包含用于校验通信数据完整性的摘要值。</li>
+<li>服务器收到 <code>ClientKeyExchange</code> 报文后，会根据其中的信息生成一个会话密钥，并使用该密钥对 <code>ChangeCipherSpec</code> 报文进行加密。服务器也会发送一个 <code>ChangeCipherSpec</code> 报文告诉客户端接下来的通信会使用协商好的密钥。接着，服务器会发送一个 <code>Finished</code> 报文，其中包含用于校验通信数据完整性的摘要值。</li>
+</ul>
+<p>这样，客户端和服务器就成功建立了安全的连接，并开始进行数据传输。</p>
+<p>所以，若有以下问题：</p>
+<p>问：HTTP&#x2F;2 的建立连接阶段需要几次连接？</p>
+<p>答：HTTP&#x2F;2 的建立连接阶段需要一次 TCP 连接，类似于 HTTP&#x2F;1.1，但是在建立 TCP 连接后，HTTP&#x2F;2 会使用一些新的协议和技术来优化数据传输，从而提高性能和安全性。具体而言，HTTP&#x2F;2 采用了二进制协议，引入了多路复用、帧、流等概念，可以更高效地利用一个 TCP 连接来传输多个请求和响应，而不是像 HTTP&#x2F;1.1 那样每个请求都需要建立一个 TCP 连接。因此，HTTP&#x2F;2 可以减少网络延迟和资源占用，提高页面加载速度和用户体验。</p>
+<p>问：HTTP&#x2F;2请求需要几次 TCP 连接？</p>
+<p>答：在 <strong>HTTP&#x2F;2 中，一个客户端和一个服务器之间只需要建立一次 TCP 连接，即可进行多个请求和响应的交互</strong>。这是因为 HTTP&#x2F;2 引入了多路复用技术，通过在一个 TCP 连接上同时进行多个流（stream）的请求和响应，从而避免了 HTTP&#x2F;1.1 中一个请求需要建立一个 TCP 连接的缺点，提高了网络性能和资源利用率。同时，HTTP&#x2F;2 还支持服务器推送（server push）等新特性，使得客户端可以在不发送请求的情况下接收服务器主动推送的资源，进一步提高了性能。</p>
+<h2 id="HTTPS协议"><a href="#HTTPS协议" class="headerlink" title="HTTPS协议"></a>HTTPS协议</h2><p>HTTPS（Hypertext Transfer Protocol Secure）是在 HTTP 协议基础上加入 SSL&#x2F;TLS 安全层的加密协议，通过使用 SSL&#x2F;TLS 加密和认证机制，确保客户端和服务器之间的通信安全。HTTPS 的建立连接流程可以概括为以下几个步骤：</p>
+<ol>
+<li><p><strong>客户端发起 HTTPS 请求</strong>：客户端通过 URL 或者地址栏输入请求地址，并选择 HTTPS 协议。</p>
+</li>
+<li><p><strong>服务端返回证书</strong>：服务端接收到客户端请求后，会将自己的 SSL&#x2F;TLS 证书返回给客户端。证书中包含了服务器的公钥、证书颁发机构的信息和证书有效期等信息。</p>
+</li>
+<li><p><strong>客户端验证证书</strong>：客户端收到服务端的证书后，会验证证书的合法性。首先会检查证书是否过期，然后会查看证书颁发机构是否可信。如果证书未过期且颁发机构可信，则客户端会<strong>使用证书中的公钥加密</strong>一个随机数，并将加密后的随机数发送给服务端。</p>
+</li>
+<li><p><strong>服务端解密随机数</strong>：服务端接收到客户端发送的加密随机数后，会<strong>使用自己的私钥进行解密</strong>，得到客户端发来的随机数。</p>
+</li>
+<li><p><strong>客户端和服务端协商加密算法和密钥</strong>：客户端和服务端使用这个随机数作为对称加密算法中的密钥，对后续的通信进行加密。在这一步中，客户端和服务端会协商使用哪种加密算法和密钥长度，以及其他一些安全相关的参数。常用的加密算法有 AES、RC4、3DES 等。</p>
+</li>
+<li><p><strong>客户端发送加密请求</strong>：客户端使用协商好的加密算法和密钥，对请求进行加密，并发送给服务端。</p>
+</li>
+<li><p><strong>服务端解密请求</strong>：服务端接收到客户端发送的加密请求后，会使用协商好的密钥和加密算法进行解密，得到客户端发送的原始请求数据。</p>
+</li>
+<li><p><strong>服务端加密响应</strong>：服务端使用协商好的加密算法和密钥，对响应进行加密，并发送给客户端。</p>
+</li>
+<li><p><strong>客户端解密响应</strong>：客户端接收到服务端发送的加密响应后，会使用协商好的密钥和加密算法进行解密，得到服务端发送的原始响应数据。</p>
+</li>
+</ol>
+<p>在上述过程中，SSL&#x2F;TLS 扮演了重要的角色，保证了通信过程的安全。具体而言，<strong>SSL&#x2F;TLS 通过使用非对称加密算法和数字证书来验证服务器的身份，保证通信双方的身份真实可信</strong>；<em>通过使用对称加密算法来加密请求和响应数据，防止中间攻击者截取和篡改数据</em>。下面是具体的过程：</p>
+<ol>
+<li><p>首先，客户端向服务器发送一个加密套件列表，该列表包含客户端支持的加密算法和协议版本等信息。</p>
+</li>
+<li><p>服务器从加密套件列表中选择一个加密套件，并向客户端返回服务器的数字证书和一些其他的信息，比如服务器支持的协议版本等。数字证书包含了服务器的公钥，以及一些其他的信息，比如服务器的域名等。</p>
+</li>
+<li><p>客户端收到服务器返回的数字证书后，首先要验证该数字证书的合法性。具体来说，客户端会检查证书的签名是否合法，证书中的信息是否与服务器提供的其他信息一致，证书是否已过期等。如果数字证书合法，那么客户端会提取其中的公钥。</p>
+</li>
+<li><p>接下来，客户端生成一个随机数（称为 Pre-Master Secret），并使用服务器的公钥将其加密，然后将加密后的 Pre-Master Secret 发送给服务器。</p>
+</li>
+<li><p>服务器收到客户端发送的加密后的 Pre-Master Secret 后，<strong>使用自己的私钥将其解密</strong>，得到 Pre-Master Secret。接着，服务器和客户端会分别根据一些预定的规则，使用 Pre-Master Secret 和之前的一些信息，生成出用于加密和解密数据的对称密钥。</p>
+</li>
+<li><p>客户端和服务器双方现在都有了用于加密和解密数据的对称密钥，通信双方将使用这个对称密钥来加密和解密请求和响应数据。</p>
+</li>
+</ol>
+<p>通过上述过程，SSL&#x2F;TLS 建立了一个安全的通信渠道，确保了通信过程中数据的隐私性和完整性。中间攻击者即使能够截获通信过程中的数据，也由于<strong>缺乏合法的数字证书</strong>和<strong>私钥无法解密和篡改数据</strong>，从而保证了通信的安全。</p>
+<p>下面是 HTTPS 的建立连接和数据传输阶段的流程图：</p>
+<pre class="mermaid">sequenceDiagram
+    participant Client
+    participant Server
+
+    Client->>Server: 发送 Client Hello，包含加密套件列表和随机数
+    Server->>Client: 返回 Server Hello，选择加密套件，发送数字证书和随机数
+    Client->>Client: 验证数字证书，生成 Pre-Master Secret
+    Client->>Server: 发送加密的 Pre-Master Secret
+    Server->>Server: 解密 Pre-Master Secret，生成对称密钥
+    Server->>Client: 发送加密的连接建立完成消息
+    Client->>Client: 解密连接建立完成消息
+
+    Client->>Server: 发送加密的 HTTP 请求
+    Server->>Server: 解密 HTTP 请求
+    Server->>Server: 处理请求，发送加密的 HTTP 响应
+    Server->>Client: 发送加密的 HTTP 响应
+    Client->>Client: 解密 HTTP 响应</pre>
+
+<p>其中，Client 和 Server 分别代表客户端和服务器，在流程图中表示为两个连续的竖直线。流程图中包含两个部分，第一部分为 HTTPS 建立连接阶段，第二部分为 HTTPS 数据传输阶段。在建立连接阶段，客户端和服务器之间交换加密套件列表、数字证书、随机数等信息，最终生成用于加密和解密数据的对称密钥。在数据传输阶段，客户端和服务器使用该对称密钥来加密和解密 HTTP 请求和响应数据。</p>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../../23/%E4%B8%80%E7%82%B9%E5%85%B3%E4%BA%8EWebSocket/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            一点关于WebSocket
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../../09/SpringBoot%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E7%82%B9/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">SpringBoot项目相关知识点</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.67px;">Git Bash</a> <a href="../../../../tags/Github/" style="font-size: 13.33px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 11.67px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 18.33px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/JVM/" style="font-size: 18.33px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 16.67px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 15px;">Linux</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.67px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="../../../../tags/SQL/" style="font-size: 13.33px;">SQL</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.67px;">Shell</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 11.67px;">WebSocket</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/hexo/" style="font-size: 11.67px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.67px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.67px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.67px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.67px;">竹云</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 13.33px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../../../2023/02/13/%E4%BD%BF%E7%94%A8Node-js%E5%90%8E%E5%8F%B0%E8%AF%BB%E5%8F%96%E4%B8%B2%E5%8F%A3%E6%95%B0%E6%8D%AE%E5%B9%B6%E9%80%9A%E8%BF%87WebSocket%E5%AE%9E%E6%97%B6%E6%98%BE%E7%A4%BA%E5%9C%A8%E7%BD%91%E9%A1%B5%E4%B8%8A/">使用Node.js后台读取串口数据并通过WebSocket实时显示在网页上</a>
+          </li>
+        
+          <li>
+            <a href="../../../../2023/02/09/%E4%BD%9C%E4%B8%BA%E7%94%A8%E6%88%B7%EF%BC%8C%E4%BF%AE%E6%94%B9Cookie%E6%9C%89%E6%95%88%E6%9C%9F%EF%BC%8C%E5%BB%B6%E9%95%BFCookie%E6%9C%9F%E9%99%90/">作为用户，修改Cookie有效期，延长Cookie期限</a>
+          </li>
+        
+          <li>
+            <a href="../../../../2023/02/08/%E7%BB%88%E7%AB%AF%E5%91%BD%E4%BB%A4%E4%BB%A3%E7%90%86/">终端命令网络设置</a>
+          </li>
+        
+          <li>
+            <a href="../../../../2023/01/18/Windows%E7%B3%BB%E7%BB%9FC%E7%9B%98%E6%B8%85%E7%90%86%E5%B7%A5%E5%85%B7FreeMove%E5%8F%8A%E6%96%87%E4%BB%B6%E5%8D%A0%E7%94%A8%E8%BF%9B%E7%A8%8B%E6%9F%A5%E7%9C%8B%E8%BD%AF%E4%BB%B6LockHunter%E9%85%8D%E5%90%88%E4%BD%BF%E7%94%A8/">Windows系统C盘清理工具FreeMove及文件占用进程查看软件LockHunter配合使用</a>
+          </li>
+        
+          <li>
+            <a href="../../../../2023/01/14/AutoReconnectWiFi/">检测断网自动重连WiFi脚本</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2025 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@7.1.2/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>
