@@ -83,6 +83,186 @@
       <div id="middlecontent" title class="global-width sidebar-right">
         <section id="main">
   
+    <article id="post-mysql数据库表自增ID跳跃不连续的问题" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="2025/02/25/mysql%E6%95%B0%E6%8D%AE%E5%BA%93%E8%A1%A8%E8%87%AA%E5%A2%9EID%E8%B7%B3%E8%B7%83%E4%B8%8D%E8%BF%9E%E7%BB%AD%E7%9A%84%E9%97%AE%E9%A2%98/">mysql数据库表自增ID跳跃不连续的问题</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="2025/02/25/mysql%E6%95%B0%E6%8D%AE%E5%BA%93%E8%A1%A8%E8%87%AA%E5%A2%9EID%E8%B7%B3%E8%B7%83%E4%B8%8D%E8%BF%9E%E7%BB%AD%E7%9A%84%E9%97%AE%E9%A2%98/" class="article-date">
+  <time datetime="2025-02-25T02:25:44.000Z" itemprop="datePublished">2025-02-25</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="tags/SQL/" rel="tag">SQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <ul>
+<li><a href="#%E9%97%AE%E9%A2%98%E7%8E%B0%E8%B1%A1">问题现象</a></li>
+<li><a href="#%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D">问题定位</a><ul>
+<li><a href="#%E5%8E%9Fsql">原sql</a></li>
+<li><a href="#%E5%8E%9F%E5%9B%A0">原因</a></li>
+<li><a href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95">解决方法</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="问题现象"><a href="#问题现象" class="headerlink" title="问题现象"></a>问题现象</h2><p><img src="/2025/02/25/mysql%E6%95%B0%E6%8D%AE%E5%BA%93%E8%A1%A8%E8%87%AA%E5%A2%9EID%E8%B7%B3%E8%B7%83%E4%B8%8D%E8%BF%9E%E7%BB%AD%E7%9A%84%E9%97%AE%E9%A2%98/2025-02-25-10-28-27.png" alt="问题现象"></p>
+<ul>
+<li>业务表记录为从SRM同步的送货单相关数据</li>
+<li>业务表只做插入和更新，没有删除逻辑</li>
+<li>业务表主键ID自增，<code>AUTO_INCREMENT</code>字段</li>
+<li>业务表出现ID增长不连续、跳跃式增长的现象</li>
+</ul>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="keyword">max</span>(<span class="keyword">id</span>) <span class="keyword">from</span> biz_wms_delivery_order_barcode;</span><br><span class="line"><span class="comment">-- 913293</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> <span class="keyword">count</span>(<span class="keyword">id</span>) <span class="keyword">from</span> biz_wms_delivery_order_barcode;</span><br><span class="line"><span class="comment">-- 49314</span></span><br></pre></td></tr></table></figure></div>
+
+<p>才几万行数据，表ID已经增长到快100万了</p>
+<h2 id="问题定位"><a href="#问题定位" class="headerlink" title="问题定位"></a>问题定位</h2><h3 id="原sql"><a href="#原sql" class="headerlink" title="原sql"></a>原sql</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">update</span> <span class="attr">id</span>=<span class="string">"insertDeliveryOrder"</span> <span class="attr">parameterType</span>=<span class="string">"Map"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">if</span> <span class="attr">test</span>=<span class="string">"dataList != null and dataList.size() &gt; 0"</span>&gt;</span></span><br><span class="line">        insert into biz_wms_delivery_order(</span><br><span class="line">        factoryid, deliveryno, deliverytype, purchasetype, status, innervendorcode, lastoperatetime, updatetime, maintainer, createtime)</span><br><span class="line">        values</span><br><span class="line">        <span class="tag">&lt;<span class="name">foreach</span> <span class="attr">collection</span>=<span class="string">"dataList"</span> <span class="attr">item</span>=<span class="string">"item"</span> <span class="attr">open</span>=<span class="string">""</span> <span class="attr">close</span>=<span class="string">""</span> <span class="attr">separator</span>=<span class="string">","</span>&gt;</span></span><br><span class="line">            (#&#123;factoryid&#125;,#&#123;item.deliveryno&#125;,#&#123;item.deliverytype&#125;,#&#123;item.purchasetype&#125;,#&#123;item.status&#125;,#&#123;item.innervendorcode&#125;,#&#123;item.lastoperatetime&#125;, #&#123;maintaintime&#125;,'sys', #&#123;maintaintime&#125;)</span><br><span class="line">        <span class="tag">&lt;/<span class="name">foreach</span>&gt;</span></span><br><span class="line">        on duplicate key update deliverytype=values(deliverytype),purchasetype=values(purchasetype),status=values(status),innervendorcode=values(innervendorcode),lastoperatetime=values(lastoperatetime),updatetime=values(updatetime),maintainer=values(maintainer)</span><br><span class="line">    <span class="tag">&lt;/<span class="name">if</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">update</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">update</span> <span class="attr">id</span>=<span class="string">"insertDeliveryOrderDetails"</span> <span class="attr">parameterType</span>=<span class="string">"Map"</span>&gt;</span></span><br><span class="line"> <span class="tag">&lt;<span class="name">if</span> <span class="attr">test</span>=<span class="string">"linelist != null and linelist.size() &gt; 0"</span>&gt;</span></span><br><span class="line">     insert into biz_wms_delivery_order_detail(</span><br><span class="line">        factoryid, deliveryno, innervendorcode, innervendorname, lineno, poerpno, polineno, requirementorderno, productcode, productname, productscale,</span><br><span class="line">        deliveryqty, remark, totalpackingqty, packingqty, sendverifystatus, createtime, maintainer, updatetime, status)</span><br><span class="line">        values</span><br><span class="line">     <span class="tag">&lt;<span class="name">foreach</span> <span class="attr">collection</span>=<span class="string">"linelist"</span> <span class="attr">item</span>=<span class="string">"item"</span> <span class="attr">open</span>=<span class="string">""</span> <span class="attr">close</span>=<span class="string">""</span> <span class="attr">separator</span>=<span class="string">","</span>&gt;</span></span><br><span class="line">         (#&#123;factoryid&#125;,#&#123;deliveryno&#125;,#&#123;innervendorcode&#125;,#&#123;innervendorname&#125;,#&#123;item.lineno&#125;,#&#123;item.poerpno&#125;,#&#123;item.polineno&#125;, #&#123;item.requirementorderno&#125;,#&#123;item.productcode&#125;,#&#123;item.productname&#125;,#&#123;item.productscale&#125;,</span><br><span class="line">            #&#123;item.deliveryqty&#125;,#&#123;item.remark&#125;,#&#123;totalpackingqty&#125;,#&#123;item.packingqty&#125;,#&#123;item.sendverifystatus&#125;, #&#123;maintaintime&#125;,'sys', #&#123;maintaintime&#125;, #&#123;item.status&#125;)</span><br><span class="line">     <span class="tag">&lt;/<span class="name">foreach</span>&gt;</span></span><br><span class="line">        on duplicate key update innervendorcode=values(innervendorcode),innervendorname=values(innervendorname),poerpno=values(poerpno),polineno=values(polineno), requirementorderno=values(requirementorderno),productcode=values(productcode),productname=values(productname),productscale=values(productscale),</span><br><span class="line">        deliveryqty=values(deliveryqty),remark=values(remark),totalpackingqty=values(totalpackingqty),packingqty=values(packingqty),sendverifystatus=values(sendverifystatus),updatetime=values(updatetime),maintainer=values(maintainer), status=values(status)</span><br><span class="line"> <span class="tag">&lt;/<span class="name">if</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">update</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">update</span> <span class="attr">id</span>=<span class="string">"insertDeliveryOrderBarcodes"</span> <span class="attr">parameterType</span>=<span class="string">"Map"</span>&gt;</span></span><br><span class="line"> <span class="tag">&lt;<span class="name">if</span> <span class="attr">test</span>=<span class="string">"dataList != null and dataList.size() &gt; 0"</span>&gt;</span></span><br><span class="line">     insert into biz_wms_delivery_order_barcode(</span><br><span class="line">        factoryid, deliveryno, productcode, productname, productscale, lineno, smallbarcode, includeqty, createtime, maintainer, updatetime)</span><br><span class="line">        values</span><br><span class="line">     <span class="tag">&lt;<span class="name">foreach</span> <span class="attr">collection</span>=<span class="string">"dataList"</span> <span class="attr">item</span>=<span class="string">"item"</span> <span class="attr">open</span>=<span class="string">""</span> <span class="attr">close</span>=<span class="string">""</span> <span class="attr">separator</span>=<span class="string">","</span>&gt;</span></span><br><span class="line">         (#&#123;factoryid&#125;,#&#123;deliveryno&#125;,#&#123;item.productcode&#125;,#&#123;item.productname&#125;,#&#123;item.productscale&#125;, ifnull(#&#123;item.dynamicdata.lineNo&#125;, 1) ,#&#123;item.smallbarcode&#125;,#&#123;item.includeqty&#125;, #&#123;maintaintime&#125;,'sys', #&#123;maintaintime&#125;)</span><br><span class="line">     <span class="tag">&lt;/<span class="name">foreach</span>&gt;</span></span><br><span class="line">        on duplicate key update productname=values(productname), productscale=values(productscale)</span><br><span class="line"> <span class="tag">&lt;/<span class="name">if</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">update</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+
+<p>三个表同样的现象，自增ID不连续。</p>
+<h3 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h3><p>使用 <code>INSERT INTO ... ON DUPLICATE KEY UPDATE</code> 或 <code>INSERT IGNORE INTO</code> 语句的坑。</p>
+<ol>
+<li><p>使用 <code>INSERT INTO ... ON DUPLICATE KEY UPDATE</code> 语句：</p>
+<p>即使在唯一键冲突时执行更新操作，没有实际插入数据库，<code>AUTO_INCREMENT</code> 计数器仍会递增，导致ID值跳跃。</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> biz_wms_delivery_order(</span><br><span class="line">factoryid, deliveryno, deliverytype, purchasetype, <span class="keyword">status</span>, innervendorcode, lastoperatetime, updatetime, maintainer, createtime)</span><br><span class="line"><span class="keyword">values</span></span><br><span class="line">(<span class="number">414</span>, <span class="string">'22241217838N'</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">4.018</span>, <span class="string">'2024-12-31 10:53:01'</span>, <span class="string">'2025-01-02 11:43:11'</span>, <span class="string">'sys'</span>, <span class="string">'2024-12-27 15:58:07'</span>)</span><br><span class="line"><span class="keyword">on</span> <span class="keyword">duplicate</span> <span class="keyword">key</span> <span class="keyword">update</span> deliverytype=<span class="keyword">values</span>(deliverytype),purchasetype=<span class="keyword">values</span>(purchasetype),<span class="keyword">status</span>=<span class="keyword">values</span>(<span class="keyword">status</span>),innervendorcode=<span class="keyword">values</span>(innervendorcode),lastoperatetime=<span class="keyword">values</span>(lastoperatetime),updatetime=<span class="keyword">values</span>(updatetime),maintainer=<span class="keyword">values</span>(maintainer)</span><br></pre></td></tr></table></figure></div>
+
+<p>尤其是在批量操作的时候，假设批量插入100条数据，其中5条插入成功，95条已存在执行更新操作，自增主键ID会在此次语句执行完后增大100而不是5，即使实际上只插入了5条新数据。</p>
+<p>可以手动多执行几次同样的SQL，通过 <code>show create table</code> 语句查看表的 <code>AUTO_INCREMENT</code> 属性验证。</p>
+</li>
+<li><p>使用 <code>INSERT IGNORE INTO</code> 语句，也是一样。假设批量插入100条数据，其中5条插入成功，另外95条由于主键冲突被忽略，实际 <code>AUTO_INCREMENT</code> 增大了100。</p>
+</li>
+</ol>
+<p>表结构，查看 <code>AUTO_INCREMENT</code></p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> <span class="keyword">create</span> <span class="keyword">table</span> biz_wms_delivery_order_barcode;</span><br><span class="line"><span class="comment">--</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`biz_wms_delivery_order_barcode`</span> (</span><br><span class="line">  <span class="string">`id`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> AUTO_INCREMENT,</span><br><span class="line">  <span class="string">`factoryid`</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">  <span class="comment">-- ...其他字段</span></span><br><span class="line">) <span class="keyword">ENGINE</span>=<span class="keyword">InnoDB</span> AUTO_INCREMENT=<span class="number">15713</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8mb4 <span class="keyword">COMMENT</span>=<span class="string">'送货单标签'</span></span><br></pre></td></tr></table></figure></div>
+
+<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><blockquote>
+<p>网上查询可知以上是mysql默认的自增ID分配策略导致的问题，会直接预先分配ID，导致 <code>AUTO_INCREMENT</code> 增长。虽然调整 <code>innodb_autoinc_lock_mode</code> 配置，可以修改该策略，但是修改该参数会影响并发性能。</p>
+</blockquote>
+<p>因为需要定时从SRM同步，每次执行 <code>INSERT INTO ... ON DUPLICATE KEY UPDATE</code> 会有大量已存在的数据需要更新，导致ID跳跃的非常大。</p>
+<p>最终还是要修改业务表的插入逻辑，不使用 <code>INSERT INTO ... ON DUPLICATE KEY UPDATE</code> ，将其拆分为插入和更新两部分。</p>
+<p><strong>方案</strong>： 在插入前先执行查询，判断记录是否存在；如果存在，则执行更新；如果不存在，则执行插入。</p>
+<p><strong>优点</strong>： 避免了自增ID的跳跃。</p>
+<p><strong>缺点</strong>： 增加了查询和判断的开销，增加了代码，可能影响性能，但影响不大可以接受。</p>
+
+          
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
+    <article id="post-mysqldump备份还原相关" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="2025/02/25/mysqldump%E5%A4%87%E4%BB%BD%E8%BF%98%E5%8E%9F%E7%9B%B8%E5%85%B3/">mysqldump备份还原相关</a>
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="2025/02/25/mysqldump%E5%A4%87%E4%BB%BD%E8%BF%98%E5%8E%9F%E7%9B%B8%E5%85%B3/" class="article-date">
+  <time datetime="2025-02-25T01:46:26.000Z" itemprop="datePublished">2025-02-25</time>
+</a>
+    
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="tags/SQL/" rel="tag">SQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li></ul>
+
+  </div>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <ul>
+<li><a href="#mysqldump%E5%A4%87%E4%BB%BD%E8%BF%98%E5%8E%9F%E7%9B%B8%E5%85%B3">mysqldump备份还原相关</a><ul>
+<li><a href="#%E4%BD%BF%E7%94%A8mysqldump%E5%A4%87%E4%BB%BD">使用mysqldump备份</a><ul>
+<li><a href="#%E5%A4%87%E4%BB%BD%E5%89%8D%E5%8F%AF%E6%9F%A5%E8%AF%A2%E8%A1%A8%E5%A4%A7%E5%B0%8F">备份前可查询表大小</a></li>
+<li><a href="#%E5%A4%87%E4%BB%BD%E6%97%B6%E5%8F%AF%E5%BF%BD%E7%95%A5%E6%8C%87%E5%AE%9A%E8%A1%A8">备份时可忽略指定表</a></li>
+<li><a href="#%E5%A4%87%E4%BB%BD%E6%97%B6%E5%8F%AA%E5%A4%87%E4%BB%BD%E8%A1%A8%E7%BB%93%E6%9E%84">备份时只备份表结构</a></li>
+<li><a href="#%E5%A4%87%E4%BB%BD%E6%97%B6%E5%8F%AF%E5%90%8C%E6%97%B6%E5%A4%87%E4%BB%BD%E5%AD%98%E5%82%A8%E8%BF%87%E7%A8%8B">备份时可同时备份存储过程</a></li>
+<li><a href="#%E5%A4%87%E4%BB%BD%E6%97%B6%E5%8F%AF%E4%BB%A5%E6%8C%87%E5%AE%9Awhere%E6%9D%A1%E4%BB%B6">备份时可以指定where条件</a></li>
+</ul>
+</li>
+<li><a href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E5%A4%87%E4%BB%BD%E6%96%87%E4%BB%B6%E8%BF%98%E5%8E%9F">数据库备份文件还原</a><ul>
+<li><a href="#%E8%BF%98%E5%8E%9F%E6%8C%87%E5%AE%9A%E8%A1%A8">还原指定表</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="mysqldump备份还原相关"><a href="#mysqldump备份还原相关" class="headerlink" title="mysqldump备份还原相关"></a>mysqldump备份还原相关</h2><h3 id="使用mysqldump备份"><a href="#使用mysqldump备份" class="headerlink" title="使用mysqldump备份"></a>使用mysqldump备份</h3><h4 id="备份前可查询表大小"><a href="#备份前可查询表大小" class="headerlink" title="备份前可查询表大小"></a>备份前可查询表大小</h4><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> table_name <span class="keyword">as</span> <span class="string">'表名'</span>,</span><br><span class="line">       <span class="keyword">round</span>((data_length + index_length) / <span class="number">1024</span> / <span class="number">1024</span>, <span class="number">2</span>) <span class="keyword">as</span> <span class="string">'表大小(MB)'</span></span><br><span class="line"><span class="keyword">from</span> information_schema.tables</span><br><span class="line"><span class="keyword">where</span> table_schema = <span class="string">'alpsmes'</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> <span class="keyword">round</span>((data_length + index_length) / <span class="number">1024</span> / <span class="number">1024</span>, <span class="number">2</span>) <span class="keyword">desc</span></span><br><span class="line"><span class="keyword">limit</span> <span class="number">20</span>;</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="备份时可忽略指定表"><a href="#备份时可忽略指定表" class="headerlink" title="备份时可忽略指定表"></a>备份时可忽略指定表</h4><p>  使用 <code>--ignore-table</code> 选项</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">mysqldump -uzy_mes -p12345 alpsmes \</span><br><span class="line">--ignore-table=alpsmes.biz_electr_inspection_data \</span><br><span class="line">--ignore-table=alpsmes.tmp_biz_electr_inspection_data \</span><br><span class="line">--ignore-table=alpsmes.sys_log_his \</span><br><span class="line">--ignore-table=alpsmes.act_ru_meter_log \</span><br><span class="line">--ignore-table=alpsmes.biz_technics_opc_quality \</span><br><span class="line">--ignore-table=alpsmes.sys_log \</span><br><span class="line">--ignore-table=alpsmes.biz_3rd_andon_api_log \</span><br><span class="line">--ignore-table=alpsmes.biz_order_report_record_bak \</span><br><span class="line">&gt; alpsmes20240306.sql</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="备份时只备份表结构"><a href="#备份时只备份表结构" class="headerlink" title="备份时只备份表结构"></a>备份时只备份表结构</h4><p>  使用 <code>--no-data</code> 选项</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">mysqldump -uzy_mes -p122345 alpsmes \</span><br><span class="line">biz_electr_inspection_data \</span><br><span class="line">tmp_biz_electr_inspection_data \</span><br><span class="line">sys_log_his \</span><br><span class="line">act_ru_meter_log \</span><br><span class="line">biz_technics_opc_quality \</span><br><span class="line">sys_log \</span><br><span class="line">biz_3rd_andon_api_log \</span><br><span class="line">biz_order_report_record_bak \</span><br><span class="line">--no-data \</span><br><span class="line">&gt; alpsmes_no_data_20240306.sql</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="备份时可同时备份存储过程"><a href="#备份时可同时备份存储过程" class="headerlink" title="备份时可同时备份存储过程"></a>备份时可同时备份存储过程</h4><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqldump -uzy_mes -p12345 --routines --no-data --databases dengqimes &gt; /tmp/dengqimes_structure.sql</span><br></pre></td></tr></table></figure></div>
+
+<h4 id="备份时可以指定where条件"><a href="#备份时可以指定where条件" class="headerlink" title="备份时可以指定where条件"></a>备份时可以指定where条件</h4><p>  使用 <code>--where</code> 选项</p>
+<ul>
+<li><p>备份时只备份数据不备份表结构</p>
+<p>使用 <code>--no-create-info</code> 选项</p>
+</li>
+</ul>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqldump -uzy_mes -p122345 dengqimes biz_technics_opc_quality --<span class="built_in">where</span>=<span class="string">"factoryid=3 and deviceid between 88 and 91"</span> --no-create-info &gt; output_technics_91.sql</span><br></pre></td></tr></table></figure></div>
+
+<h3 id="数据库备份文件还原"><a href="#数据库备份文件还原" class="headerlink" title="数据库备份文件还原"></a>数据库备份文件还原</h3><h4 id="还原指定表"><a href="#还原指定表" class="headerlink" title="还原指定表"></a>还原指定表</h4><ul>
+<li><p>mysqldump备份的历史数据库文件(.sql)，不想恢复整个数据库，只想取出其中一张表</p>
+<p>原理是使用 <code>sed</code> 工具</p>
+</li>
+</ul>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sed -n -e <span class="string">'/CREATE TABLE `biz_order_child`/,/UNLOCK TABLES/p'</span> dengqimes20240118000001.sql &gt; orderchild.sql</span><br></pre></td></tr></table></figure></div>
+
+<p>或者</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sed -n -e <span class="string">'/Table structure for.*`biz_order_child/,/Table structure for/p'</span> dengqimes20250207000001.sql &gt; biz_order_child.sql</span><br></pre></td></tr></table></figure></div>
+
+<p>或者</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sed -n -e <span class="string">'/DROP TABLE IF EXISTS `biz_product`/,/UNLOCK TABLES/p'</span> cloudmes20241121000001.sql &gt; biz_product.sql</span><br></pre></td></tr></table></figure></div>
+
+<ul>
+<li><p>mysql还原备份的sql时，可能由于字符集编码和转义问题会报错</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql --database=dengqimesprod --user=root --host=127.0.0.1 --port=3306 &lt; C:\Users\zhiyin\Downloads\dengqimes20240311.sql</span><br><span class="line">ERROR at line 33162: Unknown <span class="built_in">command</span> <span class="string">'\"'</span>.</span><br></pre></td></tr></table></figure></div>
+
+<p>需要指定字符集和数据库的字符集一样</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql --database=dengqimes --user=root -p --host=127.0.0.1 --port=3306  --default-character-set=utf8mb4 &lt; C:\Users\zhiyin\Downloads\dengqimes20240413.sql</span><br></pre></td></tr></table></figure></div></li>
+</ul>
+
+          
+      
+    </div>
+    
+    
+  </div>
+  
+  
+</article>
+
+  
     <article id="post-使用Node-js后台读取串口数据并通过WebSocket实时显示在网页上" class="article global-container article-type-post" itemscope itemprop="blogPost">
   
     <header class="article-header">
@@ -473,118 +653,6 @@
 </article>
 
   
-    <article id="post-JavaScript获取网页URL地址的查询参数-QueryString-的方法" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="2022/08/31/JavaScript%E8%8E%B7%E5%8F%96%E7%BD%91%E9%A1%B5URL%E5%9C%B0%E5%9D%80%E7%9A%84%E6%9F%A5%E8%AF%A2%E5%8F%82%E6%95%B0-QueryString-%E7%9A%84%E6%96%B9%E6%B3%95/">JavaScript获取网页URL地址的查询参数(QueryString)的方法</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="2022/08/31/JavaScript%E8%8E%B7%E5%8F%96%E7%BD%91%E9%A1%B5URL%E5%9C%B0%E5%9D%80%E7%9A%84%E6%9F%A5%E8%AF%A2%E5%8F%82%E6%95%B0-QueryString-%E7%9A%84%E6%96%B9%E6%B3%95/" class="article-date">
-  <time datetime="2022-08-31T13:27:39.000Z" itemprop="datePublished">2022-08-31</time>
-</a>
-    
-    
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="tags/JavaScript/" rel="tag">JavaScript</a></li></ul>
-
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <h2 id="需求：获取-URL-查询参数"><a href="#需求：获取-URL-查询参数" class="headerlink" title="需求：获取 URL 查询参数"></a>需求：获取 URL 查询参数</h2><p>需求详情</p>
-<p>请求URL: <code>http://example.com:80/method?id=1&amp;name=xy</code></p>
-<p>获取请求参数id、name的值1、xy。</p>
-<h2 id="方法一：URLSearchParams"><a href="#方法一：URLSearchParams" class="headerlink" title="方法一：URLSearchParams"></a>方法一：<code>URLSearchParams</code></h2><p>使用 <code>URLSearchParams</code> 对象的 <code>get</code> 方法。参考：</p>
-        
-          <p class="article-more-link">
-            <a href="2022/08/31/JavaScript%E8%8E%B7%E5%8F%96%E7%BD%91%E9%A1%B5URL%E5%9C%B0%E5%9D%80%E7%9A%84%E6%9F%A5%E8%AF%A2%E5%8F%82%E6%95%B0-QueryString-%E7%9A%84%E6%96%B9%E6%B3%95/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
-    <article id="post-NET-Framework-连接-Oracle数据库" class="article global-container article-type-post" itemscope itemprop="blogPost">
-  
-    <header class="article-header">
-      
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="2022/08/29/NET-Framework-%E8%BF%9E%E6%8E%A5-Oracle%E6%95%B0%E6%8D%AE%E5%BA%93/">.NET Framework 连接 Oracle数据库：找不到请求的 .Net Framework Data Provider。可能没有安装</a>
-    </h1>
-  
-
-    </header>
-  
-  <div class="article-meta">
-    <a href="2022/08/29/NET-Framework-%E8%BF%9E%E6%8E%A5-Oracle%E6%95%B0%E6%8D%AE%E5%BA%93/" class="article-date">
-  <time datetime="2022-08-29T08:13:41.000Z" itemprop="datePublished">2022-08-29</time>
-</a>
-    
-    
-  </div>
-  
-
-  <div class="article-inner">
-    
-    <div class="article-content article-content-cloud" itemprop="articleBody">
-      
-        <ul>
-<li><a href="#1-%E9%94%99%E8%AF%AF%E4%BF%A1%E6%81%AF">1. 错误信息</a><ul>
-<li><a href="#11-%E9%94%99%E8%AF%AF%E8%AF%A6%E6%83%85">1.1. 错误详情</a></li>
-</ul>
-</li>
-<li><a href="#2-%E9%97%AE%E9%A2%98%E5%8E%9F%E5%9B%A0">2. 问题原因</a></li>
-<li><a href="#3-%E6%9F%A5%E7%9C%8B%E4%B8%8E%E8%AE%BE%E7%BD%AEoracle_home%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F">3. 查看与设置ORACLE_HOME环境变量</a><ul>
-<li><a href="#31-windows%E4%B8%8B%E6%9F%A5%E7%9C%8B%E4%B8%8E%E8%AE%BE%E7%BD%AE%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F">3.1. Windows下查看与设置环境变量</a></li>
-</ul>
-</li>
-<li><a href="#4-%E4%B8%8B%E8%BD%BD%E4%B8%8E%E5%AE%89%E8%A3%85odpnet%E9%A9%B1%E5%8A%A8">4. 下载与安装ODP.NET驱动</a></li>
-<li><a href="#5-oracle%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%9E%E6%8E%A5%E9%85%8D%E7%BD%AE">5. Oracle数据库连接配置</a><ul>
-<li><a href="#51-%E5%88%86%E6%9E%90%E4%B8%8E%E8%A7%A3%E5%86%B3%E9%94%99%E8%AF%AF">5.1. 分析与解决错误</a><ul>
-<li><a href="#511-%E5%85%88%E4%BA%86%E8%A7%A3%E4%B8%8B-oracle-tnsnamesora-%E6%96%87%E4%BB%B6%E7%94%A8%E6%B3%95">5.1.1. 先了解下 oracle <code>tnsnames.ora</code> 文件用法</a><ul>
-<li><a href="#5111-1%E7%94%A8%E9%80%94">5.1.1.1. 1.用途</a></li>
-<li><a href="#5112-2%E7%94%A8%E6%B3%95">5.1.1.2. 2.用法</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a href="#52-%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95">5.2. 解决方法</a></li>
-</ul>
-</li>
-</ul>
-<h2 id="1-错误信息"><a href="#1-错误信息" class="headerlink" title="1. 错误信息"></a>1. 错误信息</h2><p>解决错误信息：<strong>找不到请求的 .Net Framework Data Provider。可能没有安装</strong></p>
-<h3 id="1-1-错误详情"><a href="#1-1-错误详情" class="headerlink" title="1.1. 错误详情"></a>1.1. 错误详情</h3><p><img src="/2022/08/29/NET-Framework-%E8%BF%9E%E6%8E%A5-Oracle%E6%95%B0%E6%8D%AE%E5%BA%93/2022-08-30-08-53-43.png" alt="找不到请求的 .Net Framework Data Provider。可能没有安装。"></p>
-        
-          <p class="article-more-link">
-            <a href="2022/08/29/NET-Framework-%E8%BF%9E%E6%8E%A5-Oracle%E6%95%B0%E6%8D%AE%E5%BA%93/#more">阅读全文</a>
-          </p>
-        
-      
-    </div>
-    
-    
-  </div>
-  
-  
-</article>
-
-  
 
 
   <nav id="page-nav">
@@ -629,7 +697,7 @@
   <div class="widget-box">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="tags/NET/" style="font-size: 10px;">.NET</a> <a href="tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="tags/ES6/" style="font-size: 10px;">ES6</a> <a href="tags/Git-Bash/" style="font-size: 11.67px;">Git Bash</a> <a href="tags/Github/" style="font-size: 13.33px;">Github</a> <a href="tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="tags/HTTP/" style="font-size: 11.67px;">HTTP</a> <a href="tags/Hadoop/" style="font-size: 18.33px;">Hadoop</a> <a href="tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="tags/Idea/" style="font-size: 10px;">Idea</a> <a href="tags/JVM/" style="font-size: 18.33px;">JVM</a> <a href="tags/Java/" style="font-size: 20px;">Java</a> <a href="tags/JavaScript/" style="font-size: 16.67px;">JavaScript</a> <a href="tags/Linux/" style="font-size: 15px;">Linux</a> <a href="tags/MapReduce/" style="font-size: 11.67px;">MapReduce</a> <a href="tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="tags/Node/" style="font-size: 10px;">Node</a> <a href="tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="tags/SQL/" style="font-size: 13.33px;">SQL</a> <a href="tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="tags/Shell/" style="font-size: 11.67px;">Shell</a> <a href="tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="tags/TCP/" style="font-size: 10px;">TCP</a> <a href="tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="tags/Vue/" style="font-size: 10px;">Vue</a> <a href="tags/WebSocket/" style="font-size: 11.67px;">WebSocket</a> <a href="tags/YARN/" style="font-size: 10px;">YARN</a> <a href="tags/hexo/" style="font-size: 11.67px;">hexo</a> <a href="tags/macOS/" style="font-size: 11.67px;">macOS</a> <a href="tags/ssh/" style="font-size: 11.67px;">ssh</a> <a href="tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="tags/%E7%94%B5%E8%84%91/" style="font-size: 11.67px;">电脑</a> <a href="tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.67px;">竹云</a> <a href="tags/%E7%BB%88%E7%AB%AF/" style="font-size: 13.33px;">终端</a> <a href="tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
+      <a href="tags/NET/" style="font-size: 10px;">.NET</a> <a href="tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="tags/ES6/" style="font-size: 10px;">ES6</a> <a href="tags/Git-Bash/" style="font-size: 11.43px;">Git Bash</a> <a href="tags/Github/" style="font-size: 12.86px;">Github</a> <a href="tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="tags/HTTP/" style="font-size: 11.43px;">HTTP</a> <a href="tags/Hadoop/" style="font-size: 18.57px;">Hadoop</a> <a href="tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="tags/Idea/" style="font-size: 10px;">Idea</a> <a href="tags/JVM/" style="font-size: 18.57px;">JVM</a> <a href="tags/Java/" style="font-size: 20px;">Java</a> <a href="tags/JavaScript/" style="font-size: 17.14px;">JavaScript</a> <a href="tags/Linux/" style="font-size: 14.29px;">Linux</a> <a href="tags/MapReduce/" style="font-size: 11.43px;">MapReduce</a> <a href="tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="tags/Maven/" style="font-size: 12.86px;">Maven</a> <a href="tags/Node/" style="font-size: 10px;">Node</a> <a href="tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="tags/SQL/" style="font-size: 15.71px;">SQL</a> <a href="tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="tags/Shell/" style="font-size: 11.43px;">Shell</a> <a href="tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="tags/TCP/" style="font-size: 10px;">TCP</a> <a href="tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="tags/Vue/" style="font-size: 10px;">Vue</a> <a href="tags/WebSocket/" style="font-size: 11.43px;">WebSocket</a> <a href="tags/YARN/" style="font-size: 10px;">YARN</a> <a href="tags/hexo/" style="font-size: 11.43px;">hexo</a> <a href="tags/macOS/" style="font-size: 11.43px;">macOS</a> <a href="tags/ssh/" style="font-size: 11.43px;">ssh</a> <a href="tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12.86px;">数据库</a> <a href="tags/%E7%94%B5%E8%84%91/" style="font-size: 11.43px;">电脑</a> <a href="tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.43px;">竹云</a> <a href="tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12.86px;">终端</a> <a href="tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
     </div>
   </div>
 
@@ -638,7 +706,7 @@
   <div class="widget-box">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2020/06/">六月 2020</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="archives/2020/06/">六月 2020</a></li></ul>
     </div>
   </div>
 
@@ -650,6 +718,14 @@
       <ul>
         
           <li>
+            <a href="2025/02/25/mysql%E6%95%B0%E6%8D%AE%E5%BA%93%E8%A1%A8%E8%87%AA%E5%A2%9EID%E8%B7%B3%E8%B7%83%E4%B8%8D%E8%BF%9E%E7%BB%AD%E7%9A%84%E9%97%AE%E9%A2%98/">mysql数据库表自增ID跳跃不连续的问题</a>
+          </li>
+        
+          <li>
+            <a href="2025/02/25/mysqldump%E5%A4%87%E4%BB%BD%E8%BF%98%E5%8E%9F%E7%9B%B8%E5%85%B3/">mysqldump备份还原相关</a>
+          </li>
+        
+          <li>
             <a href="2023/02/13/%E4%BD%BF%E7%94%A8Node-js%E5%90%8E%E5%8F%B0%E8%AF%BB%E5%8F%96%E4%B8%B2%E5%8F%A3%E6%95%B0%E6%8D%AE%E5%B9%B6%E9%80%9A%E8%BF%87WebSocket%E5%AE%9E%E6%97%B6%E6%98%BE%E7%A4%BA%E5%9C%A8%E7%BD%91%E9%A1%B5%E4%B8%8A/">使用Node.js后台读取串口数据并通过WebSocket实时显示在网页上</a>
           </li>
         
@@ -659,14 +735,6 @@
         
           <li>
             <a href="2023/02/08/%E7%BB%88%E7%AB%AF%E5%91%BD%E4%BB%A4%E4%BB%A3%E7%90%86/">终端命令网络设置</a>
-          </li>
-        
-          <li>
-            <a href="2023/01/18/Windows%E7%B3%BB%E7%BB%9FC%E7%9B%98%E6%B8%85%E7%90%86%E5%B7%A5%E5%85%B7FreeMove%E5%8F%8A%E6%96%87%E4%BB%B6%E5%8D%A0%E7%94%A8%E8%BF%9B%E7%A8%8B%E6%9F%A5%E7%9C%8B%E8%BD%AF%E4%BB%B6LockHunter%E9%85%8D%E5%90%88%E4%BD%BF%E7%94%A8/">Windows系统C盘清理工具FreeMove及文件占用进程查看软件LockHunter配合使用</a>
-          </li>
-        
-          <li>
-            <a href="2023/01/14/AutoReconnectWiFi/">检测断网自动重连WiFi脚本</a>
           </li>
         
       </ul>
