@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>平滑数据迁移：28GB预警发送日志表的在线瘦身实战 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="背景MES 系统的预警发送日志表 biz_notify_send_log 长到了 28GB。它记录每条预警消息的发送流水，只增不减，而业务实际只需要查询最近一段时间的数据。表太大带来一串连锁问题：  磁盘空间告急； 带全表扫描的查询越来越慢； 之前分析过的一次服务假死事故里，多级预警任务扫这张表的日志表 biz_notify_send_level_log 也是内存压力的来源之一——日志类的表就该保">
+<meta property="og:type" content="article">
+<meta property="og:title" content="平滑数据迁移：28GB预警发送日志表的在线瘦身实战">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/08/19/%E5%B9%B3%E6%BB%91%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB%EF%BC%9A28GB%E9%A2%84%E8%AD%A6%E5%8F%91%E9%80%81%E6%97%A5%E5%BF%97%E8%A1%A8%E7%9A%84%E5%9C%A8%E7%BA%BF%E7%98%A6%E8%BA%AB%E5%AE%9E%E6%88%98/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="背景MES 系统的预警发送日志表 biz_notify_send_log 长到了 28GB。它记录每条预警消息的发送流水，只增不减，而业务实际只需要查询最近一段时间的数据。表太大带来一串连锁问题：  磁盘空间告急； 带全表扫描的查询越来越慢； 之前分析过的一次服务假死事故里，多级预警任务扫这张表的日志表 biz_notify_send_level_log 也是内存压力的来源之一——日志类的表就该保">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-08-19T08:24:12.000Z">
+<meta property="article:modified_time" content="2026-08-21T09:06:55.522Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="排查实战">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="数据迁移">
+<meta property="article:tag" content="生产运维">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-平滑数据迁移：28GB预警发送日志表的在线瘦身实战" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      平滑数据迁移：28GB预警发送日志表的在线瘦身实战
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-08-19T08:24:12.000Z" itemprop="datePublished">2026-08-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>MES 系统的预警发送日志表 <code>biz_notify_send_log</code> 长到了 <strong>28GB</strong>。它记录每条预警消息的发送流水，只增不减，而业务实际只需要查询最近一段时间的数据。表太大带来一串连锁问题：</p>
+<ul>
+<li>磁盘空间告急；</li>
+<li>带全表扫描的查询越来越慢；</li>
+<li>之前分析过的一次服务假死事故里，多级预警任务扫这张表的日志表 <code>biz_notify_send_level_log</code> 也是内存压力的来源之一——日志类的表就该保持”瘦”。</li>
+</ul>
+<p>目标很明确：<strong>只保留近 30 天 + 当天的数据，扔掉历史包袱，并且全程不停机</strong>（生产库，7×24 有预警在写入）。</p>
+<a id="more"></a>
+
+<h2 id="方案总览"><a href="#方案总览" class="headerlink" title="方案总览"></a>方案总览</h2><p>核心思路是经典的 <strong>影子表（shadow table）+ 原子切换</strong>：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">建新表（同结构+补索引）</span><br><span class="line">   ↓</span><br><span class="line">按天分批把近 30 天数据搬进新表（INSERT IGNORE，幂等可重跑）</span><br><span class="line">   ↓</span><br><span class="line">补当天增量（迁移期间新产生的日志）</span><br><span class="line">   ↓</span><br><span class="line">RENAME 原子交换两张表（毫秒级完成&quot;切换&quot;）</span><br><span class="line">   ↓</span><br><span class="line">观察无误后，再 DROP 旧表释放 28GB</span><br></pre></td></tr></table></figure></div>
+
+<p>为什么不能直接 <code>DELETE FROM ... WHERE sendtime &lt; 30天前</code>？三个原因：</p>
+<ol>
+<li><strong>DELETE 大量旧数据同样产生巨量 binlog 和锁开销</strong>，而且 InnoDB 标记删除不还磁盘——删完 28GB 表文件还是 28GB，想还空间还得 <code>OPTIMIZE TABLE</code>（等于重建整表，更重）；</li>
+<li>DELETE 是大事务的话，主从延迟、undo 膨胀、阻塞业务，全是坑；</li>
+<li>无法”反悔”。影子表方案切换前随时可以放弃，新表 <code>DROP</code> 掉就行，生产库上<strong>每个操作都要有撤退路线</strong>。</li>
+</ol>
+<h2 id="逐步拆解"><a href="#逐步拆解" class="headerlink" title="逐步拆解"></a>逐步拆解</h2><h3 id="第-1-步：建影子表"><a href="#第-1-步：建影子表" class="headerlink" title="第 1 步：建影子表"></a>第 1 步：建影子表</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="string">`biz_notify_send_log_new`</span> <span class="keyword">LIKE</span> <span class="string">`biz_notify_send_log`</span>;</span><br></pre></td></tr></table></figure></div>
+
+<p><code>CREATE TABLE ... LIKE</code> 完整复制原表结构（列、主键、所有索引），不复制数据。新表空无一行，后续写它毫无压力。</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> <span class="string">`biz_notify_send_log_new`</span> <span class="keyword">ADD</span> <span class="keyword">INDEX</span> <span class="string">`idx_sendtime`</span> (<span class="string">`sendtime`</span>);</span><br></pre></td></tr></table></figure></div>
+
+<p>顺手补一个原表没有的 <code>sendtime</code> 索引——迁移按时间切批要用它，切换后业务按时间查日志也受益。<strong>在空表上加索引是秒级操作</strong>；这也是影子表方案的一个隐藏福利：结构优化可以在切换前从容做好，不用在 28GB 大表上干等。</p>
+<h3 id="第-2-步：存储过程按天分批搬运"><a href="#第-2-步：存储过程按天分批搬运" class="headerlink" title="第 2 步：存储过程按天分批搬运"></a>第 2 步：存储过程按天分批搬运</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">DELIMITER $$</span><br><span class="line"></span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">PROCEDURE</span> <span class="keyword">IF</span> <span class="keyword">EXISTS</span> <span class="string">`proc_migrate_notify_log_414_idempotent`</span>$$</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">PROCEDURE</span> <span class="string">`proc_migrate_notify_log_414_idempotent`</span>(</span><br><span class="line">    <span class="keyword">IN</span> p_start_date <span class="built_in">DATE</span>, <span class="comment">-- 起始日期，例如 '2026-07-18'</span></span><br><span class="line">    <span class="keyword">IN</span> p_end_date   <span class="built_in">DATE</span>  <span class="comment">-- 结束日期，例如 '2026-08-18'</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">    <span class="keyword">DECLARE</span> v_current_day <span class="built_in">DATE</span>;</span><br><span class="line">    <span class="keyword">DECLARE</span> v_next_day    <span class="built_in">DATE</span>;</span><br><span class="line">    <span class="keyword">DECLARE</span> v_rows        <span class="built_in">INT</span> <span class="keyword">DEFAULT</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">SET</span> v_current_day = p_start_date;</span><br><span class="line"></span><br><span class="line">    IF p_start_date &gt; p_end_date THEN</span><br><span class="line">        SIGNAL SQLSTATE '45000' <span class="keyword">SET</span> MESSAGE_TEXT = <span class="string">'错误：起始日期不能大于结束日期！'</span>;</span><br><span class="line">    <span class="keyword">END</span> <span class="keyword">IF</span>;</span><br><span class="line"></span><br><span class="line">    WHILE v_current_day &lt;= p_end_date DO</span><br><span class="line">        <span class="keyword">SET</span> v_next_day = <span class="keyword">DATE_ADD</span>(v_current_day, <span class="built_in">INTERVAL</span> <span class="number">1</span> <span class="keyword">DAY</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">-- 使用 INSERT IGNORE 保证幂等（已存在的 id 自动跳过，绝不重复）</span></span><br><span class="line">        <span class="keyword">INSERT</span> <span class="keyword">IGNORE</span> <span class="keyword">INTO</span> biz_notify_send_log_new</span><br><span class="line">        <span class="keyword">SELECT</span> * <span class="keyword">FROM</span> biz_notify_send_log</span><br><span class="line">        <span class="keyword">WHERE</span> factoryid = <span class="number">414</span></span><br><span class="line">          <span class="keyword">AND</span> sendtime &gt;= v_current_day</span><br><span class="line">          <span class="keyword">AND</span> sendtime &lt; v_next_day;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">SET</span> v_rows = <span class="keyword">ROW_COUNT</span>();</span><br><span class="line"></span><br><span class="line">        <span class="comment">-- 输出当前进度</span></span><br><span class="line">        <span class="keyword">SELECT</span> <span class="keyword">CONCAT</span>(<span class="string">'Factory 414 | 日期: '</span>, v_current_day, <span class="string">' | 新增/写入数据量: '</span>, v_rows, <span class="string">' 条'</span>) <span class="keyword">AS</span> progress;</span><br><span class="line"></span><br><span class="line">        <span class="comment">-- 暂停 0.1 秒，降低磁盘 I/O 压力</span></span><br><span class="line">        <span class="keyword">SELECT</span> <span class="keyword">SLEEP</span>(<span class="number">0.1</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">SET</span> v_current_day = v_next_day;</span><br><span class="line">    <span class="keyword">END</span> <span class="keyword">WHILE</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">SELECT</span> <span class="string">'&gt;&gt;&gt; Factory 414 幂等数据迁移完成！'</span> <span class="keyword">AS</span> <span class="keyword">result</span>;</span><br><span class="line"><span class="keyword">END</span>$$</span><br><span class="line"></span><br><span class="line">DELIMITER ;</span><br><span class="line"></span><br><span class="line"><span class="keyword">CALL</span> proc_migrate_notify_log_414_idempotent(<span class="string">'2026-07-18'</span>, <span class="string">'2026-08-18'</span>);</span><br></pre></td></tr></table></figure></div>
+
+<p>这段每一个设计点都有讲究：</p>
+<p><strong>按天切批（<code>sendtime &gt;= 当天 AND sendtime &lt; 次日</code>）。</strong> 一次搬一天的数据，单批量可控。注意边界用的是<strong>左闭右开</strong> <code>[当天, 次天)</code>——这是时间范围查询的标准姿势，天然覆盖 <code>datetime</code> 的时分秒，永远不会像 <code>BETWEEN 当天 AND 次天</code> 那样把次日凌晨 00:00:00 的记录算两遍或漏掉。</p>
+<p><strong><code>INSERT IGNORE</code> 保证幂等。</strong> 存储过程可能中途失败（网络抖动、磁盘满、手动 kill）。重跑时已迁过的行命中主键冲突被自动忽略，只补缺失的部分——<strong>一个可无限重试的迁移才是敢在生产上跑的迁移</strong>。进度行输出”新增&#x2F;写入数据量”，重跑时前一天显示 0 条就是完全追平的信号。</p>
+<p><strong><code>SELECT SLEEP(0.1)</code>。</strong> 每批之间歇 0.1 秒，把 I&#x2F;O 压力摊开。这是对同库上跑着的业务最起码的礼貌。要更狠的平滑还可以把批次切到小时级，或把 SLEEP 调大。</p>
+<p><strong><code>SIGNAL SQLSTATE &#39;45000&#39;</code>。</strong> 参数校验失败直接抛错退出，而不是静默跑出 0 行还提示”迁移完成”。脚本要诚实，错了就得喊。</p>
+<p><strong>只迁 <code>factoryid = 414</code>。</strong> 这是目标工厂的数据。日志表按工厂隔离，其他工厂的历史数据不在此次的保留范围内——按需圈定，别把”瘦身”做成”搬家”。</p>
+<h3 id="第-3-步：补迁移期间的增量"><a href="#第-3-步：补迁移期间的增量" class="headerlink" title="第 3 步：补迁移期间的增量"></a>第 3 步：补迁移期间的增量</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">count</span>(<span class="number">1</span>) <span class="keyword">FROM</span> biz_notify_send_log_new;</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">IGNORE</span> <span class="keyword">INTO</span> biz_notify_send_log_new</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> biz_notify_send_log</span><br><span class="line"><span class="keyword">WHERE</span> factoryid = <span class="number">414</span></span><br><span class="line">  <span class="keyword">AND</span> sendtime &gt;= <span class="keyword">CURDATE</span>(); <span class="comment">-- '2026-08-19'</span></span><br></pre></td></tr></table></figure></div>
+
+<p>存储过程搬的是到”昨天”为止的数据。从跑完过程到执行切换之间，业务还在往<strong>旧表</strong>写当天的新日志。所以切换前把 <code>sendtime &gt;= CURDATE()</code> 的当天增量再补一轮——还是 <code>INSERT IGNORE</code>，重复执行无害。</p>
+<p>这一步和下一步<strong>必须连着做，中间越短越好</strong>。两次补增量的间隙越短，切换时刻的数据缺口越小（后面会说为什么缺口可以容忍）。</p>
+<h3 id="第-4-步：RENAME-原子切换"><a href="#第-4-步：RENAME-原子切换" class="headerlink" title="第 4 步：RENAME 原子切换"></a>第 4 步：RENAME 原子切换</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">RENAME</span> <span class="keyword">TABLE</span> biz_notify_send_log <span class="keyword">TO</span> biz_notify_send_log_old,</span><br><span class="line">             biz_notify_send_log_new <span class="keyword">TO</span> biz_notify_send_log;</span><br></pre></td></tr></table></figure></div>
+
+<p>这是整个方案的<strong>高潮</strong>：一条 <code>RENAME TABLE</code> 同时交换两张表的名字。MySQL 对它的实现是原子的——不存在”旧表已改名、新表还没就位”的中间态，业务连接看到的要么全是旧表、要么全是新表，<strong>切换在毫秒级完成，无需停机</strong>。</p>
+<p>这也是为什么前面所有苦力活都在影子表上干：脏活累活（建表、搬运、补增量）都发生在业务看不见的 <code>_new</code> 表上，业务唯一能感知的只有最后一瞬间的原子换名。</p>
+<h3 id="第-5-步：核对，然后才敢删"><a href="#第-5-步：核对，然后才敢删" class="headerlink" title="第 5 步：核对，然后才敢删"></a>第 5 步：核对，然后才敢删</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">count</span>(<span class="number">1</span>) <span class="keyword">AS</span> cnt <span class="keyword">FROM</span> biz_notify_send_log</span><br><span class="line"><span class="keyword">WHERE</span> factoryid = <span class="number">414</span> <span class="keyword">AND</span> sendtime &gt;= <span class="keyword">CURDATE</span>()</span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="keyword">count</span>(<span class="number">1</span>) <span class="keyword">FROM</span> biz_notify_send_log_old</span><br><span class="line"><span class="keyword">WHERE</span> factoryid = <span class="number">414</span> <span class="keyword">AND</span> sendtime &gt;= <span class="keyword">CURDATE</span>();</span><br></pre></td></tr></table></figure></div>
+
+<p>切换后立刻核对：<strong>新表</strong>（已顶上业务名）与<strong>旧表</strong>（已退居 <code>_old</code>）里当天数据的行数。第一个数字 ≥ 第二个，说明切换后新表还在正常接收写入（业务已无缝切到新表）。</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 1. 删除旧的大表（释放 28 GB 磁盘）</span></span><br><span class="line"><span class="comment">-- DROP TABLE biz_notify_send_log_old;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 2. 清理存储过程</span></span><br><span class="line"><span class="comment">-- DROP PROCEDURE IF EXISTS proc_migrate_notify_log_414_idempotent;</span></span><br></pre></td></tr></table></figure></div>
+
+<p><strong>DROP 故意注释着，不当场执行。</strong> 旧表先留着当”后悔药”：观察一两天，业务查询、预警发送都正常，再回来执行这两条。28GB 的数据一旦 DROP 就找不回来了—— irreversible 操作永远值得多等一天。</p>
+<p>另外两个细节：</p>
+<ul>
+<li><strong>RENAME 之后业务写入的是新表</strong>，旧表数据冻结。所以核对逻辑才成立：如果新表计数在涨、旧表不动，说明切换生效。</li>
+<li>极限情况：补增量与 RENAME 之间的毫秒级间隙里，可能有一条日志写进了旧表却被留在 <code>_old</code> 里。对<strong>日志表</strong>来说这个量级（毫秒窗口内的 0~几条）完全可接受；若是不能丢数据的业务表，需要先短暂禁止写入或用触发器兜底，复杂度上一个台阶。</li>
+</ul>
+<h2 id="方案的通用骨架"><a href="#方案的通用骨架" class="headerlink" title="方案的通用骨架"></a>方案的通用骨架</h2><p>把表名和字段换掉，这套流程可以复用到任何”大表瘦身&#x2F;在线重建”场景：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. CREATE TABLE new LIKE old;            -- 影子表</span><br><span class="line">2. （可选）ALTER new 加&#x2F;改索引;            -- 空表上做结构变更，秒级</span><br><span class="line">3. 分批 INSERT IGNORE new SELECT old;     -- 幂等搬运历史</span><br><span class="line">4. 补增量（时间戳 &gt;&#x3D; 切换前基准点）;        -- 追平迁移期间的写入</span><br><span class="line">5. RENAME 原子交换;                       -- 毫秒级切换</span><br><span class="line">6. 核对 → 观察 → DROP 旧表;               -- 留后悔药</span><br></pre></td></tr></table></figure></div>
+
+<p>对比几个常见替代方案的坑：</p>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>问题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>直接 DELETE 旧数据</td>
+<td>不还磁盘；大事务阻塞 + binlog 风暴；删错无法恢复</td>
+</tr>
+<tr>
+<td>pt-online-schema-change &#x2F; gh-ost</td>
+<td>是”改结构”的工具，用来”删数据”绕远路且不解决”要删一大半”的场景</td>
+</tr>
+<tr>
+<td>停机导出导入</td>
+<td>需要 maintenance window，7×24 系统伤不起</td>
+</tr>
+</tbody></table>
+<h2 id="复盘要点"><a href="#复盘要点" class="headerlink" title="复盘要点"></a>复盘要点</h2><ol>
+<li><strong>影子表 + 原子 RENAME</strong> 是在线改表的基石：把一切昂贵操作挪到业务不可见的表上，用一次原子换名收尾；</li>
+<li><strong>幂等设计（INSERT IGNORE + 主键）</strong> 让迁移可以无限重试，失败不是灾难而是重跑；</li>
+<li><strong>分批 + 限速</strong> 是对同库业务的基本尊重，批次粒度和间隔就是你的流量调节阀；</li>
+<li><strong>不可逆操作（DROP）永远最后做、缓一缓做</strong>——留着 <code>_old</code> 表观察一两天，代价只是一点磁盘，换的是回滚能力；</li>
+<li>空表上补索引是免费的——顺手把原表欠的 <code>sendtime</code> 索引还上，业务查询直接受益。</li>
+</ol>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../../21/%E4%BB%8E%E5%90%8C%E6%AD%A5%E8%B6%85%E6%97%B6%E5%88%B0%E5%BC%82%E6%AD%A5%E6%B5%81%E5%BC%8F%EF%BC%9A%E4%B8%80%E6%AC%A1MES%E6%8A%A5%E8%A1%A8%E5%AF%BC%E5%87%BA%E9%93%BE%E8%B7%AF%E7%9A%84%E5%AE%8C%E6%95%B4%E6%94%B9%E9%80%A0/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            从同步超时到异步流式：一次MES报表导出链路的完整改造
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../JVM%E5%A0%86%E4%B8%8E%E7%89%A9%E5%8C%96%EF%BC%9A%E4%B8%80%E6%AC%A1MES%E6%9C%8D%E5%8A%A1%E5%81%87%E6%AD%BB%E4%BA%8B%E6%95%85%E7%9A%84%E5%AE%8C%E6%95%B4%E8%AF%8A%E6%96%AD/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">JVM堆与物化：一次MES服务假死事故的完整诊断</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/GC/" style="font-size: 10px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.25px;">Git Bash</a> <a href="../../../../tags/Github/" style="font-size: 12.5px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 11.25px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 17.5px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/JVM/" style="font-size: 18.75px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 16.25px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 13.75px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 10px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.25px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 12.5px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 11.25px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 10px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 10px;">Node.js</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 10px;">RabbitMQ</a> <a href="../../../../tags/SQL/" style="font-size: 15px;">SQL</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.25px;">Shell</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 12.5px;">WebSocket</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/hexo/" style="font-size: 11.25px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.25px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.25px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 11.25px;">排查实战</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12.5px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">架构</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.25px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.25px;">竹云</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12.5px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../21/%E4%BB%8E%E5%90%8C%E6%AD%A5%E8%B6%85%E6%97%B6%E5%88%B0%E5%BC%82%E6%AD%A5%E6%B5%81%E5%BC%8F%EF%BC%9A%E4%B8%80%E6%AC%A1MES%E6%8A%A5%E8%A1%A8%E5%AF%BC%E5%87%BA%E9%93%BE%E8%B7%AF%E7%9A%84%E5%AE%8C%E6%95%B4%E6%94%B9%E9%80%A0/">从同步超时到异步流式：一次MES报表导出链路的完整改造</a>
+          </li>
+        
+          <li>
+            <a href="">平滑数据迁移：28GB预警发送日志表的在线瘦身实战</a>
+          </li>
+        
+          <li>
+            <a href="../JVM%E5%A0%86%E4%B8%8E%E7%89%A9%E5%8C%96%EF%BC%9A%E4%B8%80%E6%AC%A1MES%E6%9C%8D%E5%8A%A1%E5%81%87%E6%AD%BB%E4%BA%8B%E6%95%85%E7%9A%84%E5%AE%8C%E6%95%B4%E8%AF%8A%E6%96%AD/">JVM堆与物化：一次MES服务假死事故的完整诊断</a>
+          </li>
+        
+          <li>
+            <a href="../../../../2025/05/26/jar%E5%8C%85%E7%9B%B4%E6%8E%A5%E6%9B%BF%E6%8D%A2%E5%8D%95%E4%B8%AAclass%E6%96%87%E4%BB%B6%E6%88%96%E4%BF%AE%E6%94%B9%E6%96%87%E4%BB%B6%E5%86%85%E5%AE%B9%E7%9A%84%E6%96%B9%E6%B3%95/">jar包直接替换单个class文件或修改文件内容的方法</a>
+          </li>
+        
+          <li>
+            <a href="../../../../2025/05/20/%E4%B8%80%E6%AC%A1mysql%E6%95%B0%E6%8D%AE%E5%BA%93%E5%A4%87%E4%BB%BD%E8%BF%98%E5%8E%9F%E5%AF%BC%E8%87%B4%E7%9A%84%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%BA%8B%E6%95%85/">一次mysql数据库备份还原导致的生产环境事故</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>

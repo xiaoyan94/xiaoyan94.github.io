@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Allow: /archives/
+Allow: /quick-notes/
+Allow: /about/
+Sitemap: https://xiaoyan94.github.io/sitemap.xml
+Sitemap: https://xiaoyan94.github.io/baidu_sitemap.xml
