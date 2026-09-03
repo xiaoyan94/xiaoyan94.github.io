@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>个人项目 CI/CD 落地：GitHub Actions 自动构建、tag 发 Release 与版本号单一来源实战教程 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="个人项目发版本这件事，很容易一直停留在手工作坊阶段：改完代码本地跑一遍打包脚本、手动改名带版本号、开浏览器传 GitHub Release、版本号在 package.json、标签、产物文件名里各写一遍——忘了哪处就漂移。本文以一个真实项目为例，把发版动作收敛成两条 git 命令：任意分支 git push 自动构建出产物（artifact 下载），git push --tags 推一个 v* 标">
+<meta property="og:type" content="article">
+<meta property="og:title" content="个人项目 CI&#x2F;CD 落地：GitHub Actions 自动构建、tag 发 Release 与版本号单一来源实战教程">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/09/03/%E4%B8%AA%E4%BA%BA%E9%A1%B9%E7%9B%AE-CI-CD-%E8%90%BD%E5%9C%B0%EF%BC%9AGitHub-Actions-%E8%87%AA%E5%8A%A8%E6%9E%84%E5%BB%BA%E3%80%81tag-%E5%8F%91-Release-%E4%B8%8E%E7%89%88%E6%9C%AC%E5%8F%B7%E5%8D%95%E4%B8%80%E6%9D%A5%E6%BA%90%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="个人项目发版本这件事，很容易一直停留在手工作坊阶段：改完代码本地跑一遍打包脚本、手动改名带版本号、开浏览器传 GitHub Release、版本号在 package.json、标签、产物文件名里各写一遍——忘了哪处就漂移。本文以一个真实项目为例，把发版动作收敛成两条 git 命令：任意分支 git push 自动构建出产物（artifact 下载），git push --tags 推一个 v* 标">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-03T09:26:24.000Z">
+<meta property="article:modified_time" content="2026-09-03T09:29:13.328Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="Node.js">
+<meta property="article:tag" content="实战教程">
+<meta property="article:tag" content="GitHub Actions">
+<meta property="article:tag" content="CI&#x2F;CD">
+<meta property="article:tag" content="DevOps">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-个人项目-CI-CD-落地：GitHub-Actions-自动构建、tag-发-Release-与版本号单一来源实战教程" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      个人项目 CI/CD 落地：GitHub Actions 自动构建、tag 发 Release 与版本号单一来源实战教程
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-09-03T09:26:24.000Z" itemprop="datePublished">2026-09-03</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <p>个人项目发版本这件事，很容易一直停留在手工作坊阶段：改完代码本地跑一遍打包脚本、手动改名带版本号、开浏览器传 GitHub Release、版本号在 <code>package.json</code>、标签、产物文件名里各写一遍——忘了哪处就漂移。本文以一个真实项目为例，把发版动作收敛成<strong>两条 git 命令</strong>：任意分支 <code>git push</code> 自动构建出产物（artifact 下载），<code>git push --tags</code> 推一个 <code>v*</code> 标签自动校验版本、构建并创建 GitHub Release。项目形态是 Node 全栈（Vue 3 前端 + Express 后端，Node 22 SEA 打包成 Windows 单文件 exe），但流水线设计与语言无关，照搬即可。</p>
+<a id="more"></a>
+
+<h2 id="一、最终形态总览"><a href="#一、最终形态总览" class="headerlink" title="一、最终形态总览"></a>一、最终形态总览</h2><p>先看要搭成什么样，再动手。核心原则只有一条：<strong>构建逻辑只有一份</strong>——本地手动打包和 CI 跑的是同一个 <code>scripts/build-exe.mjs</code>，workflow 里不重写任何构建步骤。CI 与本地共享一条链路，永远不会出现”本地能打包、CI 打不出来”的漂移。</p>
+<pre class="mermaid">flowchart LR
+    A["git push"] --> B{"push 的是什么"}
+    B -->|"任意分支"| JOB["Build job 在 windows-latest"]
+    B -->|"v 开头的标签"| JOB
+    JOB --> C["npm ci"]
+    C --> D["node scripts 打包脚本"]
+    D --> E["产物 exe 约 82MB"]
+    E --> F["上传 artifact 保留 90 天"]
+    E --> G{"本次是 v 标签吗"}
+    G -->|"否 到此结束"| END["完成"]
+    G -->|"是"| H["校验标签与 package.json 版本一致"]
+    H --> I["产物重命名带版本号"]
+    I --> J["创建 Release 并自动生成 notes"]</pre>
+
+<p>触发矩阵整理成表：</p>
+<table>
+<thead>
+<tr>
+<th>push 内容</th>
+<th>构建动作</th>
+<th>产物去向</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>任意分支</td>
+<td>构建</td>
+<td>workflow artifact（保留 90 天，构建页下载）</td>
+</tr>
+<tr>
+<td><code>v*</code> 标签（如 <code>v1.0.0</code>）</td>
+<td>构建（同一 job，不重复跑）</td>
+<td>GitHub Release，挂载带版本号的产物</td>
+</tr>
+<tr>
+<td>手动 dispatch</td>
+<td>同分支行为</td>
+<td>同上 artifact</td>
+</tr>
+</tbody></table>
+<h2 id="二、workflow-文件逐段实现"><a href="#二、workflow-文件逐段实现" class="headerlink" title="二、workflow 文件逐段实现"></a>二、workflow 文件逐段实现</h2><p>完整文件放在 <code>.github/workflows/build.yml</code>，下面按段拆开讲为什么这么写。</p>
+<h3 id="2-1-触发：branches-与-tags-是”或”的关系"><a href="#2-1-触发：branches-与-tags-是”或”的关系" class="headerlink" title="2.1 触发：branches 与 tags 是”或”的关系"></a>2.1 触发：branches 与 tags 是”或”的关系</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">name:</span> <span class="string">Build</span> <span class="string">EXE</span></span><br><span class="line"></span><br><span class="line"><span class="attr">on:</span></span><br><span class="line">  <span class="attr">push:</span></span><br><span class="line">    <span class="attr">branches:</span> <span class="string">['**']</span>   <span class="comment"># 任意分支：仅构建 + artifact</span></span><br><span class="line">    <span class="attr">tags:</span> <span class="string">['v*']</span>       <span class="comment"># v* 标签：构建 + Release</span></span><br><span class="line">  <span class="attr">workflow_dispatch:</span>   <span class="comment"># 手动触发兜底</span></span><br></pre></td></tr></table></figure></div>
+
+<p><code>on.push</code> 下同时写 <code>branches</code> 和 <code>tags</code> 时，<strong>任一命中即触发</strong>，不是”分支且带标签”。<code>branches: [&#39;**&#39;]</code> 匹配所有分支名（含斜杠的也匹配）。不写任何过滤则分支和标签全都触发——那就失去了”只让 v 开头的标签发版”的约束。</p>
+<h3 id="2-2-并发与权限：两行省一半-runner-时间"><a href="#2-2-并发与权限：两行省一半-runner-时间" class="headerlink" title="2.2 并发与权限：两行省一半 runner 时间"></a>2.2 并发与权限：两行省一半 runner 时间</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">concurrency:</span></span><br><span class="line">  <span class="attr">group:</span> <span class="string">build-$&#123;&#123;</span> <span class="string">github.ref</span> <span class="string">&#125;&#125;</span></span><br><span class="line">  <span class="attr">cancel-in-progress:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="attr">permissions:</span></span><br><span class="line">  <span class="attr">contents:</span> <span class="string">write</span></span><br></pre></td></tr></table></figure></div>
+
+<p><code>concurrency</code> 按 ref 分组：连续 push 同一分支时，旧构建自动取消，只跑最新的——个人项目免费 runner 额度有限，这行性价比极高。<code>permissions: contents: write</code> 是创建 Release 的必要写权限，放在 workflow 级别声明即可。</p>
+<h3 id="2-3-构建-job：复用本地脚本，不重写步骤"><a href="#2-3-构建-job：复用本地脚本，不重写步骤" class="headerlink" title="2.3 构建 job：复用本地脚本，不重写步骤"></a>2.3 构建 job：复用本地脚本，不重写步骤</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">jobs:</span></span><br><span class="line">  <span class="attr">build:</span></span><br><span class="line">    <span class="attr">runs-on:</span> <span class="string">windows-latest</span></span><br><span class="line">    <span class="attr">timeout-minutes:</span> <span class="number">15</span></span><br><span class="line">    <span class="attr">steps:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">uses:</span> <span class="string">actions/checkout@v4</span></span><br><span class="line"></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">uses:</span> <span class="string">actions/setup-node@v4</span></span><br><span class="line">        <span class="attr">with:</span></span><br><span class="line">          <span class="attr">node-version:</span> <span class="string">'22'</span></span><br><span class="line">          <span class="attr">cache:</span> <span class="string">npm</span></span><br><span class="line"></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">安装依赖</span></span><br><span class="line">        <span class="attr">run:</span> <span class="string">npm</span> <span class="string">ci</span></span><br><span class="line"></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">构建单</span> <span class="string">exe</span></span><br><span class="line">        <span class="attr">run:</span> <span class="string">node</span> <span class="string">scripts/build-exe.mjs</span></span><br><span class="line"></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">上传产物</span></span><br><span class="line">        <span class="attr">uses:</span> <span class="string">actions/upload-artifact@v4</span></span><br><span class="line">        <span class="attr">with:</span></span><br><span class="line">          <span class="attr">name:</span> <span class="string">app-exe-$&#123;&#123;</span> <span class="string">github.sha</span> <span class="string">&#125;&#125;</span></span><br><span class="line">          <span class="attr">path:</span> <span class="string">dist-exe/app.exe</span></span><br><span class="line">          <span class="attr">compression-level:</span> <span class="number">0</span></span><br></pre></td></tr></table></figure></div>
+
+<p>几个细节：</p>
+<ul>
+<li><strong>runner 选 <code>windows-latest</code></strong> 是因为产物是 Windows exe；纯跨语言项目按产物平台选即可。</li>
+<li><strong><code>cache: npm</code></strong> 依赖根目录的 <code>package-lock.json</code> 存在；workspaces 单仓多包时根 lockfile 就够。</li>
+<li>**<code>npm ci</code> 而非 <code>npm install</code>**：严格按 lockfile 装，可复现。</li>
+<li>**<code>compression-level: 0</code>**：80MB 的 exe 是不可压缩二进制，默认 zip 压缩纯浪费时间，跳过能省一分钟。</li>
+<li>**<code>timeout-minutes</code>**：卡死的构建默认能挂 6 小时，个人项目 15 分钟足够，早失败早发现。</li>
+</ul>
+<h3 id="2-4-tag-才执行的步骤：if-条件，不是第二个-job"><a href="#2-4-tag-才执行的步骤：if-条件，不是第二个-job" class="headerlink" title="2.4 tag 才执行的步骤：if 条件，不是第二个 job"></a>2.4 tag 才执行的步骤：<code>if</code> 条件，不是第二个 job</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">-</span> <span class="attr">name:</span> <span class="string">校验</span> <span class="string">tag</span> <span class="string">与</span> <span class="string">package.json</span> <span class="string">版本一致</span></span><br><span class="line">  <span class="attr">if:</span> <span class="string">startsWith(github.ref,</span> <span class="string">'refs/tags/'</span><span class="string">)</span></span><br><span class="line">  <span class="attr">shell:</span> <span class="string">pwsh</span></span><br><span class="line">  <span class="attr">run:</span> <span class="string">|</span></span><br><span class="line">    <span class="string">$pkg</span> <span class="string">=</span> <span class="string">(Get-Content</span> <span class="string">package.json</span> <span class="string">-Raw</span> <span class="string">|</span> <span class="string">ConvertFrom-Json).version</span></span><br><span class="line">    <span class="string">$tag</span> <span class="string">=</span> <span class="string">$env:GITHUB_REF_NAME</span> <span class="string">-replace</span> <span class="string">'^v'</span><span class="string">,</span> <span class="string">''</span></span><br><span class="line">    <span class="string">if</span> <span class="string">($pkg</span> <span class="string">-ne</span> <span class="string">$tag)</span> <span class="string">&#123;</span></span><br><span class="line">      <span class="string">Write-Error</span> <span class="string">"package.json version ($pkg) 与 tag ($tag) 不一致：先改 package.json 再打 tag"</span></span><br><span class="line">      <span class="string">exit</span> <span class="number">1</span></span><br><span class="line">    <span class="string">&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="bullet">-</span> <span class="attr">name:</span> <span class="string">产物重命名带版本号</span></span><br><span class="line">  <span class="attr">if:</span> <span class="string">startsWith(github.ref,</span> <span class="string">'refs/tags/'</span><span class="string">)</span></span><br><span class="line">  <span class="attr">shell:</span> <span class="string">pwsh</span></span><br><span class="line">  <span class="attr">run:</span> <span class="string">Copy-Item</span> <span class="string">dist-exe/app.exe</span> <span class="string">"dist-exe/app-$&#123;env:GITHUB_REF_NAME&#125;.exe"</span></span><br><span class="line"></span><br><span class="line"><span class="bullet">-</span> <span class="attr">name:</span> <span class="string">发布</span> <span class="string">Release</span></span><br><span class="line">  <span class="attr">if:</span> <span class="string">startsWith(github.ref,</span> <span class="string">'refs/tags/'</span><span class="string">)</span></span><br><span class="line">  <span class="attr">uses:</span> <span class="string">softprops/action-gh-release@v2</span></span><br><span class="line">  <span class="attr">with:</span></span><br><span class="line">    <span class="attr">files:</span> <span class="string">dist-exe/app-v*.exe</span></span><br><span class="line">    <span class="attr">generate_release_notes:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure></div>
+
+<p>这里最容易犯的错是给标签单独写一个 job——那会<strong>把整个构建跑两遍</strong>。正确姿势是一个 job 里用 <code>if: startsWith(github.ref, &#39;refs/tags/&#39;)</code> 条件步骤：构建只跑一次，Release 相关步骤按需追加。版本校验放在构建之后、发布之前，<strong>fail fast</strong>——版本对不上直接红，不会产出一个版本号撒谎的 Release。<code>generate_release_notes: true</code> 按提交历史自动生成变更说明，个人项目够用。</p>
+<h2 id="三、版本号单一来源：从-package-json-到页头显示"><a href="#三、版本号单一来源：从-package-json-到页头显示" class="headerlink" title="三、版本号单一来源：从 package.json 到页头显示"></a>三、版本号单一来源：从 package.json 到页头显示</h2><p>发版链路通了之后，下一个问题就是版本号写在几处。原则：<strong>根 <code>package.json</code> 的 <code>version</code> 字段是唯一事实</strong>，其余位置全部由它派生。</p>
+<pre class="mermaid">flowchart LR
+    PKG["根 package.json 的 version 字段"] -->|"构建时 esbuild define 注入常量"| EXE["产物内后端 APP_VERSION"]
+    EXE --> API["运行时 GET /api/version"]
+    API --> HEAD["页面页头显示 v1.0.0"]
+    PKG -->|"推标签时 CI 校验去掉 v 前缀必须相等"| REL["GitHub Release v1.0.0"]
+    DEV["npm run dev 未注入"] -->|"兜底显示 dev"| HEAD2["页面页头显示 dev"]</pre>
+
+<h3 id="3-1-构建期注入：esbuild-define-的跨-shell-引号"><a href="#3-1-构建期注入：esbuild-define-的跨-shell-引号" class="headerlink" title="3.1 构建期注入：esbuild define 的跨 shell 引号"></a>3.1 构建期注入：esbuild define 的跨 shell 引号</h3><p>打包脚本把版本号通过 <code>--define</code> 编译成常量，后端代码里只需正常读环境变量的写法：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JS"><figure class="iseeu highlight /js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// scripts/build-exe.mjs</span></span><br><span class="line"><span class="keyword">const</span> version = <span class="built_in">JSON</span>.parse(fs.readFileSync(<span class="string">'package.json'</span>, <span class="string">'utf8'</span>)).version;</span><br><span class="line">execSync(</span><br><span class="line">  <span class="string">`npx esbuild server/index.js --bundle --platform=node --format=cjs `</span> +</span><br><span class="line">    <span class="string">`--outfile=build/sea-bundle.js --define:process.env.APP_VERSION="'<span class="subst">$&#123;version&#125;</span>'"`</span>,</span><br><span class="line">  &#123; <span class="attr">stdio</span>: <span class="string">'inherit'</span> &#125;</span><br><span class="line">);</span><br></pre></td></tr></table></figure></div>
+
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JS"><figure class="iseeu highlight /js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// server/config.js</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> APP_VERSION = process.env.APP_VERSION ?? <span class="string">'dev'</span>;</span><br></pre></td></tr></table></figure></div>
+
+<p><code>--define</code> 的值必须是<strong>合法 JS 表达式</strong>，字符串就要带引号——于是命令行上出现了嵌套引号。这里的坑：Node 的 <code>execSync</code> 在 Windows 走 cmd.exe，在类 Unix 走 <code>/bin/sh</code>，两者剥引号规则不同。上面 <code>&quot;&#39;1.0.0&#39;&quot;</code> 的写法两头通吃：<strong>外层双引号被两种 shell 都剥掉，内层单引号都被保留</strong>，esbuild 最终收到 <code>process.env.APP_VERSION=&#39;1.0.0&#39;</code>。semver 版本号里不会有单引号，所以安全。</p>
+<p>esbuild 会把 <code>process.env.APP_VERSION</code> 整个表达式替换成字面量，于是 <code>?? &#39;dev&#39;</code> 在产物里变成 <code>&quot;1.0.0&quot; ?? &#39;dev&#39;</code>；本地 <code>npm run dev</code> 没有这个注入，自然落到 <code>&#39;dev&#39;</code> 分支——<strong>开发态显示 dev、发布态显示真实版本，一行兜底代码解决</strong>。</p>
+<h3 id="3-2-运行时暴露与展示"><a href="#3-2-运行时暴露与展示" class="headerlink" title="3.2 运行时暴露与展示"></a>3.2 运行时暴露与展示</h3><p>后端加一个无平台参数的全局端点，注册在所有动态路由之前，避免被路径参数吞掉：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JS"><figure class="iseeu highlight /js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// server/routes/api.js —— 注册顺序放在 /:xxx/... 路由之前</span></span><br><span class="line">router.get(<span class="string">'/version'</span>, (req, res) =&gt; &#123;</span><br><span class="line">  res.json(&#123; <span class="attr">ok</span>: <span class="literal">true</span>, <span class="attr">data</span>: &#123; <span class="attr">version</span>: APP_VERSION &#125; &#125;);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></div>
+
+<p>前端挂载时拉一次，失败静默（版本号只是展示，不阻断界面），页头小字渲染 <code>v1.0.0</code> 或 <code>dev</code>。</p>
+<p>至此闭环：改一处 <code>version</code> → 构建注入 → 页面显示 → 标签校验 → Release 文件名，全部自动对齐。</p>
+<h2 id="四、踩坑实录"><a href="#四、踩坑实录" class="headerlink" title="四、踩坑实录"></a>四、踩坑实录</h2><h3 id="4-1-打包产物差点入库"><a href="#4-1-打包产物差点入库" class="headerlink" title="4.1 打包产物差点入库"></a>4.1 打包产物差点入库</h3><p>打包脚本上库前，<code>git status</code> 里躺着两个未跟踪目录：<code>build/</code>（打包中间产物，<strong>里面还有本机绝对路径</strong>）和 <code>dist-exe/</code>（exe 成品 + 运行期数据 + 日志）。个人项目没有 code review 拦着，一顺手 <code>git add .</code> 就进去了。补救就是 <code>.gitignore</code> 显式加上这两个目录——打包产物一律不进版本库，Release 和 artifact 才是产物的家。</p>
+<h3 id="4-2-监控命令的假成功：管道吞了退出码"><a href="#4-2-监控命令的假成功：管道吞了退出码" class="headerlink" title="4.2 监控命令的假成功：管道吞了退出码"></a>4.2 监控命令的假成功：管道吞了退出码</h3><p>CI 跑起来后我在本地挂了一条监控命令盯构建状态，收到”exit 0”就以为一切正常——实际上这台机器根本没装 <code>gh</code> CLI，命令第一行就失败了。问题出在管道：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gh run watch <span class="variable">$RUN_ID</span> --<span class="built_in">exit</span>-status | tail -15   <span class="comment"># 退出码取自 tail，恒为 0</span></span><br></pre></td></tr></table></figure></div>
+
+<p>bash 管道的退出码默认取<strong>最后一个命令</strong>，<code>tail</code> 永远成功，上游 <code>gh</code> 的失败被无声吞掉。要让管道暴露上游失败得 <code>set -o pipefail</code>。更根本的教训：<strong>后台监控命令的结论必须读输出文件确认，退出码本身可能撒谎</strong>。</p>
+<h3 id="4-3-本机查不了-GitHub-API：换路子而不是死磕"><a href="#4-3-本机查不了-GitHub-API：换路子而不是死磕" class="headerlink" title="4.3 本机查不了 GitHub API：换路子而不是死磕"></a>4.3 本机查不了 GitHub API：换路子而不是死磕</h3><p>构建结果想用 API 核实，<code>curl</code> 报 schannel 证书链错误、PowerShell <code>Invoke-RestMethod</code> 报 PartialChain——本机代理的 fake-IP 模式把 TLS 握手截断了，而 <code>git push</code> 走 SSH 完全不受影响。这种环境下查 CI 状态换用外部抓取通道直读 <code>api.github.com</code> 的 JSON 端点即可。另一个细节：<strong>列表类端点（<code>/actions/runs</code>）有 15 分钟缓存</strong>，刷构建状态要用 run 专属端点（<code>/actions/runs/&lt;id&gt;</code>，每个 id 一个唯一 URL）才能拿到新鲜结果。</p>
+<h3 id="4-4-版本漂移的防御要前移"><a href="#4-4-版本漂移的防御要前移" class="headerlink" title="4.4 版本漂移的防御要前移"></a>4.4 版本漂移的防御要前移</h3><p>版本校验放 CI 里而不是靠自觉：标签推上去、版本不一致、构建直接红——比”发完版才发现 exe 页面显示 1.0.0、Release 叫 v1.1.0”好一百倍。<strong>凡是靠人记得住的约束，都该变成流水线上的一道闸。</strong></p>
+<h2 id="五、小结"><a href="#五、小结" class="headerlink" title="五、小结"></a>五、小结</h2><p>搭完之后，日常发版收敛成三步：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 改根 package.json 的 version 字段，随代码一起提交推送</span></span><br><span class="line"><span class="comment"># 2. 打同版本标签并推送</span></span><br><span class="line">git tag v1.0.0 &amp;&amp; git push origin v1.0.0</span><br><span class="line"><span class="comment"># 3. 等 Actions 绿了，Release 页面已经躺着带版本号的产物</span></span><br></pre></td></tr></table></figure></div>
+
+<p>几条可迁移的经验：</p>
+<ul>
+<li><strong>构建逻辑只写一份</strong>（本地脚本），CI 只负责调它——本地与流水线永不漂移</li>
+<li><strong>tag 语义用 <code>if</code> 条件步骤实现</strong>，不要复制 job，构建不跑第二遍</li>
+<li><strong>版本号单一来源</strong>，注入-暴露-校验全链路派生，人只写一处</li>
+<li><strong>并发取消（concurrency）</strong> 是免费额度下最值钱的一行配置</li>
+<li><strong>所有约束前移到流水线</strong>（版本校验 fail fast），不依赖人的记性</li>
+</ul>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../CentOS-7-%E7%A6%BB%E7%BA%BF%E7%8E%AF%E5%A2%83%E4%BB%8E%E9%9B%B6%E9%83%A8%E7%BD%B2-MySQL-%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%BD%93%E7%B3%BB%EF%BC%9AXtraBackup-2-4-%E4%B8%8E%E8%87%AA%E5%8A%A8%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">CentOS 7 离线环境从零部署 MySQL 物理备份体系：XtraBackup 2.4 与自动备份脚本安装教程</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/">插件开发</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ/" rel="tag">IntelliJ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PSI/" rel="tag">PSI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" rel="tag">插件开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" rel="tag">线程模型</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" rel="tag">运维部署</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/CI-CD/" style="font-size: 10px;">CI/CD</a> <a href="../../../../tags/CentOS/" style="font-size: 11.25px;">CentOS</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/EasyUI/" style="font-size: 11.25px;">EasyUI</a> <a href="../../../../tags/GC/" style="font-size: 11.25px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.25px;">Git Bash</a> <a href="../../../../tags/GitHub-Actions/" style="font-size: 10px;">GitHub Actions</a> <a href="../../../../tags/Github/" style="font-size: 12.5px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 11.25px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 16.25px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/HttpClient/" style="font-size: 11.25px;">HttpClient</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/IntelliJ/" style="font-size: 12.5px;">IntelliJ</a> <a href="../../../../tags/JVM/" style="font-size: 18.75px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 17.5px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 13.75px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 12.5px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.25px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 12.5px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 11.25px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 12.5px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 11.25px;">Node.js</a> <a href="../../../../tags/PSI/" style="font-size: 10px;">PSI</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 10px;">RabbitMQ</a> <a href="../../../../tags/SQL/" style="font-size: 15px;">SQL</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.25px;">Shell</a> <a href="../../../../tags/Spring-Cloud/" style="font-size: 10px;">Spring Cloud</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 12.5px;">WebSocket</a> <a href="../../../../tags/XtraBackup/" style="font-size: 11.25px;">XtraBackup</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/Zuul/" style="font-size: 10px;">Zuul</a> <a href="../../../../tags/hexo/" style="font-size: 11.25px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.25px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.25px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" style="font-size: 10px;">体验优化</a> <a href="../../../../tags/%E5%89%8D%E7%AB%AF/" style="font-size: 11.25px;">前端</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" style="font-size: 11.25px;">实战教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">并发</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 10px;">微服务</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 15px;">排查实战</a> <a href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" style="font-size: 12.5px;">插件开发</a> <a href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" style="font-size: 11.25px;">故障复盘</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" style="font-size: 11.25px;">数据备份</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12.5px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">架构</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.25px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12.5px;">竹云</a> <a href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" style="font-size: 10px;">线程模型</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12.5px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" style="font-size: 13.75px;">踩坑实录</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" style="font-size: 10px;">运维部署</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="">个人项目 CI/CD 落地：GitHub Actions 自动构建、tag 发 Release 与版本号单一来源实战教程</a>
+          </li>
+        
+          <li>
+            <a href="../CentOS-7-%E7%A6%BB%E7%BA%BF%E7%8E%AF%E5%A2%83%E4%BB%8E%E9%9B%B6%E9%83%A8%E7%BD%B2-MySQL-%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%BD%93%E7%B3%BB%EF%BC%9AXtraBackup-2-4-%E4%B8%8E%E8%87%AA%E5%8A%A8%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/">CentOS 7 离线环境从零部署 MySQL 物理备份体系：XtraBackup 2.4 与自动备份脚本安装教程</a>
+          </li>
+        
+          <li>
+            <a href="../%E5%A4%87%E4%BB%BD%E5%A4%A9%E5%A4%A9%E5%9C%A8%E8%B7%91%E3%80%81%E6%81%A2%E5%A4%8D%E7%82%B9%E5%8D%B4%E5%81%9C%E5%9C%A833%E5%A4%A9%E5%89%8D%EF%BC%9AXtraBackup%E5%A2%9E%E9%87%8F%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%85%A8%E9%9D%A2%E7%BF%BB%E4%BF%AE%E5%AE%9E%E5%BD%95/">备份天天在跑、恢复点却停在33天前：XtraBackup增量备份脚本全面翻修实录</a>
+          </li>
+        
+          <li>
+            <a href="../../02/%E7%BD%91%E5%85%B3%E6%97%A5%E5%BF%97%E9%9B%B6%E6%8A%A5%E9%94%99%E3%80%81%E9%A6%96%E9%A1%B5%E6%8E%A5%E5%8F%A3%E5%85%A8%E7%BA%BF404%EF%BC%9A%E4%B8%80%E6%AC%A1JRebel%E5%BC%95%E5%8F%91%E7%9A%84Zuul%E8%B7%AF%E7%94%B1%E4%B9%B1%E5%BA%8F%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/">网关日志零报错、首页接口全线404：一次JRebel引发的Zuul路由乱序排查实录</a>
+          </li>
+        
+          <li>
+            <a href="../../01/APS%E5%9B%9E%E5%86%99%E5%81%9C%E6%91%86%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E4%B8%8E%E4%BF%AE%E5%A4%8D%E8%AE%B0%E5%BD%95/">APS回写停摆故障排查与修复记录</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>

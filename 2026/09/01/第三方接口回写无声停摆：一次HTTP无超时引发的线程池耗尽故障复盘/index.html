@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>第三方接口回写无声停摆：一次HTTP无超时引发的线程池耗尽故障复盘 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="概述T 日下午，一套在产 MES 系统的第三方排产系统（下称 APS）工单状态回写链路发生静默失效：MES 侧所有业务功能（开工、报工、结单）完全正常，但对 APS 的状态推送全部停止，回写失败记录表自当日起不再产生任何新数据。故障持续约两天后被发现，重启服务即恢复，无业务数据损坏。 本文完整记录该故障的定位过程、根因机制、修复方案与验证方法。该故障的典型性在于：四个各自不算缺陷的设计组合在一起，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="第三方接口回写无声停摆：一次HTTP无超时引发的线程池耗尽故障复盘">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/09/01/%E7%AC%AC%E4%B8%89%E6%96%B9%E6%8E%A5%E5%8F%A3%E5%9B%9E%E5%86%99%E6%97%A0%E5%A3%B0%E5%81%9C%E6%91%86%EF%BC%9A%E4%B8%80%E6%AC%A1HTTP%E6%97%A0%E8%B6%85%E6%97%B6%E5%BC%95%E5%8F%91%E7%9A%84%E7%BA%BF%E7%A8%8B%E6%B1%A0%E8%80%97%E5%B0%BD%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="概述T 日下午，一套在产 MES 系统的第三方排产系统（下称 APS）工单状态回写链路发生静默失效：MES 侧所有业务功能（开工、报工、结单）完全正常，但对 APS 的状态推送全部停止，回写失败记录表自当日起不再产生任何新数据。故障持续约两天后被发现，重启服务即恢复，无业务数据损坏。 本文完整记录该故障的定位过程、根因机制、修复方案与验证方法。该故障的典型性在于：四个各自不算缺陷的设计组合在一起，">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-01T06:15:14.000Z">
+<meta property="article:modified_time" content="2026-09-03T09:29:13.328Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="HttpClient">
+<meta property="article:tag" content="故障复盘">
+<meta property="article:tag" content="并发">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-第三方接口回写无声停摆：一次HTTP无超时引发的线程池耗尽故障复盘" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      第三方接口回写无声停摆：一次HTTP无超时引发的线程池耗尽故障复盘
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-09-01T06:15:14.000Z" itemprop="datePublished">2026-09-01</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>T 日下午，一套在产 MES 系统的第三方排产系统（下称 APS）工单状态回写链路发生静默失效：MES 侧所有业务功能（开工、报工、结单）完全正常，但对 APS 的状态推送全部停止，回写失败记录表自当日起不再产生任何新数据。故障持续约两天后被发现，重启服务即恢复，无业务数据损坏。</p>
+<p>本文完整记录该故障的定位过程、根因机制、修复方案与验证方法。该故障的典型性在于：<strong>四个各自不算缺陷的设计组合在一起，形成了一个无任何错误输出、无任何自愈可能、且监控系统完全盲区的失效模式</strong>。</p>
+<ul>
+<li><strong>直接根因</strong>：HTTP 客户端未配置连接与读取超时，第三方接口瞬时半死（TCP 连接建立但不再回包）后，10 个推送工作线程永久阻塞在 socket 读取上；</li>
+<li><strong>放大因素</strong>：推送经固定大小线程池异步执行、队列无界、异常被静默吞掉；</li>
+<li><strong>恢复手段</strong>：仅能重启进程（无超时的 socketRead 永不返回，线程无法自行释放）。</li>
+</ul>
+<a id="more"></a>
+
+<h2 id="一、故障现象"><a href="#一、故障现象" class="headerlink" title="一、故障现象"></a>一、故障现象</h2><p>该回写链路的日常形态是：一个每 10 分钟执行一次的定时任务，将所有未完工单的当前状态与完工数量推送给 APS；同时开工、暂停、结单等业务事件也会触发即时推送。APS 接口日常存在一定比例的业务性拒绝（工单号不存在等），因此失败记录表每天稳定产生数千条记录——<strong>失败记录的持续产生，本身就是这条链路活着的信号</strong>。</p>
+<p>T 日之后，这张表的数据归零。而同一时间段内：</p>
+<ul>
+<li>MES 各业务功能正常运转，无任何报错；</li>
+<li>应用日志中无 ERROR 级别的相关输出；</li>
+<li>APS 侧反馈收不到任何新的状态数据。</li>
+</ul>
+<p>三条线索指向同一个问题：推送动作本身消失了，而不是推送在失败。</p>
+<h2 id="二、定位过程"><a href="#二、定位过程" class="headerlink" title="二、定位过程"></a>二、定位过程</h2><h3 id="2-1-缩小范围：日志分层签名法"><a href="#2-1-缩小范围：日志分层签名法" class="headerlink" title="2.1 缩小范围：日志分层签名法"></a>2.1 缩小范围：日志分层签名法</h3><p>推送链路横跨同步与异步两层，这是一个可以利用的结构性特征。定时任务方法体内的日志（任务开始、逐单循环）由<strong>调度线程同步打印</strong>；而实际的 HTTP 调用发生在<strong>异步工作线程</strong>内，各自产生独立的日志行。两类日志的存亡组合，可以直接指示故障发生在链路的哪一层：</p>
+<table>
+<thead>
+<tr>
+<th>同步层日志（任务开始&#x2F;逐单循环）</th>
+<th>异步层日志（HTTP 请求&#x2F;响应）</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>有</td>
+<td>有</td>
+<td>链路整体正常，故障在别处</td>
+</tr>
+<tr>
+<td>有</td>
+<td>无</td>
+<td>异步体从未执行——线程池耗尽或队列阻塞</td>
+</tr>
+<tr>
+<td>无</td>
+<td>—</td>
+<td>调度层故障（任务未触发或前置查询异常）</td>
+</tr>
+</tbody></table>
+<p>现场取证结果：任务开始日志正常出现、逐单循环日志每个周期均在迭代约 30 个工单，但当前日志窗口内 HTTP 请求日志为零。<strong>结论：任务在跑、工单在遍历、推送任务已提交，但异步执行体一次都没有运行。</strong> 这将问题从”第三方接口故障””业务数据问题””调度故障”三个方向一次性排除，收敛到线程池本身。</p>
+<h3 id="2-2-线程栈实锤"><a href="#2-2-线程栈实锤" class="headerlink" title="2.2 线程栈实锤"></a>2.2 线程栈实锤</h3><p>对进程发起 <code>SIGQUIT</code>（<code>kill -3</code>）获取全量线程栈（容器内无 JDK 工具时的标准做法，线程栈输出到 stdout，经 <code>kubectl logs</code> 收集）。栈内可见推送线程池的全部 10 个线程，状态一致：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&quot;pool-N-thread-1&quot; ... runnable</span><br><span class="line">    at java.net.SocketInputStream.socketRead0(Native Method)</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure></div>
+
+<p>10&#x2F;10 线程全部 RUNNABLE 且阻塞在 <code>socketRead0</code>，调用链即第三方推送。线程池被挂死连接占满，后续所有推送任务（定时任务与业务事件）进入无界队列永久等待——<strong>既不执行，也不失败，因此不产生任何失败记录</strong>。业务线程提交任务后立即返回，业务功能全程无感知。</p>
+<h3 id="2-3-对端反转与最终定性"><a href="#2-3-对端反转与最终定性" class="headerlink" title="2.3 对端反转与最终定性"></a>2.3 对端反转与最终定性</h3><p>此时最可能的叙事是”第三方接口挂了”。但从应用所在容器内直接 curl 第三方接口，<strong>秒回业务响应</strong>——对端当前完全健康。结合进程已连续运行近一个月未重启，完整的因果链得以闭合：</p>
+<ol>
+<li>T 日发生一次瞬时网络事件（第三方重启或链路抖动，触发源无法追溯）；</li>
+<li>当时在途的 10 次 HTTP 调用的连接进入”已建立、无响应”状态；</li>
+<li>由于客户端未配置任何超时，这 10 次调用的读取等待<strong>永远不会结束</strong>；</li>
+<li>线程池占满，此后所有推送静默积压；</li>
+<li>第三方接口随后恢复正常，但<strong>挂死的线程不会因对端恢复而恢复</strong>——这是本故障最反直觉的一点：故障的触发条件是瞬时的，故障本身却是永久的，唯一解是重启进程。</li>
+</ol>
+<h3 id="2-4-排查命令清单"><a href="#2-4-排查命令清单" class="headerlink" title="2.4 排查命令清单"></a>2.4 排查命令清单</h3><p>上述过程用到的命令按用途整理如下（占位符按各自系统替换；应用部署在 Kubernetes 容器内、无 JDK 工具为前提）：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># —— 同步层：任务是否在跑、是否跑完（缺 end = 卡在前置查询，查数据库锁）——</span></span><br><span class="line">grep -c <span class="string">"&lt;任务方法&gt; start"</span> &lt;服务日志&gt;</span><br><span class="line">grep -c <span class="string">"&lt;任务方法&gt; end"</span> &lt;服务日志&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># —— 同步层：逐条循环是否在迭代（有输出 = 数据列表非空，排除数据侧原因）——</span></span><br><span class="line">grep -c <span class="string">"&lt;任务方法&gt; &lt;逐条日志关键字&gt;"</span> &lt;服务日志&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># —— 异步层：HTTP 是否真的发出、是否收到响应（本故障的核心判别项）——</span></span><br><span class="line">grep <span class="string">"&lt;HTTP请求日志关键字&gt;"</span> &lt;服务日志&gt; | tail -5</span><br><span class="line">grep <span class="string">"&lt;HTTP响应日志关键字&gt;"</span> &lt;服务日志&gt; | tail -5</span><br><span class="line"></span><br><span class="line"><span class="comment"># —— 重试任务是否正常收尾（start 有 end 无 = 调度线程被同步外呼占死）——</span></span><br><span class="line">grep <span class="string">"&lt;重试方法名&gt;"</span> &lt;服务日志&gt; | tail -6</span><br><span class="line"></span><br><span class="line"><span class="comment"># —— 日志窗口与轮转文件（.gz 压缩文件用 grep 查不到内容，需 zgrep）——</span></span><br><span class="line">ls -lt | head -8</span><br><span class="line">head -2 &lt;服务日志&gt;</span><br><span class="line">zgrep -h <span class="string">"&lt;HTTP请求日志关键字&gt;"</span> &lt;服务日志&gt;* | tail -3</span><br><span class="line"></span><br><span class="line"><span class="comment"># —— 线程栈：容器内无 jstack/jcmd 时用 SIGQUIT（kill -3 不杀进程，</span></span><br><span class="line"><span class="comment">#    只是让 JVM 把全量线程栈打到 stdout，从容器日志收取）——</span></span><br><span class="line">ps -ef | grep java</span><br><span class="line"><span class="built_in">kill</span> -3 &lt;pid&gt;</span><br><span class="line">kubectl logs &lt;pod&gt; -n &lt;namespace&gt; --since=2m &gt; /tmp/td.txt</span><br><span class="line">grep -B1 -A14 <span class="string">'pool-'</span> /tmp/td.txt | grep -E <span class="string">'pool-|socketRead0'</span> | head -30</span><br><span class="line"></span><br><span class="line"><span class="comment"># —— 对端验证：在应用所在容器内执行（与业务同网络命名空间），</span></span><br><span class="line"><span class="comment">#    -m 5 给 curl 自己加超时，防止排查命令也被挂住 ——</span></span><br><span class="line">curl -v -m 5 -X POST -H <span class="string">"Content-Type: application/json"</span> \</span><br><span class="line">  -d <span class="string">'[&#123;...业务报文...&#125;]'</span> http://&lt;第三方接口地址&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># —— 恢复（顺序：先确认对端健康，再重启；对端未恢复时重启会立刻再次挂死）——</span></span><br><span class="line">kubectl -n &lt;namespace&gt; rollout restart deployment/&lt;服务&gt;</span><br></pre></td></tr></table></figure></div>
+
+<p>数据库侧两条：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 停摆时点与量级（按天分布，确认归零起始日与此前基线）</span></span><br><span class="line"><span class="keyword">select</span> <span class="built_in">date</span>(createtime) d, <span class="keyword">count</span>(*)</span><br><span class="line"><span class="keyword">from</span> &lt;失败记录表&gt; <span class="keyword">where</span> delflag = <span class="number">0</span></span><br><span class="line"><span class="keyword">group</span> <span class="keyword">by</span> d <span class="keyword">order</span> <span class="keyword">by</span> d <span class="keyword">desc</span> <span class="keyword">limit</span> <span class="number">7</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 停摆前最后几条失败的形态与精确时间点（用于对齐日志排查窗口）</span></span><br><span class="line"><span class="keyword">select</span> <span class="keyword">id</span>, createtime, retrycount, <span class="keyword">left</span>(<span class="keyword">error</span>, <span class="number">200</span>)</span><br><span class="line"><span class="keyword">from</span> &lt;失败记录表&gt; <span class="keyword">where</span> delflag = <span class="number">0</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> createtime <span class="keyword">desc</span> <span class="keyword">limit</span> <span class="number">5</span>;</span><br></pre></td></tr></table></figure></div>
+
+<h2 id="三、根因机制"><a href="#三、根因机制" class="headerlink" title="三、根因机制"></a>三、根因机制</h2><p>四个设计点的组合构成了完整故障面：</p>
+<pre class="mermaid">flowchart TD
+    A["推送入口 定时任务与业务事件"] --> B["提交异步推送任务"]
+    B --> C{"线程池有空闲线程?"}
+    C -- "有" --> D["发起 HTTP 请求 未配置超时"]
+    C -- "无" --> E["进入无界队列 永久等待"]
+    D -- "对端正常" --> F["按返回码落库或结束"]
+    D -- "对端半死 连接建立但不回包" --> G["线程永久阻塞在 socketRead"]
+    G --> E
+    style G fill:#fdd
+    style E fill:#fdd</pre>
+
+<ol>
+<li><strong>HTTP 客户端无超时</strong>（<code>HttpClients.createDefault()</code> 未设置 <code>RequestConfig</code>）：Apache HttpClient 默认 connect&#x2F;socket 超时为 0，即无限等待。这是根因——其余三点只决定故障的呈现形态。</li>
+<li><strong>固定大小线程池</strong>：10 个线程承载全部第三方推送，无隔离、无兜底拒绝策略。</li>
+<li><strong>无界队列</strong>：<code>newFixedThreadPool</code> 内置 <code>LinkedBlockingQueue</code>，任务只进不出，既不触发拒绝异常，也不产生任何可观测信号；内存上积压数万任务也未必触发告警。</li>
+<li><strong>异步链路吞异常</strong>：失败记录的落库本身也在异步任务内，外层 <code>catch (Exception) { /* do nothing */ }</code> 将落库失败也静默处理——即使链路尚有残存输出，这最后一层也会将其抹掉。</li>
+</ol>
+<p>值得强调的是监控盲区的成因：对这类链路，常见的监控思路是”失败率上升则告警”。但本故障中失败数不是上升而是<strong>归零</strong>——在线单量大于零的前提下，第三方回写失败记录长时间零增长，本身就是一个强故障信号，应当纳入反向监控。</p>
+<h2 id="四、修复与验证"><a href="#四、修复与验证" class="headerlink" title="四、修复与验证"></a>四、修复与验证</h2><h3 id="4-1-代码修复"><a href="#4-1-代码修复" class="headerlink" title="4.1 代码修复"></a>4.1 代码修复</h3><p>两处修改：</p>
+<p>其一，为 HTTP 工具类的 POST 方法统一设置请求超时：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> CONNECT_TIMEOUT = <span class="number">3000</span>;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> SOCKET_TIMEOUT = <span class="number">10000</span>;</span><br><span class="line"></span><br><span class="line">httpPost.setConfig(RequestConfig.custom()</span><br><span class="line">        .setSocketTimeout(SOCKET_TIMEOUT)</span><br><span class="line">        .setConnectTimeout(CONNECT_TIMEOUT)</span><br><span class="line">        .build());</span><br></pre></td></tr></table></figure></div>
+
+<p>超时生效后，原有的失效模式变为：对端半死 → 线程至多 13 秒后超时释放 → 调用返回 null → 走既有的失败落库逻辑 → 线程池自愈，失败记录持续可见。行为变更需注意：此前无限等待的调用现在会快速返回 null，所有调用方必须能容忍 null（本例中调用方本就以 null 为失败分支处理，无适配成本）。</p>
+<p>其二，将失败落库外层的静默吞异常改为记录 ERROR 日志。</p>
+<h3 id="4-2-黑洞验证法"><a href="#4-2-黑洞验证法" class="headerlink" title="4.2 黑洞验证法"></a>4.2 黑洞验证法</h3><p>单元测试很难模拟”TCP 连接建立但永不回包”的对端，而用一个极小的 TCP 黑洞进程即可精确复现：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PYTHON"><figure class="iseeu highlight /python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line">s = socket.socket()</span><br><span class="line">s.bind((<span class="string">'127.0.0.1'</span>, <span class="number">18770</span>))</span><br><span class="line">s.listen(<span class="number">100</span>)</span><br><span class="line">conns = []</span><br><span class="line"><span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">    conns.append(s.accept())   <span class="comment"># 只接受连接，永不回包</span></span><br></pre></td></tr></table></figure></div>
+
+<p>将测试环境的第三方地址指向该黑洞端口，即得到一个行为完全确定的对端半死环境。验证取得了理想的 A&#x2F;B 对照：</p>
+<ul>
+<li><strong>修复前</strong>：触发推送后请求发出、永久沉默，线程栈复现 10 线程挂死——本地完整复现了生产故障；</li>
+<li><strong>修复后</strong>：同一触发下，请求发出后精确 10.08 秒出现 <code>SocketTimeoutException: Read timed out</code>，线程释放，失败记录表产生 <code>接口返回数据为空</code> 的新行；</li>
+<li><strong>压力验证</strong>：连续触发 16 次推送，全部在两轮超时周期（约 20 秒）内完成释放，线程池无积压——排除了”超时后仍然缓慢泄漏”的可能。</li>
+</ul>
+<p>一个验证过程中的附带收获：多模块工程中，若启动脚本按单模块运行（依赖从本地仓库解析公共构件），修改公共工具模块后仅 <code>compile</code> 不会进入运行时，必须先 <code>install</code> 到本地仓库再重启业务模块——否则会在”本地复现不出刚修的 bug”上浪费一轮排查。</p>
+<h2 id="五、复盘与改进"><a href="#五、复盘与改进" class="headerlink" title="五、复盘与改进"></a>五、复盘与改进</h2><p><strong>外呼必须显式设置超时，且应作为公共组件的强制约束。</strong> 无超时的外部调用在拓扑健康时与有超时的版本毫无差别，其风险完全藏在低概率的瞬时网络事件里，一旦触发即从”性能问题”升格为”可用性问题”。本次排查的 <code>getByToken</code> 等方法早已配有超时，同一工具类内 POST 方法遗漏——同类方法配置不一致，比整体缺失更值得警惕，因为它制造了”已有防护”的错觉。</p>
+<p><strong>异步链路应保留最小告警能力。</strong> 异步化的本意是隔离慢调用，但”提交即返回”意味着调用方不再感知执行结果，链路必须自己留下可观测信号：失败落库不可吞异常，队列深度、活跃线程数应可暴露。</p>
+<p><strong>日志的”存亡”与”有无”同等可用作证据。</strong> 本次定位中，决定性的一步不是任何一条日志的内容，而是”同步层日志存在、异步层日志消失”这一组合本身。跨同步&#x2F;异步边界的链路，两侧日志的存亡矩阵是一个成本低、判别力强的定位工具。</p>
+<p><strong>对”失败驱动的监控”补上”沉默驱动的监控”。</strong> 失败率告警覆盖不了归零型故障。凡满足”业务量 &gt; 0 而输出长期为 0”语义的链路（本例：在制工单存在而回写记录零增长），都值得一条反向规则。</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>这次故障没有复杂的技术难点，每一环都是教科书级的常见配置缺失，但组合起来的失效模式安静得近乎完美：无报错、无日志、无自愈、无告警，业务侧完全无感。它提醒的是：<strong>分布式系统里最危险的往往不是会大声失败的东西，而是被设计成永远不抛异常的东西</strong>。</p>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../APS%E5%9B%9E%E5%86%99%E5%81%9C%E6%91%86%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E4%B8%8E%E4%BF%AE%E5%A4%8D%E8%AE%B0%E5%BD%95/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            APS回写停摆故障排查与修复记录
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../../../08/27/%E5%A4%A7%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BD%BD%E5%BF%85%E5%A4%B1%E8%B4%A5%E3%80%81%E5%B0%8F%E6%96%87%E4%BB%B6%E5%85%A8%E6%AD%A3%E5%B8%B8%EF%BC%9A%E4%B8%80%E8%A1%8CremoveChild%E5%BC%95%E5%8F%91%E7%9A%84%E7%BD%91%E5%85%B3Broken-pipe%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">大文件下载必失败、小文件全正常：一行removeChild引发的网关Broken pipe排查实录</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/">插件开发</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ/" rel="tag">IntelliJ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PSI/" rel="tag">PSI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" rel="tag">插件开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" rel="tag">线程模型</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" rel="tag">运维部署</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/CI-CD/" style="font-size: 10px;">CI/CD</a> <a href="../../../../tags/CentOS/" style="font-size: 11.25px;">CentOS</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/EasyUI/" style="font-size: 11.25px;">EasyUI</a> <a href="../../../../tags/GC/" style="font-size: 11.25px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.25px;">Git Bash</a> <a href="../../../../tags/GitHub-Actions/" style="font-size: 10px;">GitHub Actions</a> <a href="../../../../tags/Github/" style="font-size: 12.5px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 11.25px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 16.25px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/HttpClient/" style="font-size: 11.25px;">HttpClient</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/IntelliJ/" style="font-size: 12.5px;">IntelliJ</a> <a href="../../../../tags/JVM/" style="font-size: 18.75px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 17.5px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 13.75px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 12.5px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.25px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 12.5px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 11.25px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 12.5px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 11.25px;">Node.js</a> <a href="../../../../tags/PSI/" style="font-size: 10px;">PSI</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 10px;">RabbitMQ</a> <a href="../../../../tags/SQL/" style="font-size: 15px;">SQL</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.25px;">Shell</a> <a href="../../../../tags/Spring-Cloud/" style="font-size: 10px;">Spring Cloud</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 12.5px;">WebSocket</a> <a href="../../../../tags/XtraBackup/" style="font-size: 11.25px;">XtraBackup</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/Zuul/" style="font-size: 10px;">Zuul</a> <a href="../../../../tags/hexo/" style="font-size: 11.25px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.25px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.25px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" style="font-size: 10px;">体验优化</a> <a href="../../../../tags/%E5%89%8D%E7%AB%AF/" style="font-size: 11.25px;">前端</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" style="font-size: 11.25px;">实战教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">并发</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 10px;">微服务</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 15px;">排查实战</a> <a href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" style="font-size: 12.5px;">插件开发</a> <a href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" style="font-size: 11.25px;">故障复盘</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" style="font-size: 11.25px;">数据备份</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12.5px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">架构</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.25px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12.5px;">竹云</a> <a href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" style="font-size: 10px;">线程模型</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12.5px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" style="font-size: 13.75px;">踩坑实录</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" style="font-size: 10px;">运维部署</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../03/%E4%B8%AA%E4%BA%BA%E9%A1%B9%E7%9B%AE-CI-CD-%E8%90%BD%E5%9C%B0%EF%BC%9AGitHub-Actions-%E8%87%AA%E5%8A%A8%E6%9E%84%E5%BB%BA%E3%80%81tag-%E5%8F%91-Release-%E4%B8%8E%E7%89%88%E6%9C%AC%E5%8F%B7%E5%8D%95%E4%B8%80%E6%9D%A5%E6%BA%90%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/">个人项目 CI/CD 落地：GitHub Actions 自动构建、tag 发 Release 与版本号单一来源实战教程</a>
+          </li>
+        
+          <li>
+            <a href="../../03/CentOS-7-%E7%A6%BB%E7%BA%BF%E7%8E%AF%E5%A2%83%E4%BB%8E%E9%9B%B6%E9%83%A8%E7%BD%B2-MySQL-%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%BD%93%E7%B3%BB%EF%BC%9AXtraBackup-2-4-%E4%B8%8E%E8%87%AA%E5%8A%A8%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/">CentOS 7 离线环境从零部署 MySQL 物理备份体系：XtraBackup 2.4 与自动备份脚本安装教程</a>
+          </li>
+        
+          <li>
+            <a href="../../03/%E5%A4%87%E4%BB%BD%E5%A4%A9%E5%A4%A9%E5%9C%A8%E8%B7%91%E3%80%81%E6%81%A2%E5%A4%8D%E7%82%B9%E5%8D%B4%E5%81%9C%E5%9C%A833%E5%A4%A9%E5%89%8D%EF%BC%9AXtraBackup%E5%A2%9E%E9%87%8F%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%85%A8%E9%9D%A2%E7%BF%BB%E4%BF%AE%E5%AE%9E%E5%BD%95/">备份天天在跑、恢复点却停在33天前：XtraBackup增量备份脚本全面翻修实录</a>
+          </li>
+        
+          <li>
+            <a href="../../02/%E7%BD%91%E5%85%B3%E6%97%A5%E5%BF%97%E9%9B%B6%E6%8A%A5%E9%94%99%E3%80%81%E9%A6%96%E9%A1%B5%E6%8E%A5%E5%8F%A3%E5%85%A8%E7%BA%BF404%EF%BC%9A%E4%B8%80%E6%AC%A1JRebel%E5%BC%95%E5%8F%91%E7%9A%84Zuul%E8%B7%AF%E7%94%B1%E4%B9%B1%E5%BA%8F%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/">网关日志零报错、首页接口全线404：一次JRebel引发的Zuul路由乱序排查实录</a>
+          </li>
+        
+          <li>
+            <a href="../APS%E5%9B%9E%E5%86%99%E5%81%9C%E6%91%86%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E4%B8%8E%E4%BF%AE%E5%A4%8D%E8%AE%B0%E5%BD%95/">APS回写停摆故障排查与修复记录</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>

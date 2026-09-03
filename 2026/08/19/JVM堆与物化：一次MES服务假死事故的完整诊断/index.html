@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>JVM堆与物化：一次MES服务假死事故的完整诊断 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="事故背景下午两点半左右，本地开发环境的 MES 辅助服务（app-assist）”挂了”——接口无响应、日志停更。但排查发现：进程根本没死，端口还在监听。它陷入的是一种比崩溃更迷惑的状态——假死。 这篇文章完整复盘这次诊断，并借机把涉及的 JVM 基础概念（堆、分代、GC、晋升、物化）融会贯通地讲一遍。读完你会发现，所有现象都能用同一套逻辑串起来。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM堆与物化：一次MES服务假死事故的完整诊断">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/08/19/JVM%E5%A0%86%E4%B8%8E%E7%89%A9%E5%8C%96%EF%BC%9A%E4%B8%80%E6%AC%A1MES%E6%9C%8D%E5%8A%A1%E5%81%87%E6%AD%BB%E4%BA%8B%E6%95%85%E7%9A%84%E5%AE%8C%E6%95%B4%E8%AF%8A%E6%96%AD/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="事故背景下午两点半左右，本地开发环境的 MES 辅助服务（app-assist）”挂了”——接口无响应、日志停更。但排查发现：进程根本没死，端口还在监听。它陷入的是一种比崩溃更迷惑的状态——假死。 这篇文章完整复盘这次诊断，并借机把涉及的 JVM 基础概念（堆、分代、GC、晋升、物化）融会贯通地讲一遍。读完你会发现，所有现象都能用同一套逻辑串起来。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-08-19T07:20:49.000Z">
+<meta property="article:modified_time" content="2026-09-03T09:29:13.328Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="JVM">
+<meta property="article:tag" content="GC">
+<meta property="article:tag" content="排查实战">
+<meta property="article:tag" content="MyBatis">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-JVM堆与物化：一次MES服务假死事故的完整诊断" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      JVM堆与物化：一次MES服务假死事故的完整诊断
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-08-19T07:20:49.000Z" itemprop="datePublished">2026-08-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <h2 id="事故背景"><a href="#事故背景" class="headerlink" title="事故背景"></a>事故背景</h2><p>下午两点半左右，本地开发环境的 MES 辅助服务（app-assist）”挂了”——接口无响应、日志停更。但排查发现：<strong>进程根本没死</strong>，端口还在监听。它陷入的是一种比崩溃更迷惑的状态——<strong>假死</strong>。</p>
+<p>这篇文章完整复盘这次诊断，并借机把涉及的 JVM 基础概念（堆、分代、GC、晋升、物化）融会贯通地讲一遍。读完你会发现，所有现象都能用同一套逻辑串起来。</p>
+<a id="more"></a>
+
+<h2 id="现场勘查"><a href="#现场勘查" class="headerlink" title="现场勘查"></a>现场勘查</h2><h3 id="疑点一：进程还活着"><a href="#疑点一：进程还活着" class="headerlink" title="疑点一：进程还活着"></a>疑点一：进程还活着</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">netstat -ano | grep 8099</span><br><span class="line">TCP  0.0.0.0:8099  LISTENING  pid&#x3D;15140</span><br><span class="line"></span><br><span class="line">jps -l</span><br><span class="line">15140 com.zhiyin.AppAssistApplication</span><br></pre></td></tr></table></figure></div>
+
+<p>端口监听正常，进程存在。但应用日志停在 14:38:33，之后再无业务输出。</p>
+<h3 id="疑点二：日志里的”死前挣扎”"><a href="#疑点二：日志里的”死前挣扎”" class="headerlink" title="疑点二：日志里的”死前挣扎”"></a>疑点二：日志里的”死前挣扎”</h3><p>按时间线翻日志：</p>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>现象</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>14:36:23 → 14:37:12</td>
+<td><strong>整整 50 秒日志空白</strong>（进程整体停顿）</td>
+</tr>
+<tr>
+<td>14:37:36</td>
+<td><code>HikariPool - Thread starvation or clock leap detected (delta=49s)</code></td>
+</tr>
+<tr>
+<td>14:37:17-47</td>
+<td>Eureka 注册中心心跳超时、SocketException</td>
+</tr>
+<tr>
+<td>14:38:22</td>
+<td>最后一条业务 SQL：多级预警任务 <code>getMultiLevelAlertList</code></td>
+</tr>
+<tr>
+<td>14:38:33</td>
+<td>参数打完，<strong>再无结果输出</strong></td>
+</tr>
+</tbody></table>
+<p>很多人会把 Eureka 报错当成原因去查注册中心——其实它是<strong>症状</strong>：进程停顿了 50 秒，心跳自然超时。真正的原因要让 JVM 自己交代。</p>
+<h3 id="决定性证据：jstat"><a href="#决定性证据：jstat" class="headerlink" title="决定性证据：jstat"></a>决定性证据：jstat</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">jstat -gcutil 15140</span><br><span class="line"> S0    S1    E     O     M    CCS   YGC   YGCT   FGC   FGCT    GCT</span><br><span class="line"> 0.00  0.00  100.00 100.00 93.45 91.26  92   1.288  508  368.861 370.149</span><br></pre></td></tr></table></figure></div>
+
+<p>间隔几秒采样两次，FGC 计数从 347 → 404 → 414 → 435 → 508 持续暴涨——<strong>每秒 2~3 次 Full GC</strong>，累计耗时 368 秒。老年代（O 列）100% 满，降不下来。</p>
+<p>定性：<strong>Full GC 死循环</strong>。CPU 全部耗在 GC 上，业务线程饿死——假死的本质。</p>
+<h3 id="老年代到底装了多少：jstat-gc"><a href="#老年代到底装了多少：jstat-gc" class="headerlink" title="老年代到底装了多少：jstat -gc"></a>老年代到底装了多少：jstat -gc</h3><p><code>jstat -gcutil</code> 只给百分比，要拿绝对值用 <code>jstat -gc</code>（单位 KB）：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">jstat -gc 15140</span><br><span class="line"> S0C     S1C    S0U   S1U     EC       EU        OC        OU        ...</span><br><span class="line">54784.0 56320.0 0.0   0.0   58880.0  58880.0  349696.0  349651.9  ...</span><br></pre></td></tr></table></figure></div>
+
+<ul>
+<li><code>OC</code>（Old Capacity）&#x3D; 349,696 KB ≈ <strong>341.5MB 老年代总容量</strong></li>
+<li><code>OU</code>（Old Used）&#x3D; 349,651.9 KB ≈ <strong>341.46MB 已用</strong>——与容量只差 44KB，满到溢出</li>
+<li>顺带读出 Eden：<code>EC</code> 58880 KB ≈ 57.5MB，<code>EU</code> 100% 满——新到的结果行还在要内存</li>
+</ul>
+<p>这就是后文所有对账数字（341.46MB 已用、57.5MB Eden、341MB 老年代容量）的出处。</p>
+<h3 id="内存里装的是什么：jmap"><a href="#内存里装的是什么：jmap" class="headerlink" title="内存里装的是什么：jmap"></a>内存里装的是什么：jmap</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">jmap -histo:live 15140 | head -25</span><br><span class="line"> num    <span class="comment">#instances    #bytes   class name</span></span><br><span class="line">  1:    5387967      172414944  java.util.HashMap<span class="variable">$Node</span></span><br><span class="line">  2:    1226455       71330880  [C</span><br><span class="line">  3:     372972       50443240  [Ljava.util.HashMap<span class="variable">$Node</span>;</span><br><span class="line">  4:    1225723       29417352  java.lang.String</span><br><span class="line">  5:     355501       17064048  java.util.HashMap</span><br></pre></td></tr></table></figure></div>
+
+<p><strong>538 万个 HashMap$Node</strong>。这是 MyBatis <code>resultType=&quot;Map&quot;</code> 的典型特征——每一行查询结果装配成一个 HashMap，行里的每个字段是一对 key&#x2F;value（内部就是 HashMap$Node）。</p>
+<p>把 top5 对象字节数相加 ≈ 340.7MB，而 <code>jstat -gc</code> 给出的老年代已用是 341.46MB——两个数字几乎相等。也就是说<strong>老年代的每一寸都被这个在途查询结果集占据</strong>，连框架常驻对象的空间都被挤没了。</p>
+<h3 id="线程卡在哪：jstack"><a href="#线程卡在哪：jstack" class="headerlink" title="线程卡在哪：jstack"></a>线程卡在哪：jstack</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">jstack 15140 | grep -A15 <span class="string">'quartzScheduler_Worker-9'</span></span><br><span class="line"><span class="string">"quartzScheduler_Worker-9"</span> RUNNABLE</span><br><span class="line">  at com.mysql.jdbc.MysqlIO.nextRowFast(MysqlIO.java:2206)   ← 正在逐行接收结果</span><br><span class="line">  at com.mysql.jdbc.PreparedStatement.executeInternal</span><br><span class="line">  ...</span><br></pre></td></tr></table></figure></div>
+
+<p>工作线程还卡在”收行”的过程中——结果集没装配完，已收到的几十万行 HashMap 全部挂在结果 List 上，<strong>对 GC 全部可达、全部活着</strong>。</p>
+<h2 id="根因"><a href="#根因" class="headerlink" title="根因"></a>根因</h2><p>一条 SQL（四层 <code>@rank</code> 用户变量嵌套子查询，驱动表 3 万行）的<strong>物化结果集比整个堆（512MB）还大</strong>。物化过程中对象穿过分代机制全部晋升老年代，灌满后 Full GC 面对活对象无能为力，进程被 GC 锁死。</p>
+<h2 id="概念课：从事故学-JVM"><a href="#概念课：从事故学-JVM" class="headerlink" title="概念课：从事故学 JVM"></a>概念课：从事故学 JVM</h2><h3 id="堆是什么"><a href="#堆是什么" class="headerlink" title="堆是什么"></a>堆是什么</h3><p>Java 程序跑在 JVM 里，每个对象（字符串、Map、查询结果行）都要占内存。JVM 专门划一大块内存给对象用，叫<strong>堆（Heap）</strong>。堆不是无限大的——本例启动参数圈定约 512MB。</p>
+<h3 id="垃圾回收：闭馆查座"><a href="#垃圾回收：闭馆查座" class="headerlink" title="垃圾回收：闭馆查座"></a>垃圾回收：闭馆查座</h3><p>临时变量、处理完就扔的查询结果，用完之后程序再也不会碰——这是<strong>垃圾</strong>。清洁工就是 <strong>GC（Garbage Collector）</strong>。判断标准：从程序还在用的引用出发，”够得着”的对象是活的；够不着的是垃圾。就像闭馆后图书馆查座：从还开着的灯一路走过去，桌上还有人的书不能动，其他全收走。</p>
+<h3 id="为什么分新生代-老年代"><a href="#为什么分新生代-老年代" class="headerlink" title="为什么分新生代&#x2F;老年代"></a>为什么分新生代&#x2F;老年代</h3><p>工程师观察到（弱分代假说）：<strong>绝大多数对象朝生夕死</strong>；真正长寿的对象一旦活下来往往活很久。既然寿命差异巨大，混在一起打扫就亏了：</p>
+<table>
+<thead>
+<tr>
+<th>区域</th>
+<th>类比</th>
+<th>住着谁</th>
+<th>打扫方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>新生代（Eden + 两个 Survivor）</td>
+<td>车间工作台</td>
+<td>刚造出来的对象</td>
+<td>Minor GC：很快，大部分直接扔</td>
+</tr>
+<tr>
+<td>老年代</td>
+<td>仓库</td>
+<td>熬过多次清扫的对象</td>
+<td>Full GC：全堆盘点，慢得多</td>
+</tr>
+</tbody></table>
+<p>打扫流程：新对象在 Eden（本例 57.5MB）出生 → Eden 满 → Minor GC：活对象搬 Survivor（各 54MB），死了的直接扔 → 反复存活的对象”变老”，<strong>晋升（promotion）</strong>进老年代 → 老年代满 → Full GC。</p>
+<p>关键机制：<strong>GC 干活时所有业务线程暂停</strong>（Stop The World）。Minor GC 暂停几毫秒无感；Full GC 一停几百毫秒到几秒。Full GC 连打 &#x3D; 服务假死。</p>
+<h3 id="物化是什么"><a href="#物化是什么" class="headerlink" title="物化是什么"></a>物化是什么</h3><p>数据本身躺在数据库里，不占 Java 一字节。查询时有两种消费方式：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">流式：来一行 → 处理一行 → 扔一行。任何时刻内存里只有 1 行。</span><br><span class="line">物化：来一行 → 变成 Java 对象存进 List → …… 全部收完才开始处理。</span><br><span class="line">     把&quot;库里的死数据&quot;变成&quot;堆里一个个活生生的对象&quot;——这就是物化（materialization）。</span><br></pre></td></tr></table></figure></div>
+
+<p>物化是常态，但要付”房租”：<strong>装配完成之前，物化出来的每个对象都是活对象</strong>。这次事故就是物化的结果集大到堆装不下它”活着的那段时间”。</p>
+<h3 id="事故重演（概念全串起来）"><a href="#事故重演（概念全串起来）" class="headerlink" title="事故重演（概念全串起来）"></a>事故重演（概念全串起来）</h3><ol>
+<li><strong>14:38:22</strong> 多级预警查询发起，MyBatis 开始物化：每收一行装配一个 HashMap 挂进 List；</li>
+<li><strong>对象死不掉</strong>：线程还卡在收行，List 上几十万个 HashMap 全部可达——分代机制的赌注（”多数对象是垃圾”）破产；</li>
+<li><strong>Eden 57.5MB 反复填满 → Minor GC → 活对象整批晋升</strong>：Survivor 54MB 装不下几百 MB 活对象，57.5MB × 6 次 ≈ 345MB，正好灌满 341MB 老年代（<code>jstat -gc</code> 的 <code>OC</code>&#x3D;349,696KB）；</li>
+<li><strong>Full GC 清不出任何东西</strong>：结果集依然可达（<code>jmap -histo:live</code> 强制 Full GC 后 538 万个 Node 依然存活，铁证）→ 释放 ≈ 0 → Allocation Failure 立刻再触发 → 每秒 2~3 次连打；</li>
+<li><strong>每次 Full GC 都 Stop The World</strong> → 业务线程抢不到 CPU → 日志停更、心跳超时、接口无响应——但进程活着，端口在监听：<strong>假死</strong>。</li>
+</ol>
+<p>一句话：</p>
+<blockquote>
+<p><strong>分代回收赌”对象朝生夕死”，而物化中的大结果集偏偏”又大又长时间活着”，于是穿过新生代、灌满老年代，Full GC 面对活对象无能为力，进程被 GC 锁死。</strong></p>
+</blockquote>
+<h2 id="处置与预防"><a href="#处置与预防" class="headerlink" title="处置与预防"></a>处置与预防</h2><p><strong>当场恢复</strong>：<code>taskkill /F /PID 15140</code> 重启（假死无法自愈）。</p>
+<p><strong>治本</strong>：</p>
+<ol>
+<li>启动加大堆（<code>-Xmx1g</code>）——512MB 跑全量 quartz 任务偏小；</li>
+<li>优化那条 SQL：四层 <code>@rank</code> 用户变量嵌套在数据量增长后结果集会爆炸，改窗口函数或加内层过滤&#x2F;限批；</li>
+<li>代码层面：大结果集查询设 limit、分批、或流式消费——别让单条 SQL 的结果集有机会和堆比大小。</li>
+</ol>
+<h2 id="排查速查卡"><a href="#排查速查卡" class="headerlink" title="排查速查卡"></a>排查速查卡</h2><p>服务”没响应但进程还在” → 先想 Full GC 死循环：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">jps -l                          <span class="comment"># 找到 PID</span></span><br><span class="line">jstat -gcutil &lt;pid&gt;             <span class="comment"># O 列 100% + FGC 计数持续涨 = 实锤</span></span><br><span class="line">jmap -histo:live &lt;pid&gt;          <span class="comment"># 看什么对象占堆（Map 系 = 查询结果集）</span></span><br><span class="line">jstack &lt;pid&gt;                    <span class="comment"># 看业务线程卡在哪（JDBC 收行 = 大结果集在途）</span></span><br></pre></td></tr></table></figure></div>
+
+<p>四条命令，五分钟定性。</p>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../%E5%B9%B3%E6%BB%91%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB%EF%BC%9A28GB%E9%A2%84%E8%AD%A6%E5%8F%91%E9%80%81%E6%97%A5%E5%BF%97%E8%A1%A8%E7%9A%84%E5%9C%A8%E7%BA%BF%E7%98%A6%E8%BA%AB%E5%AE%9E%E6%88%98/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            平滑数据迁移：28GB预警发送日志表的在线瘦身实战
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../../../../2025/05/26/jar%E5%8C%85%E7%9B%B4%E6%8E%A5%E6%9B%BF%E6%8D%A2%E5%8D%95%E4%B8%AAclass%E6%96%87%E4%BB%B6%E6%88%96%E4%BF%AE%E6%94%B9%E6%96%87%E4%BB%B6%E5%86%85%E5%AE%B9%E7%9A%84%E6%96%B9%E6%B3%95/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">jar包直接替换单个class文件或修改文件内容的方法</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/">插件开发</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ/" rel="tag">IntelliJ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PSI/" rel="tag">PSI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" rel="tag">插件开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" rel="tag">线程模型</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" rel="tag">运维部署</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/CI-CD/" style="font-size: 10px;">CI/CD</a> <a href="../../../../tags/CentOS/" style="font-size: 11.25px;">CentOS</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/EasyUI/" style="font-size: 11.25px;">EasyUI</a> <a href="../../../../tags/GC/" style="font-size: 11.25px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.25px;">Git Bash</a> <a href="../../../../tags/GitHub-Actions/" style="font-size: 10px;">GitHub Actions</a> <a href="../../../../tags/Github/" style="font-size: 12.5px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 11.25px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 16.25px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/HttpClient/" style="font-size: 11.25px;">HttpClient</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/IntelliJ/" style="font-size: 12.5px;">IntelliJ</a> <a href="../../../../tags/JVM/" style="font-size: 18.75px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 17.5px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 13.75px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 12.5px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.25px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 12.5px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 11.25px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 12.5px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 11.25px;">Node.js</a> <a href="../../../../tags/PSI/" style="font-size: 10px;">PSI</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 10px;">RabbitMQ</a> <a href="../../../../tags/SQL/" style="font-size: 15px;">SQL</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.25px;">Shell</a> <a href="../../../../tags/Spring-Cloud/" style="font-size: 10px;">Spring Cloud</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 12.5px;">WebSocket</a> <a href="../../../../tags/XtraBackup/" style="font-size: 11.25px;">XtraBackup</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/Zuul/" style="font-size: 10px;">Zuul</a> <a href="../../../../tags/hexo/" style="font-size: 11.25px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.25px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.25px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" style="font-size: 10px;">体验优化</a> <a href="../../../../tags/%E5%89%8D%E7%AB%AF/" style="font-size: 11.25px;">前端</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" style="font-size: 11.25px;">实战教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">并发</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 10px;">微服务</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 15px;">排查实战</a> <a href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" style="font-size: 12.5px;">插件开发</a> <a href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" style="font-size: 11.25px;">故障复盘</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" style="font-size: 11.25px;">数据备份</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12.5px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">架构</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.25px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12.5px;">竹云</a> <a href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" style="font-size: 10px;">线程模型</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12.5px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" style="font-size: 13.75px;">踩坑实录</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" style="font-size: 10px;">运维部署</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../../09/03/%E4%B8%AA%E4%BA%BA%E9%A1%B9%E7%9B%AE-CI-CD-%E8%90%BD%E5%9C%B0%EF%BC%9AGitHub-Actions-%E8%87%AA%E5%8A%A8%E6%9E%84%E5%BB%BA%E3%80%81tag-%E5%8F%91-Release-%E4%B8%8E%E7%89%88%E6%9C%AC%E5%8F%B7%E5%8D%95%E4%B8%80%E6%9D%A5%E6%BA%90%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/">个人项目 CI/CD 落地：GitHub Actions 自动构建、tag 发 Release 与版本号单一来源实战教程</a>
+          </li>
+        
+          <li>
+            <a href="../../../09/03/CentOS-7-%E7%A6%BB%E7%BA%BF%E7%8E%AF%E5%A2%83%E4%BB%8E%E9%9B%B6%E9%83%A8%E7%BD%B2-MySQL-%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%BD%93%E7%B3%BB%EF%BC%9AXtraBackup-2-4-%E4%B8%8E%E8%87%AA%E5%8A%A8%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/">CentOS 7 离线环境从零部署 MySQL 物理备份体系：XtraBackup 2.4 与自动备份脚本安装教程</a>
+          </li>
+        
+          <li>
+            <a href="../../../09/03/%E5%A4%87%E4%BB%BD%E5%A4%A9%E5%A4%A9%E5%9C%A8%E8%B7%91%E3%80%81%E6%81%A2%E5%A4%8D%E7%82%B9%E5%8D%B4%E5%81%9C%E5%9C%A833%E5%A4%A9%E5%89%8D%EF%BC%9AXtraBackup%E5%A2%9E%E9%87%8F%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%85%A8%E9%9D%A2%E7%BF%BB%E4%BF%AE%E5%AE%9E%E5%BD%95/">备份天天在跑、恢复点却停在33天前：XtraBackup增量备份脚本全面翻修实录</a>
+          </li>
+        
+          <li>
+            <a href="../../../09/02/%E7%BD%91%E5%85%B3%E6%97%A5%E5%BF%97%E9%9B%B6%E6%8A%A5%E9%94%99%E3%80%81%E9%A6%96%E9%A1%B5%E6%8E%A5%E5%8F%A3%E5%85%A8%E7%BA%BF404%EF%BC%9A%E4%B8%80%E6%AC%A1JRebel%E5%BC%95%E5%8F%91%E7%9A%84Zuul%E8%B7%AF%E7%94%B1%E4%B9%B1%E5%BA%8F%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/">网关日志零报错、首页接口全线404：一次JRebel引发的Zuul路由乱序排查实录</a>
+          </li>
+        
+          <li>
+            <a href="../../../09/01/APS%E5%9B%9E%E5%86%99%E5%81%9C%E6%91%86%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E4%B8%8E%E4%BF%AE%E5%A4%8D%E8%AE%B0%E5%BD%95/">APS回写停摆故障排查与修复记录</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>

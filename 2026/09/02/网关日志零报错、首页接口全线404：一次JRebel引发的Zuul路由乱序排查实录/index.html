@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>网关日志零报错、首页接口全线404：一次JRebel引发的Zuul路由乱序排查实录 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="本地开发环境用一键脚本把整套微服务拉起来：网关、注册中心、认证、门户、几个业务服务。打开首页，能正常出登录页、能登录、主框架渲染出来——然后页面上的数据接口开始报错，字典、多语言资源全部拉取失败。直觉说”看网关日志”，打开一看： 网关日志从启动到现在，零 ERROR、零 Exception，干干净净。 日志无罪、配置没改过、代码没动过，这种”环境性灵异故障”最考验排查方法论。最终根因落在一个完全意">
+<meta property="og:type" content="article">
+<meta property="og:title" content="网关日志零报错、首页接口全线404：一次JRebel引发的Zuul路由乱序排查实录">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/09/02/%E7%BD%91%E5%85%B3%E6%97%A5%E5%BF%97%E9%9B%B6%E6%8A%A5%E9%94%99%E3%80%81%E9%A6%96%E9%A1%B5%E6%8E%A5%E5%8F%A3%E5%85%A8%E7%BA%BF404%EF%BC%9A%E4%B8%80%E6%AC%A1JRebel%E5%BC%95%E5%8F%91%E7%9A%84Zuul%E8%B7%AF%E7%94%B1%E4%B9%B1%E5%BA%8F%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="本地开发环境用一键脚本把整套微服务拉起来：网关、注册中心、认证、门户、几个业务服务。打开首页，能正常出登录页、能登录、主框架渲染出来——然后页面上的数据接口开始报错，字典、多语言资源全部拉取失败。直觉说”看网关日志”，打开一看： 网关日志从启动到现在，零 ERROR、零 Exception，干干净净。 日志无罪、配置没改过、代码没动过，这种”环境性灵异故障”最考验排查方法论。最终根因落在一个完全意">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-02T04:30:00.000Z">
+<meta property="article:modified_time" content="2026-09-03T09:29:13.328Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="排查实战">
+<meta property="article:tag" content="踩坑实录">
+<meta property="article:tag" content="Spring Cloud">
+<meta property="article:tag" content="Zuul">
+<meta property="article:tag" content="微服务">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-网关日志零报错、首页接口全线404：一次JRebel引发的Zuul路由乱序排查实录" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      网关日志零报错、首页接口全线404：一次JRebel引发的Zuul路由乱序排查实录
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-09-02T04:30:00.000Z" itemprop="datePublished">2026-09-02</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <p>本地开发环境用一键脚本把整套微服务拉起来：网关、注册中心、认证、门户、几个业务服务。打开首页，能正常出登录页、能登录、主框架渲染出来——然后页面上的数据接口开始报错，字典、多语言资源全部拉取失败。直觉说”看网关日志”，打开一看：</p>
+<p><strong>网关日志从启动到现在，零 ERROR、零 Exception，干干净净。</strong></p>
+<p>日志无罪、配置没改过、代码没动过，这种”环境性灵异故障”最考验排查方法论。最终根因落在一个完全意料之外的地方：<strong>网关进程带着 JRebel agent 启动，导致 Zuul 路由表的绑定顺序被打乱，兜底路由抢走了所有通配子路由</strong>。整场排查没有看一行 Zuul 源码仓库、没有重启大法、没有玄学，靠的是判别实验、字节码反编译和一个很多人没用过的 JDK 自带工具——jdb。这篇完整复盘整个过程，并把用到的工具逐一讲透。</p>
+<a id="more"></a>
+
+<h2 id="一、现象梳理：哪些正常，哪些不正常"><a href="#一、现象梳理：哪些正常，哪些不正常" class="headerlink" title="一、现象梳理：哪些正常，哪些不正常"></a>一、现象梳理：哪些正常，哪些不正常</h2><p>先把拓扑和事实钉死。一套经典的 Spring Cloud 微服务：</p>
+<ul>
+<li><strong>网关</strong>：Spring Cloud Netflix Zuul（spring-cloud-netflix-zuul 2.1.1 + Spring Boot 2.1.6），context-path 挂在 <code>/gateway</code> 下；</li>
+<li><strong>门户服务</strong>：渲染主页面、菜单；</li>
+<li><strong>基础服务、辅助服务</strong>：字典、多语言、系统配置等数据接口；</li>
+<li>所有服务注册到 Eureka，前端统一经网关访问。</li>
+</ul>
+<p>用脚本模拟浏览器走完整链路，逐段测下来：</p>
+<table>
+<thead>
+<tr>
+<th>请求</th>
+<th>结果</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GET /gateway/portal/index</code></td>
+<td>302 → 登录页</td>
+<td>正常，未登录跳转</td>
+</tr>
+<tr>
+<td><code>POST /gateway/login</code></td>
+<td>302 → index</td>
+<td>登录成功，SESSION 建立</td>
+</tr>
+<tr>
+<td><code>GET /gateway/portal/index</code>（带 cookie）</td>
+<td>200</td>
+<td>主页面正常返回</td>
+</tr>
+<tr>
+<td><code>GET /gateway/portal/server-info</code></td>
+<td>200</td>
+<td>精确路径路由，正常</td>
+</tr>
+<tr>
+<td><code>GET /gateway/portal/dict/findByCode</code></td>
+<td><strong>404</strong></td>
+<td>通配子路由，挂了</td>
+</tr>
+<tr>
+<td><code>GET /gateway/portal/i18n/zh_CN</code></td>
+<td><strong>404</strong></td>
+<td>通配子路由，挂了</td>
+</tr>
+</tbody></table>
+<p>规律非常工整：<strong>精确路径（不含通配符）的路由全部正常，带 <code>/**</code> 的通配子路由全部 404</strong>。而且 404 响应体是标准的 Spring Boot 错误 JSON：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JSON"><figure class="iseeu highlight /json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&#123;<span class="attr">"timestamp"</span>:<span class="string">"..."</span>,<span class="attr">"status"</span>:<span class="number">404</span>,<span class="attr">"error"</span>:<span class="string">"Not Found"</span>,</span><br><span class="line"> <span class="attr">"message"</span>:<span class="string">"No message available"</span>,<span class="attr">"path"</span>:<span class="string">"/dict/findByCode"</span>&#125;</span><br></pre></td></tr></table></figure></div>
+
+<h2 id="二、第一个关键线索：404-里的-path-少了前缀"><a href="#二、第一个关键线索：404-里的-path-少了前缀" class="headerlink" title="二、第一个关键线索：404 里的 path 少了前缀"></a>二、第一个关键线索：404 里的 path 少了前缀</h2><p>注意上面 JSON 的 <code>path</code> 字段：客户端请求的是 <code>/portal/dict/findByCode</code>，服务端记录的却是 <strong><code>/dict/findByCode</code>——<code>/portal</code> 前缀没了</strong>。</p>
+<p>这个字段是 Spring Boot <code>BasicErrorAttributes</code> 记录的”服务端实际收到的请求路径”。前缀凭空消失只有一种解释：<strong>请求经过了一个 <code>strip-prefix=true</code> 的 Zuul 路由</strong>，转发前把路由前缀剥掉了。</p>
+<p>翻网关路由配置，真相初现。配置里同时存在这两组路由：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PROPERTIES"><figure class="iseeu highlight /properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 精确子路由：各业务路径精确分发，不剥前缀</span></span><br><span class="line"><span class="meta">zuul.routes.dict.path</span>=<span class="string">/portal/dict/**</span></span><br><span class="line"><span class="meta">zuul.routes.dict.service-id</span>=<span class="string">app-basic</span></span><br><span class="line"><span class="meta">zuul.routes.dict.strip-prefix</span>=<span class="string">false</span></span><br><span class="line"></span><br><span class="line"><span class="meta">zuul.routes.i18n.path</span>=<span class="string">/portal/i18n/**</span></span><br><span class="line"><span class="meta">zuul.routes.i18n.service-id</span>=<span class="string">app-assist</span></span><br><span class="line"><span class="meta">zuul.routes.i18n.strip-prefix</span>=<span class="string">false</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 兜底路由：/portal/** 下所有未匹配的路径归门户服务，剥掉前缀</span></span><br><span class="line"><span class="meta">zuul.routes.portal-fallback</span>=<span class="string">/portal/**</span></span><br><span class="line"><span class="meta">zuul.routes.portal-fallback.strip-prefix</span>=<span class="string">true</span></span><br></pre></td></tr></table></figure></div>
+
+<p><code>/portal/dict/**</code> 明明是更精确的路由，为什么被 <code>/portal/**</code> 兜底抢走了？404 是门户服务返回的（它收到剥掉前缀的 <code>/dict/findByCode</code>，没有这个 handler）。</p>
+<h2 id="三、判别实验：停掉嫌疑服务"><a href="#三、判别实验：停掉嫌疑服务" class="headerlink" title="三、判别实验：停掉嫌疑服务"></a>三、判别实验：停掉嫌疑服务</h2><p>“404 是门户服务返回的”当时还只是推断，用最低成本的实验钉死它：<strong>把基础服务停掉，再发同样的请求</strong>。</p>
+<ul>
+<li>如果 404 变成 500（Ribbon 找不到可用实例的 ZuulException）→ 说明请求真的在打基础服务；</li>
+<li>如果 404 原样复现 → 说明请求根本没去基础服务。</li>
+</ul>
+<p>实测：停掉基础服务，404 纹丝不动，连响应体都一字不差。<strong>请求 100% 进了门户服务的兜底路由</strong>。</p>
+<blockquote>
+<p>这是排查里非常划算的一类实验：改一个环境变量（服务在不在），观察一个二值结果，就能砍掉一半假设树。注意只适用于本地&#x2F;测试环境，并且做完立刻恢复现场。</p>
+</blockquote>
+<h2 id="四、反编译字节码：Zuul-的路由匹配是”顺序遍历”，不是”最优匹配”"><a href="#四、反编译字节码：Zuul-的路由匹配是”顺序遍历”，不是”最优匹配”" class="headerlink" title="四、反编译字节码：Zuul 的路由匹配是”顺序遍历”，不是”最优匹配”"></a>四、反编译字节码：Zuul 的路由匹配是”顺序遍历”，不是”最优匹配”</h2><p>接下来要回答”为什么兜底能抢走子路由”。第一反应是 Spring MVC 的常识：<code>AbstractUrlHandlerMapping</code> 匹配多个 pattern 时用 <code>AntPathMatcher.getPatternComparator</code> 排序，<strong>更具体的 pattern 胜出</strong>。如果走这套逻辑，<code>/portal/dict/**</code> 必赢。</p>
+<p>但 Zuul 的实际转发目标不是 HandlerMapping 决定的——请求先由 <code>ZuulHandlerMapping</code> 交给 Zuul servlet，再由 <code>PreDecorationFilter</code> 调 <code>SimpleRouteLocator.getMatchingRoute()</code> 算出目标。这个类在第三方 jar 里没有源码，上 <code>javap -c</code> 看字节码（下面第八节详讲工具用法），还原 <code>getZuulRoute</code> 的循环：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 从字节码还原的语义</span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> ZuulRoute <span class="title">getZuulRoute</span><span class="params">(String path)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (matchesIgnoredPatterns(path)) <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">for</span> (Map.Entry&lt;String, ZuulRoute&gt; entry : getRoutesMap().entrySet()) &#123;</span><br><span class="line">        String pattern = entry.getKey();</span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">this</span>.pathMatcher.match(pattern, path)) &#123;</span><br><span class="line">            <span class="keyword">return</span> entry.getValue();     <span class="comment">// ★ 第一个 match 即返回，没有 comparator</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p><strong>顺序遍历，第一个匹配的赢。</strong> 也就是说，<code>getRoutesMap()</code>（一个 LinkedHashMap）的插入顺序就是路由优先级——兜底 <code>/portal/**</code> 只要排在 <code>/portal/dict/**</code> 前面，就会抢走请求。</p>
+<p>顺手写了个五行小实验验证 Spring 的 comparator 本身没毛病（同版本 spring-core）：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">AntPathMatcher m = <span class="keyword">new</span> AntPathMatcher();</span><br><span class="line">List&lt;String&gt; pats = <span class="keyword">new</span> ArrayList&lt;&gt;(Arrays.asList(<span class="string">"/portal/**"</span>, <span class="string">"/portal/dict/**"</span>));</span><br><span class="line">pats.sort(m.getPatternComparator(<span class="string">"/portal/dict/findByCode"</span>));</span><br><span class="line">System.out.println(pats.get(<span class="number">0</span>));   <span class="comment">// 输出 /portal/dict/** —— comparator 是对的</span></span><br></pre></td></tr></table></figure></div>
+
+<p>comparator 正确 + 实际行为错误 → <strong>问题锁定在运行时的 map 顺序</strong>。</p>
+<h2 id="五、离线最小复现：Spring-原生绑定是保序的"><a href="#五、离线最小复现：Spring-原生绑定是保序的" class="headerlink" title="五、离线最小复现：Spring 原生绑定是保序的"></a>五、离线最小复现：Spring 原生绑定是保序的</h2><p>那 map 顺序应该是什么？<code>ZuulProperties.routes</code> 由 Spring Boot Binder 从 properties 绑定，LinkedHashMap 应保文件序——文件里 <code>dict</code> 在前、兜底在后，理论上 dict 会赢。</p>
+<p>不猜，直接复现。从本地 Maven 仓库把 spring-boot &#x2F; spring-core &#x2F; spring-beans &#x2F; spring-context &#x2F; zuul 的 jar 拼个 classpath，写个三十行的 <code>DumpRoutes</code>：保序读 properties 文件 → 构造 PropertySource → Binder 绑定成 <code>ZuulProperties</code> → 打印路由顺序。</p>
+<p>输出（节选）：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">26: dict      path&#x3D;&#x2F;portal&#x2F;dict&#x2F;**  svc&#x3D;app-basic  strip&#x3D;false</span><br><span class="line">52: fallback  path&#x3D;&#x2F;portal&#x2F;**       svc&#x3D;app-home   strip&#x3D;true</span><br></pre></td></tr></table></figure></div>
+
+<p><strong>保文件序，dict 在兜底前面。</strong> 纯 Spring Boot 2.1.6 的加载绑定链路是正确的。至此排除法收敛：静态世界一切正常，<strong>只有”运行中的那个网关进程”内部是乱的</strong>——而它和离线实验之间唯一的差异，是命令行里多了一段 JRebel agent：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-agentpath:C:\...\jrebel64.dll -Drebel.plugins&#x3D;...</span><br></pre></td></tr></table></figure></div>
+
+<p>（启动脚本开 <code>-JRebel</code> 时会给包括网关在内的所有模块注入 agent。）</p>
+<h2 id="六、jdb-出场：dump-运行时路由表，乱序实锤"><a href="#六、jdb-出场：dump-运行时路由表，乱序实锤" class="headerlink" title="六、jdb 出场：dump 运行时路由表，乱序实锤"></a>六、jdb 出场：dump 运行时路由表，乱序实锤</h2><p>离线实验毕竟不是运行时。要一锤定音，得看到<strong>那个进程内存里</strong>的路由表。网关带着 jdwp 远程调试端口跑着，JDK 自带的命令行调试器 jdb 可以直接 attach。</p>
+<p>在 <code>SimpleRouteLocator.getSimpleMatchingRoute</code> 打断点，后台循环发请求触发，断点命中后 dump map 的 key 顺序：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt; stop in org.springframework.cloud.netflix.zuul.filters.SimpleRouteLocator.getSimpleMatchingRoute</span><br><span class="line">&gt; print java.util.Arrays.toString(this.routes.get().keySet().toArray())</span><br></pre></td></tr></table></figure></div>
+
+<p>拿到的运行时顺序（87 条路由，节选关键段）：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">..., &#x2F;portal&#x2F;i18n&#x2F;**, ..., &#x2F;portal&#x2F;**, &#x2F;3rdtools&#x2F;**, ...,</span><br><span class="line">..., &#x2F;portal&#x2F;dict&#x2F;**, ..., &#x2F;app-basic&#x2F;**, ...</span><br></pre></td></tr></table></figure></div>
+
+<p>三个关键位置：</p>
+<ul>
+<li><code>/portal/System/**</code> —— 第 32 位</li>
+<li><strong><code>/portal/**</code>（兜底）—— 第 52 位</strong></li>
+<li><code>/portal/i18n/**</code> —— 第 68 位</li>
+<li><code>/portal/dict/**</code> —— 第 71 位</li>
+</ul>
+<p><strong>兜底排在两个通配子路由前面</strong>，整个顺序是明显的 hash 桶乱序而非文件序。顺序遍历 + 兜底在前 → 兜底抢走一切 → 剥前缀转门户 → 404。全部现象闭环。</p>
+<h2 id="七、验证与修复"><a href="#七、验证与修复" class="headerlink" title="七、验证与修复"></a>七、验证与修复</h2><p>修复动作：重启网关，<strong>不带 JRebel</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>请求</th>
+<th>修复前</th>
+<th>修复后</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/portal/dict/findByCode</code></td>
+<td>404，path 无前缀</td>
+<td><strong>200</strong>，字典数据正常返回</td>
+</tr>
+<tr>
+<td><code>/portal/i18n/zh_CN</code></td>
+<td>404，path 无前缀</td>
+<td>404，但 <strong>path 带完整前缀</strong></td>
+</tr>
+</tbody></table>
+<p>第二条值得多说一句：i18n 依然 404，但 404 body 的 <code>path</code> 是 <code>/portal/i18n/zh_CN</code>（带前缀）——说明这次请求<strong>正确路由到了辅助服务</strong>，404 只是因为测试里随手编的子路径本来就不存在。<strong>同一个状态码，path 字段有无前缀，指向完全不同的故障层</strong>。</p>
+<p>至此根因闭环：</p>
+<pre class="mermaid">flowchart TD
+    A["启动脚本带 -JRebel"] --> B["JRebel agent 注入网关 JVM"]
+    B --> C["properties 加载后 zuul.routes map 变为 hash 乱序"]
+    C --> D["SimpleRouteLocator 顺序遍历第一个 match 即返回"]
+    D --> E["兜底路由排在子路由前面"]
+    E --> F["请求被兜底路由命中 strip-prefix=true"]
+    F --> G["剥掉前缀转发给门户服务"]
+    G --> H["门户服务无此 handler 返回 404"]
+    H --> I["首页数据接口全线报错"]</pre>
+
+<pre class="mermaid">flowchart TD
+    S["现象: 首页接口 404 网关日志干净"] --> T1{"404 body 的 path 带前缀?"}
+    T1 -- "不带前缀" --> T2["被 strip-prefix 路由吃掉"]
+    T2 --> T3{"停掉目标服务仍 404?"}
+    T3 -- "是" --> T4["请求进的是兜底路由"]
+    T4 --> T5["javap 确认匹配是顺序遍历"]
+    T5 --> T6["离线 Binder 复现: 应保序"]
+    T6 --> T7{"运行时顺序与离线一致?"}
+    T7 -- "不一致" --> T8["jdb attach dump 运行时路由表"]
+    T8 --> T9["乱序实锤 + 命令行差异定位 JRebel"]
+    T9 --> R["去掉 JRebel 重启验证恢复"]</pre>
+
+<p>经验教训很直接：</p>
+<ol>
+<li><strong>网关这类基础组件不要带 JRebel 启动</strong>——agent 类工具改变的是”看不见的”运行时行为（这里是 properties→map 的顺序），出的问题完全没有日志可循。热部署留给业务模块，且加 <code>-SkipBase</code> 跳过基础包。</li>
+<li>Zuul 的路由优先级<strong>由 map 插入序决定</strong>，靠”更具体的路径在前”的文件序约定是脆弱的——依赖加载顺序的配置，任何打乱顺序的东西（agent、自定义 PropertySource、动态刷新）都可能翻车。</li>
+</ol>
+<h2 id="八、工具箱详解"><a href="#八、工具箱详解" class="headerlink" title="八、工具箱详解"></a>八、工具箱详解</h2><p>这次排查几乎每一步都靠工具拿实证，逐个讲透。</p>
+<h3 id="8-1-jdb：JDK-自带的命令行调试器"><a href="#8-1-jdb：JDK-自带的命令行调试器" class="headerlink" title="8.1 jdb：JDK 自带的命令行调试器"></a>8.1 jdb：JDK 自带的命令行调试器</h3><p>被严重低估的工具。平时调试用 IDE，但在”<strong>只能看运行中进程</strong>“的场景（服务器、启动脚本拉起的进程、CI 环境），jdb 是零依赖方案——只要目标 JVM 开了 jdwp。</p>
+<p><strong>attach 与基本命令：</strong></p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">jdb -connect com.sun.jdi.SocketAttach:hostname=127.0.0.1,port=5503</span><br><span class="line"></span><br><span class="line">resume                                                       <span class="comment"># attach 后默认挂起所有线程，先恢复</span></span><br><span class="line">stop <span class="keyword">in</span> org.example.SimpleRouteLocator.getSimpleMatchingRoute  <span class="comment"># 方法断点（写全限定名）</span></span><br><span class="line"><span class="built_in">print</span> this.routes.get()          <span class="comment"># 断点命中后打印字段（自动展开对象字段）</span></span><br><span class="line"><span class="built_in">print</span> java.util.Arrays.toString(this.routes.get().keySet().toArray())  <span class="comment"># 执行方法调用拼输出</span></span><br><span class="line">clear org.example.SimpleRouteLocator.getSimpleMatchingRoute  <span class="comment"># 清断点</span></span><br><span class="line">cont                            <span class="comment"># 继续</span></span><br><span class="line">quit                            <span class="comment"># 退出（会 detach，进程继续跑）</span></span><br></pre></td></tr></table></figure></div>
+
+<p><strong>脚本化是关键</strong>：断点命中是异步的，交互式手敲来不及。用子 shell 按节奏喂命令——<code>sleep</code> 的时长就是留给断点命中的窗口，期间要有后台流量触发断点：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 后台循环发请求制造断点命中机会</span></span><br><span class="line">(<span class="keyword">for</span> i <span class="keyword">in</span> $(seq 30); <span class="keyword">do</span> curl -s localhost:8080/gateway/portal/dict/x &gt;/dev/null; sleep 0.5; <span class="keyword">done</span>) &amp;</span><br><span class="line"></span><br><span class="line">( <span class="built_in">echo</span> <span class="string">"resume"</span></span><br><span class="line">  <span class="built_in">echo</span> <span class="string">"stop in org.example.SimpleRouteLocator.getSimpleMatchingRoute"</span></span><br><span class="line">  sleep 15                          <span class="comment"># 等断点命中</span></span><br><span class="line">  <span class="built_in">echo</span> <span class="string">'print java.util.Arrays.toString(this.routes.get().keySet().toArray())'</span></span><br><span class="line">  sleep 3</span><br><span class="line">  <span class="built_in">echo</span> <span class="string">"clear org.example.SimpleRouteLocator.getSimpleMatchingRoute"</span></span><br><span class="line">  <span class="built_in">echo</span> <span class="string">"cont"</span>; sleep 1; <span class="built_in">echo</span> <span class="string">"quit"</span></span><br><span class="line">) | jdb -connect com.sun.jdi.SocketAttach:hostname=127.0.0.1,port=5503</span><br></pre></td></tr></table></figure></div>
+
+<p><strong>三个实战坑：</strong></p>
+<ul>
+<li><strong>attach 瞬间全线程挂起</strong>。断点默认 suspend-all，dump 完立刻 <code>clear</code> + <code>cont</code> + <code>quit</code>，整个窗口控制在几秒内，否则服务表现为”卡死”。</li>
+<li><strong>表达式歧义</strong>。<code>new java.util.ArrayList(collection)</code> 会报 <code>Arguments match multiple methods</code>（构造器重载，jdb 的表达式解析器不按泛型消歧）；换 <code>java.util.Arrays.toString(x.toArray())</code> 一次成功。</li>
+<li><strong>中文输出是 GBK</strong>。Windows 下 jdb 输出混着 GBK 编码的提示，管道里 <code>iconv -f gbk -t utf-8</code> 转一下。</li>
+</ul>
+<p><strong>什么时候用 jdb 而不是别的</strong>：想在运行中进程里读一个”没有暴露端点”的内部状态（本文的路由 map、没有 actuator <code>/routes</code> 端点）时，jdb 断点 + print 是成本最低的侵入式观测。附带伤害几乎为零，比加日志重启、写 arthas 脚本都轻。</p>
+<h3 id="8-2-javap-c：没有源码时读字节码"><a href="#8-2-javap-c：没有源码时读字节码" class="headerlink" title="8.2 javap -c：没有源码时读字节码"></a>8.2 javap -c：没有源码时读字节码</h3><p>第三方 jar（或反编译源码都找不到的内部框架）里一个方法的真实行为，<code>javap -c</code> 三十秒出答案：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">javap -p -c -cp spring-cloud-netflix-zuul-2.1.1.RELEASE.jar \</span><br><span class="line">    org.springframework.cloud.netflix.zuul.filters.SimpleRouteLocator</span><br></pre></td></tr></table></figure></div>
+
+<ul>
+<li><code>-p</code> 显示 private 成员，<code>-c</code> 反汇编方法体；</li>
+<li>输出的每行行首是字节码偏移，<strong>行尾注释带常量池字符串和被调方法名</strong>——靠这些注释就能还原分支和循环：</li>
+</ul>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">81: aload_0</span><br><span class="line">85: aload_4                    &#x2F;&#x2F; pattern</span><br><span class="line">88: invokeinterface PathMatcher.match:(String,String)Z</span><br><span class="line">93: ifeq 106                   &#x2F;&#x2F; 不匹配 → 跳过</span><br><span class="line">96: aload_3</span><br><span class="line">97: invokeinterface Map$Entry.getValue:()Object</span><br><span class="line">105: areturn                   &#x2F;&#x2F; ★ 匹配即 return，无排序逻辑</span><br></pre></td></tr></table></figure></div>
+
+<p>上面这段直接证实了”顺序遍历第一个命中即返回”。判断循环边界、方法提前返回点、异常表，看偏移跳转就够，不需要懂全部字节码指令。本次还用它确认了 <code>DiscoveryClientRouteLocator.locateRoutes()</code> 不做路由过滤&#x2F;重排，以及一个 NPE 的抛点。</p>
+<h3 id="8-3-HTTP-探针与判别实验设计"><a href="#8-3-HTTP-探针与判别实验设计" class="headerlink" title="8.3 HTTP 探针与判别实验设计"></a>8.3 HTTP 探针与判别实验设计</h3><p>工具之外，<strong>实验设计</strong>本身是这次排查的主引擎：</p>
+<ul>
+<li><strong>404 body 的 path 字段是个免费的 tracer</strong>。它记录服务端实际收到的路径——带不带前缀，直接区分”路由错了（被 strip）”和”路由对了但接口不存在”。同一个 404，两种天壤之别的结论。</li>
+<li><strong>停服务判别法</strong>：二值实验（目标服务在&#x2F;不在）× 二值结果（500&#x2F;404），一次就能把请求去向钉死。比抓包、比看 access log 都快。</li>
+<li><strong>模拟登录链路的 requests 脚本</strong>：整套系统登录走了”下载前端加密 JS → node 执行加密 → POST 登录 → 跟随重定向完成 session”的链路，把它固化成一个 python 脚本后，任何接口都能一键复测，这是后面所有实验的地基。</li>
+</ul>
+<h3 id="8-4-最小复现实验：classpath-拼装"><a href="#8-4-最小复现实验：classpath-拼装" class="headerlink" title="8.4 最小复现实验：classpath 拼装"></a>8.4 最小复现实验：classpath 拼装</h3><p>第五节的离线 Binder 复现，本质是”<strong>把嫌疑组件单独拎出来重放</strong>“。要点：</p>
+<ol>
+<li>从本地 Maven 仓库按坐标找 jar（<code>find repo -name &#39;*.jar&#39;</code>）；</li>
+<li><strong>Windows JVM 不认 Git Bash 的 <code>/c/...</code> 路径</strong>，classpath 里要用 <code>cygpath -m</code> 转成 <code>C:/...</code> 形式；</li>
+<li>依赖按 NoClassDefFoundError 报一个补一个（FormattingConversionService→spring-context、Aware→spring-beans、Hystrix 类→hystrix-core），几分钟就能跑通；</li>
+<li>复现脚本要<strong>复刻真实机制</strong>（保序 LinkedHashMap 逐行读 properties 模拟加载顺序），偷懒用 <code>java.util.Properties.load()</code> 会把顺序信息直接丢掉，实验本身失真。</li>
+</ol>
+<p>这类实验的价值在于<strong>隔离变量</strong>：离线（无 agent）保序 + 运行时（有 agent）乱序，两个事实一对照，根因就不用猜了。</p>
+<h2 id="九、小结"><a href="#九、小结" class="headerlink" title="九、小结"></a>九、小结</h2><p>复盘整条证据链，没有一个结论是”想出来”的：</p>
+<table>
+<thead>
+<tr>
+<th>结论</th>
+<th>证据来源</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>404 来自门户服务</td>
+<td>停基础服务仍 404 + path 无前缀</td>
+</tr>
+<tr>
+<td>匹配是顺序遍历</td>
+<td>javap 字节码还原</td>
+</tr>
+<tr>
+<td>Spring 原生绑定保序</td>
+<td>离线 Binder 复现实验</td>
+</tr>
+<tr>
+<td>运行时路由表乱序</td>
+<td>jdb attach dump</td>
+</tr>
+<tr>
+<td>根因是 JRebel</td>
+<td>离线&#x2F;运行时唯一差异 + 去掉后恢复</td>
+</tr>
+</tbody></table>
+<p>排查”日志干净的故障”时，日志只是起点不是答案。<strong>当纸面推理和现实行为矛盾时，不要继续推理，去拿运行时证据</strong>——jdb、判别实验、最小复现，这三样凑齐，大部分”灵异问题”都撑不过三个回合。而 agent 类工具（JRebel、各种字节码增强）改变的恰恰是最难观测的那层行为，出问题时请第一时间想起它们。</p>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../../03/%E5%A4%87%E4%BB%BD%E5%A4%A9%E5%A4%A9%E5%9C%A8%E8%B7%91%E3%80%81%E6%81%A2%E5%A4%8D%E7%82%B9%E5%8D%B4%E5%81%9C%E5%9C%A833%E5%A4%A9%E5%89%8D%EF%BC%9AXtraBackup%E5%A2%9E%E9%87%8F%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%85%A8%E9%9D%A2%E7%BF%BB%E4%BF%AE%E5%AE%9E%E5%BD%95/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            备份天天在跑、恢复点却停在33天前：XtraBackup增量备份脚本全面翻修实录
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../../01/APS%E5%9B%9E%E5%86%99%E5%81%9C%E6%91%86%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E4%B8%8E%E4%BF%AE%E5%A4%8D%E8%AE%B0%E5%BD%95/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">APS回写停摆故障排查与修复记录</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/">插件开发</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ/" rel="tag">IntelliJ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PSI/" rel="tag">PSI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" rel="tag">插件开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" rel="tag">线程模型</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" rel="tag">运维部署</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/CI-CD/" style="font-size: 10px;">CI/CD</a> <a href="../../../../tags/CentOS/" style="font-size: 11.25px;">CentOS</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/EasyUI/" style="font-size: 11.25px;">EasyUI</a> <a href="../../../../tags/GC/" style="font-size: 11.25px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.25px;">Git Bash</a> <a href="../../../../tags/GitHub-Actions/" style="font-size: 10px;">GitHub Actions</a> <a href="../../../../tags/Github/" style="font-size: 12.5px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 11.25px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 16.25px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/HttpClient/" style="font-size: 11.25px;">HttpClient</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/IntelliJ/" style="font-size: 12.5px;">IntelliJ</a> <a href="../../../../tags/JVM/" style="font-size: 18.75px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 17.5px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 13.75px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 12.5px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.25px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 12.5px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 11.25px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 12.5px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 11.25px;">Node.js</a> <a href="../../../../tags/PSI/" style="font-size: 10px;">PSI</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 10px;">RabbitMQ</a> <a href="../../../../tags/SQL/" style="font-size: 15px;">SQL</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.25px;">Shell</a> <a href="../../../../tags/Spring-Cloud/" style="font-size: 10px;">Spring Cloud</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 12.5px;">WebSocket</a> <a href="../../../../tags/XtraBackup/" style="font-size: 11.25px;">XtraBackup</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/Zuul/" style="font-size: 10px;">Zuul</a> <a href="../../../../tags/hexo/" style="font-size: 11.25px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.25px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.25px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" style="font-size: 10px;">体验优化</a> <a href="../../../../tags/%E5%89%8D%E7%AB%AF/" style="font-size: 11.25px;">前端</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" style="font-size: 11.25px;">实战教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">并发</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 10px;">微服务</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 15px;">排查实战</a> <a href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" style="font-size: 12.5px;">插件开发</a> <a href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" style="font-size: 11.25px;">故障复盘</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" style="font-size: 11.25px;">数据备份</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12.5px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">架构</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.25px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12.5px;">竹云</a> <a href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" style="font-size: 10px;">线程模型</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12.5px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" style="font-size: 13.75px;">踩坑实录</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" style="font-size: 10px;">运维部署</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../03/%E4%B8%AA%E4%BA%BA%E9%A1%B9%E7%9B%AE-CI-CD-%E8%90%BD%E5%9C%B0%EF%BC%9AGitHub-Actions-%E8%87%AA%E5%8A%A8%E6%9E%84%E5%BB%BA%E3%80%81tag-%E5%8F%91-Release-%E4%B8%8E%E7%89%88%E6%9C%AC%E5%8F%B7%E5%8D%95%E4%B8%80%E6%9D%A5%E6%BA%90%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/">个人项目 CI/CD 落地：GitHub Actions 自动构建、tag 发 Release 与版本号单一来源实战教程</a>
+          </li>
+        
+          <li>
+            <a href="../../03/CentOS-7-%E7%A6%BB%E7%BA%BF%E7%8E%AF%E5%A2%83%E4%BB%8E%E9%9B%B6%E9%83%A8%E7%BD%B2-MySQL-%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%BD%93%E7%B3%BB%EF%BC%9AXtraBackup-2-4-%E4%B8%8E%E8%87%AA%E5%8A%A8%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/">CentOS 7 离线环境从零部署 MySQL 物理备份体系：XtraBackup 2.4 与自动备份脚本安装教程</a>
+          </li>
+        
+          <li>
+            <a href="../../03/%E5%A4%87%E4%BB%BD%E5%A4%A9%E5%A4%A9%E5%9C%A8%E8%B7%91%E3%80%81%E6%81%A2%E5%A4%8D%E7%82%B9%E5%8D%B4%E5%81%9C%E5%9C%A833%E5%A4%A9%E5%89%8D%EF%BC%9AXtraBackup%E5%A2%9E%E9%87%8F%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%85%A8%E9%9D%A2%E7%BF%BB%E4%BF%AE%E5%AE%9E%E5%BD%95/">备份天天在跑、恢复点却停在33天前：XtraBackup增量备份脚本全面翻修实录</a>
+          </li>
+        
+          <li>
+            <a href="">网关日志零报错、首页接口全线404：一次JRebel引发的Zuul路由乱序排查实录</a>
+          </li>
+        
+          <li>
+            <a href="../../01/APS%E5%9B%9E%E5%86%99%E5%81%9C%E6%91%86%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E4%B8%8E%E4%BF%AE%E5%A4%8D%E8%AE%B0%E5%BD%95/">APS回写停摆故障排查与修复记录</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>

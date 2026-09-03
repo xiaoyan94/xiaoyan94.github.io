@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>从选项截断到全局自适应：EasyUI下拉面板通用机制与三重陷阱 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="服役超过十年的 MES 前端，技术栈是 EasyUI 1.4.3 + jQuery 1.11.3 这对”考古级”组合。它有一个存在了同样十年的体验缺陷：combobox 下拉面板的宽度永远等于输入框宽度——这是框架默认行为。于是所有长选项都逃不过被截断的命运：”SMT贴片车间-第一生产线-回流焊工段-NS-04高端精密贴片机设备”在下拉里只剩前半截，用户靠脑补补全。 这类问题单看是小事，逐页修是不">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从选项截断到全局自适应：EasyUI下拉面板通用机制与三重陷阱">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/08/26/%E4%BB%8E%E9%80%89%E9%A1%B9%E6%88%AA%E6%96%AD%E5%88%B0%E5%85%A8%E5%B1%80%E8%87%AA%E9%80%82%E5%BA%94%EF%BC%9AEasyUI%E4%B8%8B%E6%8B%89%E9%9D%A2%E6%9D%BF%E9%80%9A%E7%94%A8%E6%9C%BA%E5%88%B6%E4%B8%8E%E4%B8%89%E9%87%8D%E9%99%B7%E9%98%B1/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="服役超过十年的 MES 前端，技术栈是 EasyUI 1.4.3 + jQuery 1.11.3 这对”考古级”组合。它有一个存在了同样十年的体验缺陷：combobox 下拉面板的宽度永远等于输入框宽度——这是框架默认行为。于是所有长选项都逃不过被截断的命运：”SMT贴片车间-第一生产线-回流焊工段-NS-04高端精密贴片机设备”在下拉里只剩前半截，用户靠脑补补全。 这类问题单看是小事，逐页修是不">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-08-26T10:46:37.000Z">
+<meta property="article:modified_time" content="2026-09-03T09:29:13.328Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="JavaScript">
+<meta property="article:tag" content="前端">
+<meta property="article:tag" content="EasyUI">
+<meta property="article:tag" content="MES">
+<meta property="article:tag" content="体验优化">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-从选项截断到全局自适应：EasyUI下拉面板通用机制与三重陷阱" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      从选项截断到全局自适应：EasyUI下拉面板通用机制与三重陷阱
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-08-26T10:46:37.000Z" itemprop="datePublished">2026-08-26</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <p>服役超过十年的 MES 前端，技术栈是 EasyUI 1.4.3 + jQuery 1.11.3 这对”考古级”组合。它有一个存在了同样十年的体验缺陷：<strong>combobox 下拉面板的宽度永远等于输入框宽度</strong>——这是框架默认行为。于是所有长选项都逃不过被截断的命运：”SMT贴片车间-第一生产线-回流焊工段-NS-04高端精密贴片机设备”在下拉里只剩前半截，用户靠脑补补全。</p>
+<p>这类问题单看是小事，逐页修是不归路：全系统几十个页面、数不清的下拉框，每个页面写一遍 <code>panelWidth</code> 计算？下一个新页面照样忘。正确的解法是<strong>在全局扩展层做一个通用机制：改一处，全系统生效，且给页面留逃逸口</strong>。本文记录这个机制的完整设计、实现、三重陷阱踩坑实录，以及一套无头浏览器验证矩阵——作为年度复盘，这也是”老系统增强”这类工作方法论的一个样本。</p>
+<a id="more"></a>
+
+<h2 id="一、需求拆解：不只是”变宽”"><a href="#一、需求拆解：不只是”变宽”" class="headerlink" title="一、需求拆解：不只是”变宽”"></a>一、需求拆解：不只是”变宽”</h2><p>把”下拉面板自适应内容宽度”这句话拆成可验收的约束：</p>
+<table>
+<thead>
+<tr>
+<th>约束</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>全局生效</td>
+<td>改通用扩展文件一处，所有引用它的页面（全系统）立即生效</td>
+</tr>
+<tr>
+<td>可覆盖</td>
+<td>页面显式设置了 <code>panelWidth</code> 的，不接管，保持原行为</td>
+</tr>
+<tr>
+<td>有上限</td>
+<td>自适应有最大宽度封顶（默认 500px），页面可用 <code>panelMaxWidth</code> 选项覆盖</td>
+</tr>
+<tr>
+<td>不伤邻居</td>
+<td>datebox &#x2F; combotree &#x2F; combogrid 等同样基于 combo 的组件不受干扰</td>
+</tr>
+<tr>
+<td>幂等</td>
+<td>重复打开、异步 reload 数据后重新打开，都按最新内容重算，无残留状态</td>
+</tr>
+<tr>
+<td>无痕</td>
+<td>机制注入的临时状态用完即恢复，不污染组件 options</td>
+</tr>
+</tbody></table>
+<p>“可覆盖”和”无痕”这两条最容易被忽略，但恰恰是通用机制能不能长期活下去的关键：<strong>一个不给逃逸口的全局魔法，迟早会被某个特殊页面逼到 fork 掉</strong>。</p>
+<h2 id="二、机制设计"><a href="#二、机制设计" class="headerlink" title="二、机制设计"></a>二、机制设计</h2><h3 id="2-1-拦截点选型"><a href="#2-1-拦截点选型" class="headerlink" title="2.1 拦截点选型"></a>2.1 拦截点选型</h3><p>EasyUI 的组件体系里，combobox 构建在 combo 之上，方法分发链是：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$(&#39;#x&#39;).combobox(&#39;showPanel&#39;)</span><br><span class="line">   │ combobox.methods 里没有 showPanel</span><br><span class="line">   ▼</span><br><span class="line">   落回 this.combo(&#39;showPanel&#39;)</span><br><span class="line">   │</span><br><span class="line">   ▼</span><br><span class="line">$.fn.combo.methods.showPanel   ← 唯一收口点</span><br></pre></td></tr></table></figure></div>
+
+<p>datebox、datetimebox、combotree、combogrid 全部经过这个收口点。所以<strong>包装 <code>$.fn.combo.methods.showPanel</code></strong> 一处即可拦截所有 combo 系组件——这是”全局生效”的物理基础。备选方案比较：</p>
+<ul>
+<li>重写 <code>onShowPanel</code> 回调：面板宽度此时已定，只能打开后再改尺寸，闪烁；且页面自己传的回调会覆盖 defaults 上的钩子，不可靠；</li>
+<li>fork 组件源码：升级即丢，违背”老系统增强”原则；</li>
+<li>方法包装（Method Wrapping）：保存原函数引用，前后加逻辑，调用链不变——最终选择。</li>
+</ul>
+<h3 id="2-2-宽度怎么测：克隆进隐藏-table"><a href="#2-2-宽度怎么测：克隆进隐藏-table" class="headerlink" title="2.2 宽度怎么测：克隆进隐藏 table"></a>2.2 宽度怎么测：克隆进隐藏 table</h3><p>打开面板前，把面板内全部 <code>.combobox-item</code> 克隆到一个隐藏容器里测”自然宽度”。核心问题是<strong>用什么容器测</strong>——这直接踩出了后文的陷阱二，最终方案是 table：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────────────────────────────────┐</span><br><span class="line">│ 隐藏 table（position:absolute 收缩到内容宽）    │</span><br><span class="line">│  ┌─────────────────────────────────────┐    │</span><br><span class="line">│  │ td &gt; 克隆项1（display:block, nowrap） │    │</span><br><span class="line">│  ├─────────────────────────────────────┤    │</span><br><span class="line">│  │ td &gt; 克隆项2                          │    │</span><br><span class="line">│  └─────────────────────────────────────┘    │</span><br><span class="line">│  table 宽 &#x3D; 最长单元格宽   ← 选项自然宽度      │</span><br><span class="line">│  table 高 &#x3D; 各行高之和     ← 判断是否出滚动条  │</span><br><span class="line">└─────────────────────────────────────────────┘</span><br></pre></td></tr></table></figure></div>
+
+<p>shrink-to-fit 的 table，表宽天然等于最长单元格宽度，每项一行又保住了”逐项取最大”的语义，表高顺便给出列表总高——<strong>一次 DOM 探测，两个判定依据</strong>（宽度 + 是否出纵向滚动条需要预留滚动条宽度）。相比逐项测量（N 次强制回流），全量克隆只触发一次布局，千级数据量也不卡。</p>
+<h3 id="2-3-宽度合成公式"><a href="#2-3-宽度合成公式" class="headerlink" title="2.3 宽度合成公式"></a>2.3 宽度合成公式</h3><div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">width = contentWidth + <span class="number">2</span>;                    <span class="comment">// 边框与取整补偿</span></span><br><span class="line"><span class="keyword">if</span> (列表总高 &gt; panelHeight) width += 滚动条宽;  <span class="comment">// 防最长项被滚动条遮住</span></span><br><span class="line">width = min(max(width, comboWidth),          <span class="comment">// 不窄于输入框</span></span><br><span class="line">            opts.panelMaxWidth || <span class="number">500</span>);      <span class="comment">// 封顶，可被页面覆盖</span></span><br><span class="line"><span class="keyword">return</span> width &gt; comboWidth ? width : <span class="literal">null</span>;    <span class="comment">// 不超出输入框就不接管</span></span><br></pre></td></tr></table></figure></div>
+
+<p>返回 <code>null</code> 表示”内容本来就放得下”，走框架默认逻辑——机制只在必要时出手。</p>
+<h3 id="2-4-无痕注入"><a href="#2-4-无痕注入" class="headerlink" title="2.4 无痕注入"></a>2.4 无痕注入</h3><p>测得宽度后<strong>临时</strong>写入 <code>options.panelWidth</code>，调用原 <code>showPanel</code>（内部会用它定面板宽度），<code>finally</code> 里立刻恢复 <code>null</code>：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">state.options.panelWidth = width;    <span class="comment">// 仅本次打开生效</span></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    _comboShowPanel($(<span class="keyword">this</span>));</span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    state.options.panelWidth = <span class="literal">null</span>; <span class="comment">// 用完即恢复，下次重算</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>副作用生命周期 &#x3D; 一次同步调用，任何异步路径（reload 数据、重复打开）看到的都是干净状态。</p>
+<h2 id="三、三重陷阱实录"><a href="#三、三重陷阱实录" class="headerlink" title="三、三重陷阱实录"></a>三、三重陷阱实录</h2><p>机制本身的代码量不大，真正的成本全在”让它真的生效”上。三个陷阱按隐蔽程度递增，每一个都是靠打点取证才定位的。</p>
+<h3 id="陷阱一：defaults-的”定型”机制，Math-min-出-NaN-静默失效"><a href="#陷阱一：defaults-的”定型”机制，Math-min-出-NaN-静默失效" class="headerlink" title="陷阱一：defaults 的”定型”机制，Math.min 出 NaN 静默失效"></a>陷阱一：defaults 的”定型”机制，Math.min 出 NaN 静默失效</h3><p>第一版在扩展文件里写了：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$.fn.combo.defaults.panelMaxWidth = <span class="number">500</span>;   <span class="comment">// 看起来很合理</span></span><br></pre></td></tr></table></figure></div>
+
+<p>验证时面板纹丝不动。排查发现 EasyUI 在 bundle 加载时就已经执行了：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$.fn.combobox.defaults = $.extend(&#123;&#125;, $.fn.combo.defaults, &#123;...&#125;);</span><br></pre></td></tr></table></figure></div>
+
+<p><strong>这一步是值拷贝（快照），不是引用</strong>。之后我再去改 <code>combo.defaults.panelMaxWidth</code>，<code>combobox.defaults</code> 里的快照还是 <code>null</code>；每个 combobox 实例初始化时从 <code>combobox.defaults</code> 取值，拿到的自然是 <code>null</code>。于是宽度合成公式里：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">Math</span>.min(<span class="number">374</span>, <span class="literal">undefined</span>)   <span class="comment">// = NaN</span></span><br><span class="line"><span class="literal">NaN</span> &gt; <span class="number">220</span>                  <span class="comment">// = false → 返回 null → 不接管</span></span><br></pre></td></tr></table></figure></div>
+
+<p><strong>不报错、不接管、无任何日志</strong>——静默失效是最恶心的失败模式。修复是三层兜底：<code>combo.defaults</code> 与 <code>combobox.defaults</code> 都补默认值（覆盖未来初始化的实例），合成公式里 <code>opts.panelMaxWidth || 500</code>（覆盖已存在的实例）。</p>
+<p>教训：<strong>给”继承链式 defaults”体系打补丁，先确认 defaults 是引用共享还是加载时快照</strong>。</p>
+<h3 id="陷阱二：inline-block-克隆测出”所有选项之和”"><a href="#陷阱二：inline-block-克隆测出”所有选项之和”" class="headerlink" title="陷阱二：inline-block 克隆测出”所有选项之和”"></a>陷阱二：inline-block 克隆测出”所有选项之和”</h3><p>最初的测量容器用 div + 克隆项设 <code>display:inline-block</code>。两个选项的用例完美通过，20 个选项的用例测出 <strong>6014px</strong>——直接撞上封顶值 500，而真实最长项只有 304px。</p>
+<p>根因是 CSS 布局语义：inline-level 的盒子在 shrink-to-fit 容器里<strong>排成一行</strong>，容器的 max-content 宽度是它们之和。两个选项的用例里”短”选项只贡献 14px，误差被 374 vs 371 的量级掩盖了——<strong>用例覆盖不足时，错误方案会给出正确-looking 的结果</strong>。</p>
+<p>修复即换成上文 table 方案（每项独占一行）。为确认 table 测的是真实渲染宽度，做了一个隔离实验：同一段富文本分别用”600px 可见容器真实渲染 &#x2F; inline-block 克隆 &#x2F; table 克隆 &#x2F; width:max-content”四种方式测量，后三者完全一致（207.3px），并反推出旧方案 241 &#x3D; 207.3 + 34（第二项宽度）的求和构成。</p>
+<p>教训：<strong>测量的容器语义决定测量结果</strong>；验证测量方案时用”多方式对照 + 反推误差构成”，比信任单一方案可靠。</p>
+<h3 id="陷阱三：验证链路自己也有-bug"><a href="#陷阱三：验证链路自己也有-bug" class="headerlink" title="陷阱三：验证链路自己也有 bug"></a>陷阱三：验证链路自己也有 bug</h3><p>最有意思的是调试过程本身。机制装好了、用例跑了、面板没变宽——一度怀疑是包装没生效。逐步打点后发现<strong>验证链路自己埋了两个坑</strong>：</p>
+<ol>
+<li>用脚本注入测试代码时，<code>$(...)</code> 被转义处理错误写成了 <code>$.(...)</code>——一个语法错误让整个 <code>&lt;script&gt;</code> 块静默死亡，之前”看起来跑了”的输出全是缓存假象；</li>
+<li>诊断代码里检查”showPanel 是否被包装”，却写在测试自身的 SPY 替换<strong>之后</strong>——检查到的是 SPY 自己，得出”机制没安装”的错误结论。</li>
+</ol>
+<p>修复验证链路后真凶才现形（正是陷阱一）。也就是说：<strong>当结论是”机制没生效”时，先审计验证手段本身</strong>——调试器也会说谎，说谎的方式是让你测错对象。</p>
+<h2 id="四、验证矩阵"><a href="#四、验证矩阵" class="headerlink" title="四、验证矩阵"></a>四、验证矩阵</h2><p>交付前的最终回归，无头 Chrome + 项目真实 EasyUI&#x2F;jQuery 依赖，9 个场景一次跑齐：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>期望</th>
+<th>实测面板宽</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>短选项（不超输入框）</td>
+<td>不接管</td>
+<td>220（&#x3D;输入框宽）</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>长选项</td>
+<td>自适应加宽</td>
+<td>359（内容357+2）</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>超长选项</td>
+<td>封顶</td>
+<td>500</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>显式 panelWidth&#x3D;300</td>
+<td>不接管</td>
+<td>300</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>formatter 富文本选项</td>
+<td>按真实内容判定</td>
+<td>220（实测内容207&lt;220）</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>20 条长选项（出滚动条）</td>
+<td>内容+滚动条预留</td>
+<td>321（304+2+15）</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>页面覆盖 panelMaxWidth&#x3D;350</td>
+<td>按页面值封顶</td>
+<td>350</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>datebox</td>
+<td>不受干扰</td>
+<td>180（框架自带值）</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>二次打开 &#x2F; 状态恢复</td>
+<td>幂等无残留</td>
+<td>359 一致，临时值已恢复 null</td>
+<td>✓</td>
+</tr>
+</tbody></table>
+<p>这个矩阵的价值不在”全绿”，而在<strong>每一行都是一个可能被回归破坏的契约</strong>——下次有人改这段代码，矩阵能告诉他破坏了什么。</p>
+<p>上面的矩阵不必只停留在纸面：下面的演示页是<strong>自包含</strong>的真实环境（jQuery 1.11.3 + EasyUI 1.4.3 + 本机制代码全部内联，无外部依赖），可以直接点开各下拉框体验自适应与封顶行为，或点”运行验证矩阵”当场复跑全部九个场景：</p>
+<iframe src="/assets/combo-autowidth-demo.html" style="width:100%;height:860px;border:1px solid #ddd;border-radius:4px" loading="lazy" title="EasyUI combobox 宽度自适应在线演示"></iframe>
+
+<h2 id="五、小结"><a href="#五、小结" class="headerlink" title="五、小结"></a>五、小结</h2><p>回头看这件事的账：代码改动一个文件几十行，覆盖全系统所有 combobox；耗时的不是写代码，是三个陷阱的取证与验证矩阵的搭建。几条可迁移的经验：</p>
+<ol>
+<li><strong>小痛点值得机制化</strong>：判断标准不是”这个 bug 多严重”，而是”它是不是结构性重复”——几十个页面共享同一个框架默认行为的问题，就该在框架层解决；</li>
+<li><strong>通用机制三原则</strong>：可逃逸（显式配置优先于机制）、无痕（临时状态必须恢复）、幂等（重复执行结果一致）；</li>
+<li><strong>静默失效优先怀疑类型</strong>：<code>NaN</code> &#x2F; <code>undefined</code> 在比较运算里永不报错，<code>Math.min(x, undefined)</code> 这类组合要在代码审查里当成地雷；</li>
+<li><strong>测量类逻辑要有对照实验</strong>：单一方案的”正确结果”可能是误差掩盖，多方案对照 + 反推误差构成才能定性；</li>
+<li><strong>验证手段本身是代码</strong>：也会错，而且它错的时候你倾向于信它。</li>
+</ol>
+<p>老系统的价值不在技术新，在于每一处通用机制都能被全量页面复用。给老框架做增强，是投入产出比很高的一类工作。</p>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../../27/%E5%A4%A7%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BD%BD%E5%BF%85%E5%A4%B1%E8%B4%A5%E3%80%81%E5%B0%8F%E6%96%87%E4%BB%B6%E5%85%A8%E6%AD%A3%E5%B8%B8%EF%BC%9A%E4%B8%80%E8%A1%8CremoveChild%E5%BC%95%E5%8F%91%E7%9A%84%E7%BD%91%E5%85%B3Broken-pipe%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            大文件下载必失败、小文件全正常：一行removeChild引发的网关Broken pipe排查实录
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../../24/%E4%B8%80%E4%B8%AA%E5%90%8E%E5%8F%B0%E7%BA%BF%E7%A8%8B%E6%96%AD%E8%A8%80%E5%BC%82%E5%B8%B8%E5%A6%82%E4%BD%95%E6%9D%80%E6%8E%89%E6%95%B4%E4%B8%AA%E6%8F%92%E4%BB%B6%E5%8A%9F%E8%83%BD%EF%BC%9Aread-action%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">一个后台线程断言异常如何杀掉整个插件功能：read-action线程模型踩坑实录</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/">插件开发</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ/" rel="tag">IntelliJ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PSI/" rel="tag">PSI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" rel="tag">插件开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" rel="tag">线程模型</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" rel="tag">运维部署</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/CI-CD/" style="font-size: 10px;">CI/CD</a> <a href="../../../../tags/CentOS/" style="font-size: 11.25px;">CentOS</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/EasyUI/" style="font-size: 11.25px;">EasyUI</a> <a href="../../../../tags/GC/" style="font-size: 11.25px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.25px;">Git Bash</a> <a href="../../../../tags/GitHub-Actions/" style="font-size: 10px;">GitHub Actions</a> <a href="../../../../tags/Github/" style="font-size: 12.5px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 11.25px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 16.25px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/HttpClient/" style="font-size: 11.25px;">HttpClient</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/IntelliJ/" style="font-size: 12.5px;">IntelliJ</a> <a href="../../../../tags/JVM/" style="font-size: 18.75px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 17.5px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 13.75px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 12.5px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.25px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 12.5px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 11.25px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 12.5px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 11.25px;">Node.js</a> <a href="../../../../tags/PSI/" style="font-size: 10px;">PSI</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 10px;">RabbitMQ</a> <a href="../../../../tags/SQL/" style="font-size: 15px;">SQL</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.25px;">Shell</a> <a href="../../../../tags/Spring-Cloud/" style="font-size: 10px;">Spring Cloud</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 12.5px;">WebSocket</a> <a href="../../../../tags/XtraBackup/" style="font-size: 11.25px;">XtraBackup</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/Zuul/" style="font-size: 10px;">Zuul</a> <a href="../../../../tags/hexo/" style="font-size: 11.25px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.25px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.25px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" style="font-size: 10px;">体验优化</a> <a href="../../../../tags/%E5%89%8D%E7%AB%AF/" style="font-size: 11.25px;">前端</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" style="font-size: 11.25px;">实战教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">并发</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 10px;">微服务</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 15px;">排查实战</a> <a href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" style="font-size: 12.5px;">插件开发</a> <a href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" style="font-size: 11.25px;">故障复盘</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" style="font-size: 11.25px;">数据备份</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12.5px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">架构</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.25px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12.5px;">竹云</a> <a href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" style="font-size: 10px;">线程模型</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12.5px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" style="font-size: 13.75px;">踩坑实录</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" style="font-size: 10px;">运维部署</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../../09/03/%E4%B8%AA%E4%BA%BA%E9%A1%B9%E7%9B%AE-CI-CD-%E8%90%BD%E5%9C%B0%EF%BC%9AGitHub-Actions-%E8%87%AA%E5%8A%A8%E6%9E%84%E5%BB%BA%E3%80%81tag-%E5%8F%91-Release-%E4%B8%8E%E7%89%88%E6%9C%AC%E5%8F%B7%E5%8D%95%E4%B8%80%E6%9D%A5%E6%BA%90%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/">个人项目 CI/CD 落地：GitHub Actions 自动构建、tag 发 Release 与版本号单一来源实战教程</a>
+          </li>
+        
+          <li>
+            <a href="../../../09/03/CentOS-7-%E7%A6%BB%E7%BA%BF%E7%8E%AF%E5%A2%83%E4%BB%8E%E9%9B%B6%E9%83%A8%E7%BD%B2-MySQL-%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%BD%93%E7%B3%BB%EF%BC%9AXtraBackup-2-4-%E4%B8%8E%E8%87%AA%E5%8A%A8%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/">CentOS 7 离线环境从零部署 MySQL 物理备份体系：XtraBackup 2.4 与自动备份脚本安装教程</a>
+          </li>
+        
+          <li>
+            <a href="../../../09/03/%E5%A4%87%E4%BB%BD%E5%A4%A9%E5%A4%A9%E5%9C%A8%E8%B7%91%E3%80%81%E6%81%A2%E5%A4%8D%E7%82%B9%E5%8D%B4%E5%81%9C%E5%9C%A833%E5%A4%A9%E5%89%8D%EF%BC%9AXtraBackup%E5%A2%9E%E9%87%8F%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%85%A8%E9%9D%A2%E7%BF%BB%E4%BF%AE%E5%AE%9E%E5%BD%95/">备份天天在跑、恢复点却停在33天前：XtraBackup增量备份脚本全面翻修实录</a>
+          </li>
+        
+          <li>
+            <a href="../../../09/02/%E7%BD%91%E5%85%B3%E6%97%A5%E5%BF%97%E9%9B%B6%E6%8A%A5%E9%94%99%E3%80%81%E9%A6%96%E9%A1%B5%E6%8E%A5%E5%8F%A3%E5%85%A8%E7%BA%BF404%EF%BC%9A%E4%B8%80%E6%AC%A1JRebel%E5%BC%95%E5%8F%91%E7%9A%84Zuul%E8%B7%AF%E7%94%B1%E4%B9%B1%E5%BA%8F%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/">网关日志零报错、首页接口全线404：一次JRebel引发的Zuul路由乱序排查实录</a>
+          </li>
+        
+          <li>
+            <a href="../../../09/01/APS%E5%9B%9E%E5%86%99%E5%81%9C%E6%91%86%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E4%B8%8E%E4%BF%AE%E5%A4%8D%E8%AE%B0%E5%BD%95/">APS回写停摆故障排查与修复记录</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>

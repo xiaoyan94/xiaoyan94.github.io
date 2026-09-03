@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>备份天天在跑、恢复点却停在33天前：XtraBackup增量备份脚本全面翻修实录 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="凌晨两点的定时备份，天天在跑、日志天天在写、备份目录天天生成——直到需要恢复的那一刻，才发现最后一个能用的恢复点停在 33 天前。 这是一套跑了很久的 CentOS 7 + MySQL 5.7 + Percona XtraBackup 2.4 组合：每周一次全量、每日增量、qpress 压缩、凌晨 cron 自动执行，看上去是教科书级的配置。但从 8 月 7 日起的每一次备份都失败了，而失败只安静">
+<meta property="og:type" content="article">
+<meta property="og:title" content="备份天天在跑、恢复点却停在33天前：XtraBackup增量备份脚本全面翻修实录">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/09/03/%E5%A4%87%E4%BB%BD%E5%A4%A9%E5%A4%A9%E5%9C%A8%E8%B7%91%E3%80%81%E6%81%A2%E5%A4%8D%E7%82%B9%E5%8D%B4%E5%81%9C%E5%9C%A833%E5%A4%A9%E5%89%8D%EF%BC%9AXtraBackup%E5%A2%9E%E9%87%8F%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%85%A8%E9%9D%A2%E7%BF%BB%E4%BF%AE%E5%AE%9E%E5%BD%95/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="凌晨两点的定时备份，天天在跑、日志天天在写、备份目录天天生成——直到需要恢复的那一刻，才发现最后一个能用的恢复点停在 33 天前。 这是一套跑了很久的 CentOS 7 + MySQL 5.7 + Percona XtraBackup 2.4 组合：每周一次全量、每日增量、qpress 压缩、凌晨 cron 自动执行，看上去是教科书级的配置。但从 8 月 7 日起的每一次备份都失败了，而失败只安静">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-03T03:43:46.000Z">
+<meta property="article:modified_time" content="2026-09-03T09:29:13.328Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="排查实战">
+<meta property="article:tag" content="踩坑实录">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="XtraBackup">
+<meta property="article:tag" content="CentOS">
+<meta property="article:tag" content="数据备份">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-备份天天在跑、恢复点却停在33天前：XtraBackup增量备份脚本全面翻修实录" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      备份天天在跑、恢复点却停在33天前：XtraBackup增量备份脚本全面翻修实录
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-09-03T03:43:46.000Z" itemprop="datePublished">2026-09-03</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <p>凌晨两点的定时备份，天天在跑、日志天天在写、备份目录天天生成——直到需要恢复的那一刻，才发现最后一个能用的恢复点停在 33 天前。</p>
+<p>这是一套跑了很久的 CentOS 7 + MySQL 5.7 + Percona XtraBackup 2.4 组合：每周一次全量、每日增量、qpress 压缩、凌晨 cron 自动执行，看上去是教科书级的配置。但从 8 月 7 日起的每一次备份都失败了，而失败只安静地躺在日志文件里——没有任何推送、任何告警。根因是备份窗口撞上了 MySQL 5.7 免 redo 的在线 DDL，XtraBackup 主动中止；旧备份脚本的几个设计缺陷，又把”一次本可以重试的自中止”放大成了”静默断裂一个月”。</p>
+<p>本文完整复盘这次事故，并给出一套翻修后的生产级备份脚本：基准有效性校验、DDL 窗口自动重试、半成品清理、链式维护、钉钉结果推送、本机防呆——外加一个很多人不知道的大坑：<strong>xtrabackup 的 <code>--host</code> 参数只是”协调端”，要备份的数据永远从本机磁盘复制</strong>。</p>
+<a id="more"></a>
+
+<h2 id="一、事故现场：备份在跑，链早断了"><a href="#一、事故现场：备份在跑，链早断了" class="headerlink" title="一、事故现场：备份在跑，链早断了"></a>一、事故现场：备份在跑，链早断了</h2><p>先把环境和事实钉死：</p>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>配置</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>操作系统 &#x2F; 数据库</td>
+<td>CentOS 7 &#x2F; MySQL 5.7.26</td>
+</tr>
+<tr>
+<td>备份工具</td>
+<td>Percona XtraBackup 2.4.29（适配 MySQL 5.7）</td>
+</tr>
+<tr>
+<td>备份策略</td>
+<td>每周一次全量 + 每日增量，凌晨 02:00 cron 执行</td>
+</tr>
+<tr>
+<td>压缩</td>
+<td><code>--compress</code>（qpress），并行 4 线程</td>
+</tr>
+<tr>
+<td>存储结构</td>
+<td><code>/data/backup</code> 下 <code>base_日期_时间</code>（全量）与 <code>inc_日期_时间</code>（增量）</td>
+</tr>
+</tbody></table>
+<p>巡检发现的事实同样工整：</p>
+<table>
+<thead>
+<tr>
+<th>检查项</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>base_2026-07-31_020001</code></td>
+<td><strong>有效</strong>（目录完整、有 <code>xtrabackup_checkpoints</code>）</td>
+</tr>
+<tr>
+<td>08-07 之后的每一次备份</td>
+<td><strong>全部失败</strong>，目录是半成品或干脆没有生成</td>
+</tr>
+<tr>
+<td>失败通知</td>
+<td>无——旧脚本没有任何推送机制，失败只写日志</td>
+</tr>
+<tr>
+<td>净效果</td>
+<td>可恢复点停在 7 月 31 日，<strong>RPO 缺口 33 天</strong></td>
+</tr>
+</tbody></table>
+<p>失败日志里反复出现同一段三行报错：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">InnoDB: Last flushed lsn: 636724032437 load_index lsn 4307682970222</span><br><span class="line">InnoDB: An optimized (without redo logging) DDL operation has been performed.</span><br><span class="line">        All modified pages may not have been flushed to the disk yet.</span><br><span class="line">PXB will not be able to make a consistent backup. Retry the backup operation.</span><br></pre></td></tr></table></figure></div>
+
+<p>这里先给出第一个关键认知：<strong>这不是 XtraBackup 的 bug，也不是数据库损坏，而是一次保护性中止</strong>。PXB 检测到自身无法保证一致性时，宁可放弃也不产出一份”看起来成功、恢复时才发现是坏的”的备份。真正的问题在于：中止之后没有任何人知道，也没有任何机制把它救回来。</p>
+<h2 id="二、根因：免-redo-的在线-DDL-为什么会中止物理备份"><a href="#二、根因：免-redo-的在线-DDL-为什么会中止物理备份" class="headerlink" title="二、根因：免 redo 的在线 DDL 为什么会中止物理备份"></a>二、根因：免 redo 的在线 DDL 为什么会中止物理备份</h2><h3 id="2-1-XtraBackup-的一致性靠什么"><a href="#2-1-XtraBackup-的一致性靠什么" class="headerlink" title="2.1 XtraBackup 的一致性靠什么"></a>2.1 XtraBackup 的一致性靠什么</h3><p>物理备份不是原子快照。备份一个几十 GB 的库要十几分钟，这期间数据页一直在变——xtrabackup 一边拷贝数据文件，一边持续追着复制 redo log，恢复（prepare）阶段用 redo 把”不同时刻拷出来的页”回放到同一个一致点。<strong>一句话：数据文件 + 覆盖备份窗口的 redo &#x3D; 一致性。</strong></p>
+<h3 id="2-2-MySQL-5-7-的”优化-DDL”恰恰绕开了-redo"><a href="#2-2-MySQL-5-7-的”优化-DDL”恰恰绕开了-redo" class="headerlink" title="2.2 MySQL 5.7 的”优化 DDL”恰恰绕开了 redo"></a>2.2 MySQL 5.7 的”优化 DDL”恰恰绕开了 redo</h3><p>5.7 对 <code>ALTER TABLE ADD INDEX</code> 的 bulk 阶段、<code>OPTIMIZE TABLE</code> 等 inplace 操作做了优化：<strong>批量构建索引数据时不写 redo</strong>（几十万页的索引数据写 redo 既慢又占空间），改靠 page cleaner 把脏页刷盘保证持久性。</p>
+<p>平时这没有任何问题。但备份窗口里撞上它，PXB 的前提就被打破了：</p>
+<pre class="mermaid">sequenceDiagram
+    autonumber
+    participant X as xtrabackup
+    participant D as MySQL 5.7
+    X->>D: 建立连接 开始拷贝数据文件
+    D-->>D: 凌晨维护任务执行免 redo 在线 DDL
+    Note over D: bulk 阶段修改的数据页不写 redo
+    X->>X: 检测到存在 redo 覆盖不到的脏页
+    X->>X: 主动中止并提示 Retry the backup operation</pre>
+
+<p>日志里 <code>Last flushed lsn</code>（已刷盘的 LSN）与 <code>load_index lsn</code>（免 redo 操作推进到的 LSN）之间的巨大落差，就是”有一段页修改没有落在 redo 里”的直接证据。此时若强行继续，产出的备份在 prepare 阶段必然无法自洽——所以 PXB 选择中止。</p>
+<h3 id="2-3-结论与工程对策"><a href="#2-3-结论与工程对策" class="headerlink" title="2.3 结论与工程对策"></a>2.3 结论与工程对策</h3><ul>
+<li><strong>库本身无损</strong>：DDL 不写 redo 是官方设计，靠刷盘保证持久性，不影响业务数据；</li>
+<li><strong>重试即可</strong>：DDL 结束、脏页刷盘完成后重跑备份就能成功——我们在低峰期手动重试验证过；</li>
+<li><strong>两个长期对策</strong>：① 备份窗口与维护任务错峰（本文的脚本后来改到 04:40 执行，DDL 任务仍在 02:00 档）；② 让脚本具备”识别这种失败并自动等待重试”的能力，见第四节。</li>
+</ul>
+<h2 id="三、旧脚本的四个设计缺陷：把”一次中止”放大成”33-天断裂”"><a href="#三、旧脚本的四个设计缺陷：把”一次中止”放大成”33-天断裂”" class="headerlink" title="三、旧脚本的四个设计缺陷：把”一次中止”放大成”33 天断裂”"></a>三、旧脚本的四个设计缺陷：把”一次中止”放大成”33 天断裂”</h2><p>拿到生产的脚本和它更早的版本做 diff，定位到四个缺陷。它们单独看都不致命，叠加起来就是”静默断裂一个月”：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>缺陷</th>
+<th>后果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>过期清理的 <code>find -regex</code> 写法在实际方言下<strong>永远匹配不到任何目录</strong></td>
+<td>保留策略形同虚设，历史目录无限堆积</td>
+</tr>
+<tr>
+<td>2</td>
+<td>增量基准选择<strong>不做有效性校验</strong>（<code>ls -1dt ... | head -1</code> 直接取最新）</td>
+<td>任何一个半成品目录都会被选为基准，之后的增量连环失败</td>
+</tr>
+<tr>
+<td>3</td>
+<td>备份失败即 <code>exit 1</code></td>
+<td>脚本尾部的清理段是<strong>死代码</strong>——失败路径永远走不到清理</td>
+</tr>
+<tr>
+<td>4</td>
+<td>失败不清理半成品、无任何通知</td>
+<td>磁盘堆积坏目录 + 无人知晓，失败 33 天没人发现</td>
+</tr>
+</tbody></table>
+<p>第 1 条值得展开，因为它非常隐蔽。旧代码：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">find <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span> -maxdepth 1 -<span class="built_in">type</span> d \</span><br><span class="line">    -regex <span class="string">".*/\(base\|inc\)_[0-9_-]+"</span> \</span><br><span class="line">    -mtime +<span class="variable">$RETENTION_DAYS</span> -<span class="built_in">exec</span> rm -rf &#123;&#125; \;</span><br></pre></td></tr></table></figure></div>
+
+<p>GNU <code>find</code> 的 <code>-regex</code> 默认是 <strong>emacs 方言</strong>——在 emacs 正则里，量词必须转义（<code>\+</code> 才是”一个或多个”，裸 <code>+</code> 是字面量加号）。于是 <code>[0-9_-]+</code> 的真实含义是”字符类里的<strong>一个</strong>字符，后面跟一个字面量 <code>+</code>“。目录名里永远不会有 <code>+</code>，这条 find 从上线第一天起就没删过任何东西。这也是我后来重构时干脆不用 regex、直接 glob 的原因：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">find <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/base_* <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/inc_* -maxdepth 0 -<span class="built_in">type</span> d \</span><br><span class="line">    -mtime +<span class="variable">$RETENTION_DAYS</span> -<span class="built_in">print</span> -<span class="built_in">exec</span> rm -rf &#123;&#125; \;</span><br></pre></td></tr></table></figure></div>
+
+<p>glob 由 shell 展开，没有方言问题；<code>-maxdepth 0</code> 保证只作用于 <code>base_*</code>&#x2F;<code>inc_*</code> 本身。</p>
+<h2 id="四、翻修设计：让链条”断不了、断了也知道”"><a href="#四、翻修设计：让链条”断不了、断了也知道”" class="headerlink" title="四、翻修设计：让链条”断不了、断了也知道”"></a>四、翻修设计：让链条”断不了、断了也知道”</h2><p>翻修后的整体决策流程：</p>
+<pre class="mermaid">flowchart TD
+    S["脚本启动"] --> V{"BACKUP_HOST 是本机地址?"}
+    V -->|"否"| X["拒绝执行并推送告警"]
+    V -->|"是"| L["扫描 base 目录找最新有效全量"]
+    L --> N{"有有效全量且间隔小于 7 天?"}
+    N -->|"否"| F["全量备份"]
+    N -->|"是"| I["从新到旧挑选增量基准"]
+    I --> Y{"基准完整且链根仍在?"}
+    Y -->|"否 跳过并记日志"| I
+    Y -->|"是"| INC["增量备份"]
+    F --> R{"成功?"}
+    INC --> R
+    R -->|"失败且日志含重试提示"| W["清理半成品 等待后重试"]
+    W --> R
+    R -->|"成功"| C["清理过期备份与孤儿增量"]
+    R -->|"最终失败"| C
+    C --> D["钉钉推送结果并以退出码汇报"]</pre>
+
+<h3 id="4-1-有效性校验：xtrabackup-checkpoints-是唯一的”完整体”标志"><a href="#4-1-有效性校验：xtrabackup-checkpoints-是唯一的”完整体”标志" class="headerlink" title="4.1 有效性校验：xtrabackup_checkpoints 是唯一的”完整体”标志"></a>4.1 有效性校验：<code>xtrabackup_checkpoints</code> 是唯一的”完整体”标志</h3><p>xtrabackup 只在<strong>成功收尾</strong>时才写 <code>xtrabackup_checkpoints</code>（内含 <code>backup_type = full-backuped / incremental</code> 行）。失败、中断的半成品目录里没有这个文件。于是它就是最可靠的有效性判据：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="title">is_valid_backup</span></span>() &#123;</span><br><span class="line">    [ -f <span class="string">"<span class="variable">$1</span>/xtrabackup_checkpoints"</span> ] &amp;&amp; grep -q <span class="string">"^backup_type"</span> <span class="string">"<span class="variable">$1</span>/xtrabackup_checkpoints"</span> 2&gt;/dev/null</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>选全量基准时从新到旧扫描，第一个通过校验的才用；半成品自动跳过并记日志。<strong>一个坏目录从此只能损失它自己那一次，毒不到后面的增量。</strong></p>
+<h3 id="4-2-增量基准：还要校验”链根”"><a href="#4-2-增量基准：还要校验”链根”" class="headerlink" title="4.2 增量基准：还要校验”链根”"></a>4.2 增量基准：还要校验”链根”</h3><p>增量目录有效还不够——它的链根全量必须还在。选择逻辑从新到旧扫全部目录：候选若是 <code>inc_*</code>，就反查比它更早的最新有效 <code>base_*</code> 是否存在，不存在说明链根已丢，这个增量恢复了也拼不出完整链条，跳过继续找。这条与 4.6 的链式清理配合，保证<strong>被选为基准的目录一定属于一条完整活链</strong>。</p>
+<h3 id="4-3-DDL-窗口自动重试"><a href="#4-3-DDL-窗口自动重试" class="headerlink" title="4.3 DDL 窗口自动重试"></a>4.3 DDL 窗口自动重试</h3><p>第二节结论说”重试即可”，那就让脚本自己重试。判据就是日志里的官方提示串：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> grep -q <span class="string">"Retry the backup operation"</span> <span class="string">"<span class="variable">$LOG_FILE</span>"</span> &amp;&amp; [ <span class="string">"<span class="variable">$ATTEMPT</span>"</span> -le <span class="string">"<span class="variable">$RETRY_TIMES</span>"</span> ]; <span class="keyword">then</span></span><br><span class="line">    <span class="comment"># 清理半成品 → 等待 RETRY_WAIT_SEC（默认 1800s）→ 重试</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure></div>
+
+<p>默认重试 2 次、间隔 30 分钟——足够等一个凌晨 DDL 窗口结束加脏页刷盘。窗口内第 1 次撞上、第 2 次成功，是翻修后最常见的形态。</p>
+<h3 id="4-4-失败半成品清理"><a href="#4-4-失败半成品清理" class="headerlink" title="4.4 失败半成品清理"></a>4.4 失败半成品清理</h3><p>任何一次最终失败（含重试耗尽），都把半成品目录删掉，同时把 <code>rm -rf</code> 约束在备份根目录之下，防止配置错误时误删别处：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="string">"<span class="variable">$TARGET_DIR</span>"</span> <span class="keyword">in</span></span><br><span class="line">    <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/*) rm -rf <span class="string">"<span class="variable">$TARGET_DIR</span>"</span>; <span class="built_in">log</span> <span class="string">"已清理半成品目录: <span class="variable">$TARGET_DIR</span>"</span> ;;</span><br><span class="line"><span class="keyword">esac</span></span><br></pre></td></tr></table></figure></div>
+
+<h3 id="4-5-失败不中断维护，退出码汇报"><a href="#4-5-失败不中断维护，退出码汇报" class="headerlink" title="4.5 失败不中断维护，退出码汇报"></a>4.5 失败不中断维护，退出码汇报</h3><p>旧版”失败即 exit”让清理段变成死代码。翻修后全程只置 <code>EXIT_CODE=1</code> 不退出，过期清理照常执行，最后统一 <code>exit &quot;$EXIT_CODE&quot;</code>——cron 侧能拿到非零码，清理也不会因为一次失败停摆一个月。</p>
+<h3 id="4-6-链式清理：孤儿增量"><a href="#4-6-链式清理：孤儿增量" class="headerlink" title="4.6 链式清理：孤儿增量"></a>4.6 链式清理：孤儿增量</h3><p>链式备份有一个容易被忽略的维护点。恢复一个增量需要”链根全量 + 之前所有增量”按序应用，所以<strong>链根全量被过期清理后，挂在它链上、比它更晚的增量全部失效</strong>——这些目录留着既占磁盘，又会在人工选链恢复时误导判断。</p>
+<p>磁盘上识别它们的方法：<strong>凡是比现存最老全量更早的增量，链根必然已被清理</strong>（增量不可能早于自己的链根，而比它早的全量都已不在了）：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">OLDEST_BASE=$(ls -1dt <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/base_* 2&gt;/dev/null | tail -1)</span><br><span class="line"><span class="keyword">for</span> INC <span class="keyword">in</span> <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/inc_*; <span class="keyword">do</span></span><br><span class="line">    [ -d <span class="string">"<span class="variable">$INC</span>"</span> ] || <span class="built_in">continue</span></span><br><span class="line">    [ <span class="string">"<span class="variable">$INC</span>"</span> -ot <span class="string">"<span class="variable">$OLDEST_BASE</span>"</span> ] &amp;&amp; &#123; <span class="built_in">log</span> <span class="string">"清理孤儿增量: <span class="variable">$INC</span>"</span>; rm -rf <span class="string">"<span class="variable">$INC</span>"</span>; &#125;</span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure></div>
+
+<p>注意这里方向别说反：以”被删的全量”为参照，失效的是它<strong>链上更晚</strong>的增量；以”现存最老全量”为参照，待清理的是比它<strong>更早</strong>的增量。两种说法描述的是同一批目录，参照物一换，”更早&#x2F;更晚”就互换——写文档时值得多看一眼。</p>
+<h3 id="4-7-钉钉结果推送：把静默失败变成到人告警"><a href="#4-7-钉钉结果推送：把静默失败变成到人告警" class="headerlink" title="4.7 钉钉结果推送：把静默失败变成到人告警"></a>4.7 钉钉结果推送：把静默失败变成到人告警</h3><p>这次事故最大的教训不是根因，而是<strong>33 天没人知道</strong>。翻修版内置了钉钉机器人推送，成功失败都推，加签模式只依赖 <code>openssl</code> + <code>curl</code>，无需任何第三方客户端：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 签名 = base64(hmac_sha256(secret, "timestamp\nsecret"))，再 URL 编码</span></span><br><span class="line">ts=$(date +%s%3N)</span><br><span class="line">sign=$(<span class="built_in">printf</span> <span class="string">'%s\n%s'</span> <span class="string">"<span class="variable">$ts</span>"</span> <span class="string">"<span class="variable">$DING_SECRET</span>"</span> \</span><br><span class="line">    | openssl dgst -sha256 -hmac <span class="string">"<span class="variable">$DING_SECRET</span>"</span> -binary \</span><br><span class="line">    | base64 | tr -d <span class="string">'\n'</span>)</span><br></pre></td></tr></table></figure></div>
+
+<p>推送文本带服务器、备份类型、目录、耗时、日志路径；推送失败只记日志、绝不影响备份流程与退出码。</p>
+<h2 id="五、最大的坑：-host-只是协调端，数据永远来自本机磁盘"><a href="#五、最大的坑：-host-只是协调端，数据永远来自本机磁盘" class="headerlink" title="五、最大的坑：--host 只是协调端，数据永远来自本机磁盘"></a>五、最大的坑：<code>--host</code> 只是协调端，数据永远来自本机磁盘</h2><p>翻修过程中还踩到一个更有普遍价值的坑，单独成节。</p>
+<h3 id="5-1-现象：连的是测试库，备份出来-47GB-生产数据"><a href="#5-1-现象：连的是测试库，备份出来-47GB-生产数据" class="headerlink" title="5.1 现象：连的是测试库，备份出来 47GB 生产数据"></a>5.1 现象：连的是测试库，备份出来 47GB 生产数据</h3><p>给一台机器部署脚本时，连接信息（host&#x2F;账号&#x2F;密码）误填成了另一套环境的。执行后一切”正常”：日志显示连的是那台小库，钉钉推送里写的也是它——但看备份产物，<strong>47GB</strong>，分明是本机这套大库的体量；那台小库的全量备份才 2.8GB。连的 A 库，备份出来的是 B 库的数据？</p>
+<h3 id="5-2-原理：xtrabackup-根本不通过-MySQL-连接搬数据"><a href="#5-2-原理：xtrabackup-根本不通过-MySQL-连接搬数据" class="headerlink" title="5.2 原理：xtrabackup 根本不通过 MySQL 连接搬数据"></a>5.2 原理：xtrabackup 根本不通过 MySQL 连接搬数据</h3><p>对比一下两类备份工具：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>mysqldump 等逻辑备份</th>
+<th>xtrabackup 物理备份</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据通道</td>
+<td>MySQL 协议连接（走网络）</td>
+<td><strong>本地文件系统直接读</strong></td>
+</tr>
+<tr>
+<td><code>--host</code> 决定什么</td>
+<td>备份<strong>谁的数据</strong></td>
+<td>只决定跟<strong>哪个实例协调</strong></td>
+</tr>
+<tr>
+<td>能否备份远程库</td>
+<td>可以</td>
+<td><strong>不能</strong>（要远程得配 ssh&#x2F;stream）</td>
+</tr>
+</tbody></table>
+<p>xtrabackup 的连接只做三件事：版本检查、备份锁（FTWRL &#x2F; backup locks）、取 LSN 与 binlog 位点等元数据。<strong>要复制的数据文件，永远从运行脚本这台机器的本地 <code>datadir</code> 路径读取</strong>：</p>
+<pre class="mermaid">flowchart LR
+    subgraph SERVER["运行脚本的备份服务器"]
+        SCRIPT["mysql_backup.sh"] -->|"控制面 MySQL 协议连接"| CONN["xtrabackup 协调端"]
+        SCRIPT -->|"数据面 直接读本地文件"| FILES["本机 datadir 数据文件"]
+        FILES --> OUT["备份产物 target-dir"]
+    end
+    CONN -.->|"只提供锁 LSN 位点等元数据"| DB["host 指向的实例 可以是另一台机器"]</pre>
+
+<p>所以 host 填错环境时：复制的是<strong>本机</strong>的数据文件（47GB 的生产数据），协调的却是<strong>另一台</strong>实例。日志里其实留有证据——<code>recognized server arguments</code> 这一行打印在 <code>version_check Connecting</code> <strong>之前</strong>，它读的是<strong>本机</strong> <code>/etc/my.cnf</code>（里面 32G 的 buffer pool 配置正是这台大库机器的体量），此时还没连任何库。</p>
+<h3 id="5-3-为什么这种备份”看似成功、实则不可恢复”"><a href="#5-3-为什么这种备份”看似成功、实则不可恢复”" class="headerlink" title="5.3 为什么这种备份”看似成功、实则不可恢复”"></a>5.3 为什么这种备份”看似成功、实则不可恢复”</h3><ul>
+<li>备份锁加在了错误的实例上，本机实例在备份窗口内照常写入、无人协调；</li>
+<li>LSN、binlog 位点等元数据全部来自错误的实例，与本地数据文件对不上；</li>
+<li>数据页复制与 redo 跟随发生在本地文件上，所以这种错配<strong>不必然立刻报错</strong>——exit 0 与”可恢复”之间没有任何必然联系。</li>
+</ul>
+<p>结论：只要发现 host 指向了别的机器，这次备份无论成败一律按无效处理。</p>
+<h3 id="5-4-判别实验与防呆"><a href="#5-4-判别实验与防呆" class="headerlink" title="5.4 判别实验与防呆"></a>5.4 判别实验与防呆</h3><p>现场判别一条命令就够：在跑脚本的机器上 <code>hostname -I</code>，对比 host 是不是本机地址。</p>
+<p>但靠人记得检查不叫工程，翻修版把检查写进了脚本——启动时拿 <code>BACKUP_HOST</code> 与 <code>127.0.0.1 / localhost / hostname -I 列出的本机所有网卡 IP</code> 比对，对不上直接拒绝执行并推送告警：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> [ -n <span class="string">"<span class="variable">$BACKUP_HOST</span>"</span> ]; <span class="keyword">then</span></span><br><span class="line">    HOST_IS_LOCAL=0</span><br><span class="line">    <span class="keyword">for</span> _h <span class="keyword">in</span> 127.0.0.1 localhost ::1 $(hostname -I 2&gt;/dev/null); <span class="keyword">do</span></span><br><span class="line">        [ <span class="string">"<span class="variable">$BACKUP_HOST</span>"</span> = <span class="string">"<span class="variable">$_h</span>"</span> ] &amp;&amp; &#123; HOST_IS_LOCAL=1; <span class="built_in">break</span>; &#125;</span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">    <span class="keyword">if</span> [ <span class="string">"<span class="variable">$HOST_IS_LOCAL</span>"</span> -ne 1 ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">log</span> <span class="string">"❌ BACKUP_HOST=<span class="variable">$BACKUP_HOST</span> 不是本机地址，拒绝执行（防跨环境连错库）"</span></span><br><span class="line">        send_dingtalk <span class="string">"【MySQL备份】❌ 配置错误拒绝执行 | 服务器: <span class="variable">$(hostname)</span> | 请将 BACKUP_HOST 改为 127.0.0.1"</span></span><br><span class="line">        <span class="built_in">exit</span> 1</span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">fi</span></span><br></pre></td></tr></table></figure></div>
+
+<p>设计上放行”本机任意网卡 IP”（连自己的内网 IP 语义上仍是本机实例），只拒绝真正指向其他机器的情况；校验在任何备份动作之前，不产生半成品。<strong>备份脚本的 <code>BACKUP_HOST</code> 应当固定写 <code>127.0.0.1</code>，从根上消除跨环境连错的可能。</strong></p>
+<h2 id="六、恢复侧：链式应用原理"><a href="#六、恢复侧：链式应用原理" class="headerlink" title="六、恢复侧：链式应用原理"></a>六、恢复侧：链式应用原理</h2><p>脚本产出的备份链按下面方式恢复（配套恢复脚本已自动化，这里讲清原理）：</p>
+<pre class="mermaid">flowchart LR
+    A["全量 prepare 加 --apply-log-only"] --> B["按序应用增量1 仍加 --apply-log-only"]
+    B --> C["按序应用增量2 仍加 --apply-log-only"]
+    C --> D["最后一次 prepare 不加参数"]
+    D --> E["copy-back 回数据目录并 chown mysql"]</pre>
+
+<p>两条铁律：</p>
+<ul>
+<li>**中间每一次 prepare 都加 <code>--apply-log-only</code>**：只前滚、不回滚，保持备份处于”可继续追加增量”的状态；</li>
+<li><strong>链上最后一次 prepare 不加</strong>：回滚未提交事务，把数据推到一致点。</li>
+</ul>
+<p>注意事项：增量链必须完整连续，链中任何一个增量缺失，其后的增量全部失效；操作前停 MySQL、清空数据目录；建议全程在临时副本上进行，原备份目录不动，失败还能重来；恢复后修正数据目录属主再启动。<strong>任何备份方案，只有经过恢复验证才算有效</strong>——建议每季度在测试环境演练一次完整恢复。</p>
+<h2 id="七、完整脚本"><a href="#七、完整脚本" class="headerlink" title="七、完整脚本"></a>七、完整脚本</h2><p>以下是翻修后的完整脚本（敏感项已替换为占位符）。依赖仅 <code>xtrabackup</code>、<code>openssl</code>、<code>curl</code>：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/bin/bash</span></span><br><span class="line"><span class="comment"># ===========================================</span></span><br><span class="line"><span class="comment"># MySQL XtraBackup 自动备份脚本（最终版）</span></span><br><span class="line"><span class="comment"># 功能：</span></span><br><span class="line"><span class="comment">#   - 支持指定数据库备份</span></span><br><span class="line"><span class="comment">#   - 支持压缩备份</span></span><br><span class="line"><span class="comment">#   - 支持增量备份（一天内多次）</span></span><br><span class="line"><span class="comment">#   - 自定义全量备份间隔</span></span><br><span class="line"><span class="comment">#   - 可指定 MySQL 主机和端口</span></span><br><span class="line"><span class="comment"># 2026-09-02 修复：</span></span><br><span class="line"><span class="comment">#   - 增量基准有效性校验：缺 xtrabackup_checkpoints 的坏目录自动跳过，</span></span><br><span class="line"><span class="comment">#     不再卡死整条备份链（此前 base 半成品会导致之后每天增量全部失败）</span></span><br><span class="line"><span class="comment">#   - 备份失败自动清理半成品目录：避免坏目录被下次增量误选为基准，同时释放磁盘</span></span><br><span class="line"><span class="comment">#   - 链式清理：链根全量过期被删后，对应的孤儿增量一并清理</span></span><br><span class="line"><span class="comment">#   - 遇 PXB「Retry the backup operation」(备份窗口内有免 redo 的在线 DDL 未刷盘)</span></span><br><span class="line"><span class="comment">#     自动等待并重试，避开 DDL 窗口</span></span><br><span class="line"><span class="comment">#   - 备份失败也执行过期清理（此前失败即 exit，清理段永远不执行，</span></span><br><span class="line"><span class="comment">#     导致历史备份堆积不删）；失败时退出码非零，便于外部监控告警</span></span><br><span class="line"><span class="comment"># 2026-09-03 新增：</span></span><br><span class="line"><span class="comment">#   - 备份结果钉钉机器人推送（成功/失败都推，加签安全模式；</span></span><br><span class="line"><span class="comment">#     配置见 DING_WEBHOOK / DING_SECRET，DING_WEBHOOK 留空即关闭）</span></span><br><span class="line"><span class="comment">#   - 本机防呆：BACKUP_HOST 只允许本机地址（127.0.0.1/localhost/本机任意网卡 IP），</span></span><br><span class="line"><span class="comment">#     指向其他机器直接拒绝执行并推送告警——xtrabackup 复制的是本机 datadir 的文件，</span></span><br><span class="line"><span class="comment">#     host 仅是协调端，连远程 = “本地文件+远端协调”的错配备份</span></span><br><span class="line"><span class="comment"># ===========================================</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 提升当前脚本的最大打开文件数，避免 xtrabackup 报 too many open files</span></span><br><span class="line"><span class="built_in">ulimit</span> -n 65536</span><br><span class="line"></span><br><span class="line"><span class="comment"># ---------------- 配置区 -------------------</span></span><br><span class="line">BACKUP_USER=<span class="string">"backup_user"</span>         <span class="comment"># 备份 MySQL 用户</span></span><br><span class="line">BACKUP_PASS=<span class="string">"你的密码"</span>             <span class="comment"># 本机实例的密码</span></span><br><span class="line">BACKUP_HOST=<span class="string">"127.0.0.1"</span>          <span class="comment"># 只连本机实例！xtrabackup 复制本机 datadir 的文件，</span></span><br><span class="line">                                 <span class="comment"># host 仅是协调端（锁/LSN/binlog 位点）；填成其他机器</span></span><br><span class="line">                                 <span class="comment"># 会做出错配备份（看似成功、不可恢复），脚本将拒绝执行</span></span><br><span class="line">BACKUP_PORT=3306               <span class="comment"># MySQL 端口</span></span><br><span class="line">BACKUP_SOCKET=<span class="string">""</span>               <span class="comment"># MySQL socket，如果使用 TCP 可留空</span></span><br><span class="line">BACKUP_DATADIR=<span class="string">"/var/lib/mysql"</span>   <span class="comment"># MySQL 数据目录</span></span><br><span class="line"></span><br><span class="line">BACKUP_BASE_DIR=<span class="string">"/data/backup"</span>   <span class="comment"># 备份根目录</span></span><br><span class="line">LOG_DIR=<span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>/logs"</span></span><br><span class="line">RETENTION_DAYS=90                <span class="comment"># 备份保留天数（默认 3 个月，可配置；按目录 mtime 判断）</span></span><br><span class="line">FULL_BACKUP_INTERVAL=7           <span class="comment"># 每隔多少天做一次全量备份</span></span><br><span class="line"></span><br><span class="line">DBS=<span class="string">""</span>                           <span class="comment"># 要备份的数据库，空表示全库</span></span><br><span class="line"></span><br><span class="line">PARALLEL=4   <span class="comment"># 并行备份线程数，可配置</span></span><br><span class="line">COMPRESS_THREADS=4   <span class="comment"># 压缩线程数</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 遇 PXB「Retry the backup operation」（备份窗口内有免 redo 的在线 DDL，</span></span><br><span class="line"><span class="comment"># 如 ALTER TABLE ADD INDEX / OPTIMIZE 的 bulk 阶段，脏页未刷盘）时自动重试</span></span><br><span class="line">RETRY_TIMES=2          <span class="comment"># 重试次数（不含首次）</span></span><br><span class="line">RETRY_WAIT_SEC=1800    <span class="comment"># 每次重试前等待秒数，给 DDL 结束/脏页刷盘留时间</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 钉钉机器人推送（备份成功/失败都会推送；DING_WEBHOOK 留空即关闭）</span></span><br><span class="line"><span class="comment"># 机器人安全设置须为「加签」，SEC 开头的密钥填 DING_SECRET</span></span><br><span class="line">DING_WEBHOOK=<span class="string">""</span></span><br><span class="line">DING_SECRET=<span class="string">""</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ---------------- 日期时间 ------------------</span></span><br><span class="line">START_TS=$(date +%s)             <span class="comment"># 任务开始时间戳（统计总耗时用）</span></span><br><span class="line">DATE=$(date +%F)                 <span class="comment"># 当前日期</span></span><br><span class="line">TIME=$(date +%H%M%S)             <span class="comment"># 当前时间，保证一天内多次备份唯一目录</span></span><br><span class="line"></span><br><span class="line">mkdir -p <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span> <span class="string">"<span class="variable">$LOG_DIR</span>"</span></span><br><span class="line">LOG_FILE=<span class="string">"<span class="variable">$LOG_DIR</span>/backup_<span class="variable">$&#123;DATE&#125;</span>_<span class="variable">$&#123;TIME&#125;</span>.log"</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="title">log</span></span>() &#123; <span class="built_in">echo</span> <span class="string">"[<span class="variable">$(date '+%F %T')</span>] $*"</span> | tee -a <span class="string">"<span class="variable">$LOG_FILE</span>"</span>; &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 钉钉推送（加签模式）：推送失败只记日志，绝不影响备份流程和退出码</span></span><br><span class="line"><span class="function"><span class="title">send_dingtalk</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> msg=<span class="string">"<span class="variable">$1</span>"</span> url=<span class="string">"<span class="variable">$DING_WEBHOOK</span>"</span> ts sign resp</span><br><span class="line">    [ -z <span class="string">"<span class="variable">$DING_WEBHOOK</span>"</span> ] &amp;&amp; <span class="built_in">return</span> 0</span><br><span class="line">    <span class="keyword">if</span> [ -n <span class="string">"<span class="variable">$DING_SECRET</span>"</span> ]; <span class="keyword">then</span></span><br><span class="line">        <span class="comment"># 签名 = base64(hmac_sha256(secret, "timestamp\nsecret"))，再 URL 编码</span></span><br><span class="line">        ts=$(date +%s%3N)</span><br><span class="line">        sign=$(<span class="built_in">printf</span> <span class="string">'%s\n%s'</span> <span class="string">"<span class="variable">$ts</span>"</span> <span class="string">"<span class="variable">$DING_SECRET</span>"</span> \</span><br><span class="line">            | openssl dgst -sha256 -hmac <span class="string">"<span class="variable">$DING_SECRET</span>"</span> -binary \</span><br><span class="line">            | base64 | tr -d <span class="string">'\n'</span>)</span><br><span class="line">        url=<span class="string">"<span class="variable">$&#123;url&#125;</span>&amp;timestamp=<span class="variable">$&#123;ts&#125;</span>&amp;sign=<span class="variable">$(printf '%s' "$sign" | sed 's/+/%2B/g; s;/;%2F;g; s/=/%3D/g')</span>"</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line">    msg=$(<span class="built_in">printf</span> <span class="string">'%s'</span> <span class="string">"<span class="variable">$msg</span>"</span> | tr -d <span class="string">'\r\n'</span>)   <span class="comment"># 文本消息压成单行，保证 JSON 合法</span></span><br><span class="line">    resp=$(curl -sS -m 10 <span class="string">"<span class="variable">$url</span>"</span> -H <span class="string">'Content-Type: application/json'</span> \</span><br><span class="line">        -d <span class="string">"&#123;\"msgtype\":\"text\",\"text\":&#123;\"content\":\"<span class="variable">$msg</span>\"&#125;&#125;"</span> 2&gt;&amp;1)</span><br><span class="line">    <span class="keyword">case</span> <span class="string">"<span class="variable">$resp</span>"</span> <span class="keyword">in</span></span><br><span class="line">        *<span class="string">'"errcode":0'</span>*) <span class="built_in">log</span> <span class="string">"钉钉推送成功"</span> ;;</span><br><span class="line">        *) <span class="built_in">log</span> <span class="string">"⚠️ 钉钉推送失败: <span class="variable">$resp</span>"</span> ;;</span><br><span class="line">    <span class="keyword">esac</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">"==================================================="</span> &gt;&gt; <span class="string">"<span class="variable">$LOG_FILE</span>"</span></span><br><span class="line"><span class="built_in">log</span> <span class="string">"开始备份，日志输出到 <span class="variable">$LOG_FILE</span>"</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ---------------- 本机防呆 ------------------</span></span><br><span class="line"><span class="comment"># 备份脚本永远只连本机实例：xtrabackup 是物理备份，复制的是本机 datadir 下的文件，</span></span><br><span class="line"><span class="comment"># host 只是协调端（版本检查/备份锁/LSN 与 binlog 位点）。host 指向其他机器会产生</span></span><br><span class="line"><span class="comment"># “本地文件 + 远端协调”的错配备份——可能看似成功、实则不可恢复，因此直接拒绝执行</span></span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">"<span class="variable">$BACKUP_HOST</span>"</span> ]; <span class="keyword">then</span></span><br><span class="line">    HOST_IS_LOCAL=0</span><br><span class="line">    <span class="keyword">for</span> _h <span class="keyword">in</span> 127.0.0.1 localhost ::1 $(hostname -I 2&gt;/dev/null); <span class="keyword">do</span></span><br><span class="line">        [ <span class="string">"<span class="variable">$BACKUP_HOST</span>"</span> = <span class="string">"<span class="variable">$_h</span>"</span> ] &amp;&amp; &#123; HOST_IS_LOCAL=1; <span class="built_in">break</span>; &#125;</span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line">    <span class="keyword">if</span> [ <span class="string">"<span class="variable">$HOST_IS_LOCAL</span>"</span> -ne 1 ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">log</span> <span class="string">"❌ BACKUP_HOST=<span class="variable">$BACKUP_HOST</span> 不是本机地址，拒绝执行（防跨环境连错库）"</span></span><br><span class="line">        <span class="built_in">log</span> <span class="string">"   xtrabackup 只复制本机 datadir 的文件，host 仅是协调端；请改为 127.0.0.1（或本机内网 IP）"</span></span><br><span class="line">        send_dingtalk <span class="string">"【MySQL备份】❌ 配置错误拒绝执行 | 服务器: <span class="variable">$(hostname)</span> | BACKUP_HOST=<span class="variable">$BACKUP_HOST</span> 不是本机地址，请改为 127.0.0.1"</span></span><br><span class="line">        <span class="built_in">exit</span> 1</span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ---------------- 备份目录 ------------------</span></span><br><span class="line">FULL_DIR=<span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>/base_<span class="variable">$&#123;DATE&#125;</span>_<span class="variable">$&#123;TIME&#125;</span>"</span>   <span class="comment"># 全量目录</span></span><br><span class="line">INC_DIR=<span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>/inc_<span class="variable">$&#123;DATE&#125;</span>_<span class="variable">$&#123;TIME&#125;</span>"</span>    <span class="comment"># 增量目录</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ---------------- 基准有效性校验 ------------------</span></span><br><span class="line"><span class="comment"># xtrabackup 只在备份完整收尾时才写 xtrabackup_checkpoints：</span></span><br><span class="line"><span class="comment"># 失败/中断的半成品目录没有该文件，不能作为增量基准</span></span><br><span class="line"><span class="function"><span class="title">is_valid_backup</span></span>() &#123;</span><br><span class="line">    [ -f <span class="string">"<span class="variable">$1</span>/xtrabackup_checkpoints"</span> ] &amp;&amp; grep -q <span class="string">"^backup_type"</span> <span class="string">"<span class="variable">$1</span>/xtrabackup_checkpoints"</span> 2&gt;/dev/null</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 找最新的【有效】全量目录（新→旧，第一个通过校验的）</span></span><br><span class="line"><span class="function"><span class="title">latest_valid_base</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> d</span><br><span class="line">    <span class="keyword">while</span> IFS= <span class="built_in">read</span> -r d; <span class="keyword">do</span></span><br><span class="line">        is_valid_backup <span class="string">"<span class="variable">$d</span>"</span> &amp;&amp; &#123; <span class="built_in">echo</span> <span class="string">"<span class="variable">$d</span>"</span>; <span class="built_in">return</span> 0; &#125;</span><br><span class="line">    <span class="keyword">done</span> &lt; &lt;(ls -1dt <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/base_* 2&gt;/dev/null)</span><br><span class="line">    <span class="built_in">return</span> 1</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 找比 $1 更早的最新【有效】全量目录（用于判断增量的链根是否还在）</span></span><br><span class="line"><span class="function"><span class="title">latest_valid_base_before</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> ref=<span class="string">"<span class="variable">$1</span>"</span> d</span><br><span class="line">    <span class="keyword">while</span> IFS= <span class="built_in">read</span> -r d; <span class="keyword">do</span></span><br><span class="line">        [ <span class="string">"<span class="variable">$d</span>"</span> -ot <span class="string">"<span class="variable">$ref</span>"</span> ] || <span class="built_in">continue</span></span><br><span class="line">        is_valid_backup <span class="string">"<span class="variable">$d</span>"</span> &amp;&amp; &#123; <span class="built_in">echo</span> <span class="string">"<span class="variable">$d</span>"</span>; <span class="built_in">return</span> 0; &#125;</span><br><span class="line">    <span class="keyword">done</span> &lt; &lt;(ls -1dt <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/base_* 2&gt;/dev/null)</span><br><span class="line">    <span class="built_in">return</span> 1</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># 选择增量基准：全部目录按新→旧找第一个可用的；</span></span><br><span class="line"><span class="comment"># 增量还要求其链根全量仍在且有效（否则恢复了也拼不出完整链条，跳过继续找更早的）</span></span><br><span class="line"><span class="function"><span class="title">select_inc_base</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> d root</span><br><span class="line">    <span class="keyword">while</span> IFS= <span class="built_in">read</span> -r d; <span class="keyword">do</span></span><br><span class="line">        is_valid_backup <span class="string">"<span class="variable">$d</span>"</span> || &#123; <span class="built_in">log</span> <span class="string">"⚠️ 跳过无效备份目录（缺 xtrabackup_checkpoints）: <span class="variable">$d</span>"</span>; <span class="built_in">continue</span>; &#125;</span><br><span class="line">        <span class="keyword">case</span> <span class="string">"<span class="variable">$d</span>"</span> <span class="keyword">in</span></span><br><span class="line">            */base_*)</span><br><span class="line">                <span class="built_in">echo</span> <span class="string">"<span class="variable">$d</span>"</span>; <span class="built_in">return</span> 0 ;;</span><br><span class="line">            */inc_*)</span><br><span class="line">                root=$(latest_valid_base_before <span class="string">"<span class="variable">$d</span>"</span>)</span><br><span class="line">                <span class="keyword">if</span> [ -n <span class="string">"<span class="variable">$root</span>"</span> ]; <span class="keyword">then</span></span><br><span class="line">                    <span class="built_in">echo</span> <span class="string">"<span class="variable">$d</span>"</span>; <span class="built_in">return</span> 0</span><br><span class="line">                <span class="keyword">fi</span></span><br><span class="line">                <span class="built_in">log</span> <span class="string">"⚠️ 跳过孤儿增量（链根全量已丢失或无效）: <span class="variable">$d</span>"</span></span><br><span class="line">                ;;</span><br><span class="line">        <span class="keyword">esac</span></span><br><span class="line">    <span class="keyword">done</span> &lt; &lt;(ls -1dt <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/base_* <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/inc_* 2&gt;/dev/null)</span><br><span class="line">    <span class="built_in">return</span> 1</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># ---------------- 计算是否需要新全量备份 ------------------</span></span><br><span class="line">NEED_FULL=0</span><br><span class="line">LATEST_BASE=$(latest_valid_base)</span><br><span class="line"><span class="keyword">if</span> [ -z <span class="string">"<span class="variable">$LATEST_BASE</span>"</span> ]; <span class="keyword">then</span></span><br><span class="line">    NEED_FULL=1</span><br><span class="line">    <span class="built_in">log</span> <span class="string">"⚠️ 没有可用的全量基准（base_* 缺失或均为半成品），本次执行全量备份"</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    LAST_DATE=$(basename <span class="string">"<span class="variable">$LATEST_BASE</span>"</span> | cut -d_ -f2)</span><br><span class="line">    DAYS_DIFF=$(( ( $(date -d <span class="string">"<span class="variable">$DATE</span>"</span> +%s) - $(date -d <span class="string">"<span class="variable">$LAST_DATE</span>"</span> +%s) ) / 86400 ))</span><br><span class="line">    <span class="built_in">log</span> <span class="string">"📌 最新有效全量: <span class="variable">$LATEST_BASE</span>（<span class="variable">$&#123;DAYS_DIFF&#125;</span> 天前）"</span></span><br><span class="line">    <span class="keyword">if</span> [ <span class="string">"<span class="variable">$DAYS_DIFF</span>"</span> -ge <span class="string">"<span class="variable">$FULL_BACKUP_INTERVAL</span>"</span> ]; <span class="keyword">then</span></span><br><span class="line">        NEED_FULL=1</span><br><span class="line">        <span class="built_in">log</span> <span class="string">"ℹ️ 距上次全量已 <span class="variable">$DAYS_DIFF</span> 天（≥ <span class="variable">$FULL_BACKUP_INTERVAL</span>），本次执行全量备份"</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ---------------- 备份函数 ------------------</span></span><br><span class="line"><span class="function"><span class="title">do_backup</span></span>() &#123;</span><br><span class="line">    <span class="built_in">local</span> TYPE=<span class="string">"<span class="variable">$1</span>"</span>       <span class="comment"># 全量或增量</span></span><br><span class="line">    <span class="built_in">local</span> TARGET_DIR=<span class="string">"<span class="variable">$2</span>"</span></span><br><span class="line">    <span class="built_in">local</span> BASE_DIR=<span class="string">"<span class="variable">$3</span>"</span></span><br><span class="line"></span><br><span class="line">    CMD=(xtrabackup --backup --user=<span class="string">"<span class="variable">$BACKUP_USER</span>"</span> --password=<span class="string">"<span class="variable">$BACKUP_PASS</span>"</span>)</span><br><span class="line">    [ -n <span class="string">"<span class="variable">$BACKUP_HOST</span>"</span> ] &amp;&amp; CMD+=(--host=<span class="string">"<span class="variable">$BACKUP_HOST</span>"</span>)</span><br><span class="line">    [ -n <span class="string">"<span class="variable">$BACKUP_PORT</span>"</span> ] &amp;&amp; CMD+=(--port=<span class="string">"<span class="variable">$BACKUP_PORT</span>"</span>)</span><br><span class="line">    [ -n <span class="string">"<span class="variable">$BACKUP_SOCKET</span>"</span> ] &amp;&amp; CMD+=(--socket=<span class="string">"<span class="variable">$BACKUP_SOCKET</span>"</span>)</span><br><span class="line">    [ -n <span class="string">"<span class="variable">$DBS</span>"</span> ] &amp;&amp; CMD+=(--databases=<span class="string">"<span class="variable">$DBS</span>"</span>)</span><br><span class="line">    [ -n <span class="string">"<span class="variable">$BACKUP_DATADIR</span>"</span> ] &amp;&amp; CMD+=(--datadir=<span class="variable">$BACKUP_DATADIR</span>)</span><br><span class="line">    CMD+=(--parallel=<span class="variable">$PARALLEL</span>)</span><br><span class="line">    CMD+=(--target-dir=<span class="string">"<span class="variable">$TARGET_DIR</span>"</span> --compress --compress-threads=<span class="variable">$COMPRESS_THREADS</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> [[ <span class="string">"<span class="variable">$TYPE</span>"</span> == <span class="string">"增量"</span> ]]; <span class="keyword">then</span></span><br><span class="line">        <span class="keyword">if</span> [ -z <span class="string">"<span class="variable">$BASE_DIR</span>"</span> ]; <span class="keyword">then</span></span><br><span class="line">            <span class="built_in">log</span> <span class="string">"错误：增量备份需要基备份目录"</span></span><br><span class="line">            EXIT_CODE=1</span><br><span class="line">            <span class="built_in">return</span> 1</span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line">        CMD+=(--incremental-basedir=<span class="string">"<span class="variable">$BASE_DIR</span>"</span>)</span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">local</span> ATTEMPT=1</span><br><span class="line">    <span class="keyword">while</span> <span class="literal">true</span>; <span class="keyword">do</span></span><br><span class="line">        <span class="built_in">log</span> <span class="string">"执行 <span class="variable">$TYPE</span> 备份: <span class="variable">$TARGET_DIR</span> (第 <span class="variable">$ATTEMPT</span> 次尝试)"</span></span><br><span class="line">        [ -n <span class="string">"<span class="variable">$BASE_DIR</span>"</span> ] &amp;&amp; <span class="built_in">log</span> <span class="string">"基于基准目录: <span class="variable">$BASE_DIR</span>"</span></span><br><span class="line">        <span class="string">"<span class="variable">$&#123;CMD[@]&#125;</span>"</span> &gt;&gt; <span class="string">"<span class="variable">$LOG_FILE</span>"</span> 2&gt;&amp;1</span><br><span class="line">        STATUS=$?</span><br><span class="line"></span><br><span class="line">        [ <span class="variable">$STATUS</span> -eq 0 ] &amp;&amp; <span class="built_in">break</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># PXB 遇在线 DDL 免 redo 未刷盘会主动放弃并建议重试：等待后重试</span></span><br><span class="line">        <span class="keyword">if</span> grep -q <span class="string">"Retry the backup operation"</span> <span class="string">"<span class="variable">$LOG_FILE</span>"</span> &amp;&amp; [ <span class="string">"<span class="variable">$ATTEMPT</span>"</span> -le <span class="string">"<span class="variable">$RETRY_TIMES</span>"</span> ]; <span class="keyword">then</span></span><br><span class="line">            <span class="built_in">log</span> <span class="string">"<span class="variable">$TYPE</span> 备份失败（在线 DDL 未刷盘），<span class="variable">$&#123;RETRY_WAIT_SEC&#125;</span>s 后重试"</span></span><br><span class="line">            <span class="keyword">case</span> <span class="string">"<span class="variable">$TARGET_DIR</span>"</span> <span class="keyword">in</span></span><br><span class="line">                <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/*) rm -rf <span class="string">"<span class="variable">$TARGET_DIR</span>"</span> ;;</span><br><span class="line">            <span class="keyword">esac</span></span><br><span class="line">            ATTEMPT=$((ATTEMPT + 1))</span><br><span class="line">            sleep <span class="string">"<span class="variable">$RETRY_WAIT_SEC</span>"</span></span><br><span class="line">            <span class="built_in">continue</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">        <span class="built_in">log</span> <span class="string">"<span class="variable">$TYPE</span> 备份失败 ❌ (exit=<span class="variable">$STATUS</span>) 请检查日志 <span class="variable">$LOG_FILE</span>"</span></span><br><span class="line">        <span class="comment"># 清理半成品目录：既释放磁盘，也避免坏目录被后续增量误选为基准</span></span><br><span class="line">        <span class="keyword">case</span> <span class="string">"<span class="variable">$TARGET_DIR</span>"</span> <span class="keyword">in</span></span><br><span class="line">            <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/*) rm -rf <span class="string">"<span class="variable">$TARGET_DIR</span>"</span>; <span class="built_in">log</span> <span class="string">"已清理半成品目录: <span class="variable">$TARGET_DIR</span>"</span> ;;</span><br><span class="line">        <span class="keyword">esac</span></span><br><span class="line">        EXIT_CODE=1</span><br><span class="line">        <span class="built_in">return</span> 1</span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">log</span> <span class="string">"<span class="variable">$TYPE</span> 备份成功 ✅"</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"># ---------------- 执行备份 ------------------</span></span><br><span class="line">EXIT_CODE=0    <span class="comment"># 失败不立即退出：清理段必须照常执行，最后统一以退出码汇报结果</span></span><br><span class="line">BACKUP_TYPE_DONE=<span class="string">"全量"</span>; BACKUP_TARGET_DONE=<span class="string">"<span class="variable">$FULL_DIR</span>"</span>   <span class="comment"># 供结果推送引用</span></span><br><span class="line"><span class="keyword">if</span> [ <span class="variable">$NEED_FULL</span> -eq 1 ]; <span class="keyword">then</span></span><br><span class="line">    do_backup <span class="string">"全量"</span> <span class="string">"<span class="variable">$FULL_DIR</span>"</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    BASE_DIR=$(select_inc_base)</span><br><span class="line">    <span class="keyword">if</span> [ -z <span class="string">"<span class="variable">$BASE_DIR</span>"</span> ]; <span class="keyword">then</span></span><br><span class="line">        <span class="built_in">log</span> <span class="string">"❌ 未找到任何有效基准，自动转为全量备份"</span></span><br><span class="line">        do_backup <span class="string">"全量"</span> <span class="string">"<span class="variable">$FULL_DIR</span>"</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        BACKUP_TYPE_DONE=<span class="string">"增量"</span>; BACKUP_TARGET_DONE=<span class="string">"<span class="variable">$INC_DIR</span>"</span></span><br><span class="line">        do_backup <span class="string">"增量"</span> <span class="string">"<span class="variable">$INC_DIR</span>"</span> <span class="string">"<span class="variable">$BASE_DIR</span>"</span></span><br><span class="line">    <span class="keyword">fi</span></span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ---------------- 清理过期备份 ------------------</span></span><br><span class="line"><span class="built_in">log</span> <span class="string">"清理超过 <span class="variable">$RETENTION_DAYS</span> 天的备份..."</span></span><br><span class="line"><span class="comment"># 注意：不用 find -regex（emacs/posix 方言差异导致旧写法实际匹配不到任何目录），</span></span><br><span class="line"><span class="comment"># 直接用 glob + maxdepth 0 只作用于 base_*/inc_* 本身</span></span><br><span class="line">find <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/base_* <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/inc_* -maxdepth 0 -<span class="built_in">type</span> d \</span><br><span class="line">    -mtime +<span class="variable">$RETENTION_DAYS</span> -<span class="built_in">print</span> -<span class="built_in">exec</span> rm -rf &#123;&#125; \; &gt;&gt; <span class="string">"<span class="variable">$LOG_FILE</span>"</span> 2&gt;&amp;1</span><br><span class="line"></span><br><span class="line"><span class="comment"># 链式保护：比现存最老全量更早的增量，其链根已被清理、无法恢复，一并删除</span></span><br><span class="line">OLDEST_BASE=$(ls -1dt <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/base_* 2&gt;/dev/null | tail -1)</span><br><span class="line"><span class="keyword">if</span> [ -n <span class="string">"<span class="variable">$OLDEST_BASE</span>"</span> ]; <span class="keyword">then</span></span><br><span class="line">    <span class="keyword">for</span> INC <span class="keyword">in</span> <span class="string">"<span class="variable">$BACKUP_BASE_DIR</span>"</span>/inc_*; <span class="keyword">do</span></span><br><span class="line">        [ -d <span class="string">"<span class="variable">$INC</span>"</span> ] || <span class="built_in">continue</span></span><br><span class="line">        <span class="keyword">if</span> [ <span class="string">"<span class="variable">$INC</span>"</span> -ot <span class="string">"<span class="variable">$OLDEST_BASE</span>"</span> ]; <span class="keyword">then</span></span><br><span class="line">            <span class="built_in">log</span> <span class="string">"清理孤儿增量（链根全量已被清理）: <span class="variable">$INC</span>"</span></span><br><span class="line">            rm -rf <span class="string">"<span class="variable">$INC</span>"</span></span><br><span class="line">        <span class="keyword">fi</span></span><br><span class="line">    <span class="keyword">done</span></span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"></span><br><span class="line">ELAPSED=$(( $(date +%s) - START_TS ))</span><br><span class="line"><span class="keyword">if</span> [ <span class="string">"<span class="variable">$EXIT_CODE</span>"</span> -eq 0 ]; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">log</span> <span class="string">"备份任务完成 🎉 (总耗时 <span class="variable">$&#123;ELAPSED&#125;</span>s)"</span></span><br><span class="line">    send_dingtalk <span class="string">"【MySQL备份】✅ 成功 | <span class="variable">$&#123;BACKUP_TYPE_DONE&#125;</span> | 服务器: <span class="variable">$(hostname)</span> | DB: <span class="variable">$&#123;BACKUP_HOST&#125;</span>:<span class="variable">$&#123;BACKUP_PORT&#125;</span> | 目录: <span class="variable">$&#123;BACKUP_TARGET_DONE&#125;</span> | 耗时: <span class="variable">$&#123;ELAPSED&#125;</span>s | 日志: <span class="variable">$&#123;LOG_FILE&#125;</span>"</span></span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    <span class="built_in">log</span> <span class="string">"备份任务结束，但本次备份失败 ❌（过期清理已照常执行）"</span></span><br><span class="line">    send_dingtalk <span class="string">"【MySQL备份】❌ 失败 | <span class="variable">$&#123;BACKUP_TYPE_DONE:-备份&#125;</span> | 服务器: <span class="variable">$(hostname)</span> | DB: <span class="variable">$&#123;BACKUP_HOST&#125;</span>:<span class="variable">$&#123;BACKUP_PORT&#125;</span> | 详见日志: <span class="variable">$&#123;LOG_FILE&#125;</span>（过期清理已照常执行）"</span></span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"><span class="built_in">exit</span> <span class="string">"<span class="variable">$EXIT_CODE</span>"</span></span><br></pre></td></tr></table></figure></div>
+
+<h2 id="八、部署清单与验证"><a href="#八、部署清单与验证" class="headerlink" title="八、部署清单与验证"></a>八、部署清单与验证</h2><p>新机器部署&#x2F;升级旧脚本时按这个顺序过一遍：</p>
+<ol>
+<li><strong>传脚本</strong>：Windows 上编辑过的脚本先 <code>dos2unix</code>，再 <code>bash -n</code> 过语法，<code>chmod 700</code>（内含密码与钉钉密钥，不给其他用户读权限）；</li>
+<li><strong>回环连通预检</strong>：<code>mysql -h127.0.0.1 -P3306 -u&lt;user&gt; -p -e &quot;select 1&quot;</code> 确认本机实例监听回环、账号授权了本机来源；不行就退而填本机内网 IP（防呆同样放行）；</li>
+<li><strong>手动跑一次全量</strong>：低峰期执行脚本，确认日志出现”备份成功”、<code>xtrabackup_checkpoints</code> 生成、钉钉收到成功推送——三个信号齐了才交给 cron；</li>
+<li><strong>错峰</strong>：cron 时间与已知的维护任务（DDL、批处理）拉开距离，脚本内的自动重试是兜底而不是常规路径；</li>
+<li><strong>异机保存</strong>：本机磁盘只是第一道防线，定期把 <code>/data/backup</code> 下的目录 rsync 到其他机器，防范服务器本身故障；</li>
+<li><strong>恢复演练</strong>：每季度在测试环境做一次完整链式恢复。备份的价值只在恢复的那一刻兑现，没有恢复验证过的备份等于没有备份。</li>
+</ol>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li>**重新定义”备份成功”**：不是 cron 跑了、日志写了，而是——目录带 <code>xtrabackup_checkpoints</code>、失败能推送到人、并且真的演练恢复过；</li>
+<li><strong>静默失败是最危险的失败</strong>：这次事故的根因（DDL 撞窗）其实无害，致命的是 33 天无人知晓——结果通知和退出码是备份脚本的一等公民，不是可选项；</li>
+<li><strong>物理备份工具先分清数据面与控制面</strong>：<code>--host</code> 只是协调端，数据永远来自本机 <code>datadir</code>。填错 host 不会报错，只会产出一份看似成功的废备份——所以把”只连本机”写进脚本做硬校验，防呆优于文档；</li>
+<li>**链式备份的维护成本在”链”不在”份”**：基准有效性、链根完整性、孤儿增量清理，任何一环失守，单份备份再成功也拼不出恢复点；</li>
+<li><strong>正则方言是隐形雷区</strong>：<code>find -regex</code> 默认 emacs 方言下裸 <code>+</code> 是字面量，一条”看起来对”的清理规则可以安静地失效几年。能用 glob 解决的事就别用正则。</li>
+</ul>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../CentOS-7-%E7%A6%BB%E7%BA%BF%E7%8E%AF%E5%A2%83%E4%BB%8E%E9%9B%B6%E9%83%A8%E7%BD%B2-MySQL-%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%BD%93%E7%B3%BB%EF%BC%9AXtraBackup-2-4-%E4%B8%8E%E8%87%AA%E5%8A%A8%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            CentOS 7 离线环境从零部署 MySQL 物理备份体系：XtraBackup 2.4 与自动备份脚本安装教程
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../../02/%E7%BD%91%E5%85%B3%E6%97%A5%E5%BF%97%E9%9B%B6%E6%8A%A5%E9%94%99%E3%80%81%E9%A6%96%E9%A1%B5%E6%8E%A5%E5%8F%A3%E5%85%A8%E7%BA%BF404%EF%BC%9A%E4%B8%80%E6%AC%A1JRebel%E5%BC%95%E5%8F%91%E7%9A%84Zuul%E8%B7%AF%E7%94%B1%E4%B9%B1%E5%BA%8F%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">网关日志零报错、首页接口全线404：一次JRebel引发的Zuul路由乱序排查实录</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/">插件开发</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ/" rel="tag">IntelliJ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PSI/" rel="tag">PSI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" rel="tag">插件开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" rel="tag">线程模型</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" rel="tag">运维部署</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/CI-CD/" style="font-size: 10px;">CI/CD</a> <a href="../../../../tags/CentOS/" style="font-size: 11.25px;">CentOS</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/EasyUI/" style="font-size: 11.25px;">EasyUI</a> <a href="../../../../tags/GC/" style="font-size: 11.25px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.25px;">Git Bash</a> <a href="../../../../tags/GitHub-Actions/" style="font-size: 10px;">GitHub Actions</a> <a href="../../../../tags/Github/" style="font-size: 12.5px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 11.25px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 16.25px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/HttpClient/" style="font-size: 11.25px;">HttpClient</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/IntelliJ/" style="font-size: 12.5px;">IntelliJ</a> <a href="../../../../tags/JVM/" style="font-size: 18.75px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 17.5px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 13.75px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 12.5px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.25px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 12.5px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 11.25px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 12.5px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 11.25px;">Node.js</a> <a href="../../../../tags/PSI/" style="font-size: 10px;">PSI</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 10px;">RabbitMQ</a> <a href="../../../../tags/SQL/" style="font-size: 15px;">SQL</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.25px;">Shell</a> <a href="../../../../tags/Spring-Cloud/" style="font-size: 10px;">Spring Cloud</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 12.5px;">WebSocket</a> <a href="../../../../tags/XtraBackup/" style="font-size: 11.25px;">XtraBackup</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/Zuul/" style="font-size: 10px;">Zuul</a> <a href="../../../../tags/hexo/" style="font-size: 11.25px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.25px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.25px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" style="font-size: 10px;">体验优化</a> <a href="../../../../tags/%E5%89%8D%E7%AB%AF/" style="font-size: 11.25px;">前端</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" style="font-size: 11.25px;">实战教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E5%8F%91/" style="font-size: 10px;">并发</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 10px;">微服务</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 15px;">排查实战</a> <a href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" style="font-size: 12.5px;">插件开发</a> <a href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" style="font-size: 11.25px;">故障复盘</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" style="font-size: 11.25px;">数据备份</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12.5px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 10px;">架构</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.25px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12.5px;">竹云</a> <a href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" style="font-size: 10px;">线程模型</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12.5px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" style="font-size: 13.75px;">踩坑实录</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" style="font-size: 10px;">运维部署</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../%E4%B8%AA%E4%BA%BA%E9%A1%B9%E7%9B%AE-CI-CD-%E8%90%BD%E5%9C%B0%EF%BC%9AGitHub-Actions-%E8%87%AA%E5%8A%A8%E6%9E%84%E5%BB%BA%E3%80%81tag-%E5%8F%91-Release-%E4%B8%8E%E7%89%88%E6%9C%AC%E5%8F%B7%E5%8D%95%E4%B8%80%E6%9D%A5%E6%BA%90%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/">个人项目 CI/CD 落地：GitHub Actions 自动构建、tag 发 Release 与版本号单一来源实战教程</a>
+          </li>
+        
+          <li>
+            <a href="../CentOS-7-%E7%A6%BB%E7%BA%BF%E7%8E%AF%E5%A2%83%E4%BB%8E%E9%9B%B6%E9%83%A8%E7%BD%B2-MySQL-%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%BD%93%E7%B3%BB%EF%BC%9AXtraBackup-2-4-%E4%B8%8E%E8%87%AA%E5%8A%A8%E5%A4%87%E4%BB%BD%E8%84%9A%E6%9C%AC%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/">CentOS 7 离线环境从零部署 MySQL 物理备份体系：XtraBackup 2.4 与自动备份脚本安装教程</a>
+          </li>
+        
+          <li>
+            <a href="">备份天天在跑、恢复点却停在33天前：XtraBackup增量备份脚本全面翻修实录</a>
+          </li>
+        
+          <li>
+            <a href="../../02/%E7%BD%91%E5%85%B3%E6%97%A5%E5%BF%97%E9%9B%B6%E6%8A%A5%E9%94%99%E3%80%81%E9%A6%96%E9%A1%B5%E6%8E%A5%E5%8F%A3%E5%85%A8%E7%BA%BF404%EF%BC%9A%E4%B8%80%E6%AC%A1JRebel%E5%BC%95%E5%8F%91%E7%9A%84Zuul%E8%B7%AF%E7%94%B1%E4%B9%B1%E5%BA%8F%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/">网关日志零报错、首页接口全线404：一次JRebel引发的Zuul路由乱序排查实录</a>
+          </li>
+        
+          <li>
+            <a href="../../01/APS%E5%9B%9E%E5%86%99%E5%81%9C%E6%91%86%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E4%B8%8E%E4%BF%AE%E5%A4%8D%E8%AE%B0%E5%BD%95/">APS回写停摆故障排查与修复记录</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>
