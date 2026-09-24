@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>接口限流落地复盘：算法是最简单的部分，难的是宿主环境 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="最近在一套服务端渲染的制造执行系统（Spring Boot 2.1 + Spring Cloud 老版本微服务，JSP + EasyUI 前端，十几个业务服务）里做了一个统一接口限流组件。起因不是优化诉求，是一次生产事故：疑似客户侧用脚本对系统做批量数据查询，请求洪峰把业务服务直接打死了。复盘时发现这类风险早有伏笔——一条库存流水查询接口带全表聚合，页脚汇总要六秒多，人手连点就能把它拖垮；另一个条">
+<meta property="og:type" content="article">
+<meta property="og:title" content="接口限流落地复盘：算法是最简单的部分，难的是宿主环境">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/09/22/%E6%8E%A5%E5%8F%A3%E9%99%90%E6%B5%81%E8%90%BD%E5%9C%B0%E5%A4%8D%E7%9B%98%EF%BC%9A%E7%AE%97%E6%B3%95%E6%98%AF%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84%E9%83%A8%E5%88%86%EF%BC%8C%E9%9A%BE%E7%9A%84%E6%98%AF%E5%AE%BF%E4%B8%BB%E7%8E%AF%E5%A2%83/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="最近在一套服务端渲染的制造执行系统（Spring Boot 2.1 + Spring Cloud 老版本微服务，JSP + EasyUI 前端，十几个业务服务）里做了一个统一接口限流组件。起因不是优化诉求，是一次生产事故：疑似客户侧用脚本对系统做批量数据查询，请求洪峰把业务服务直接打死了。复盘时发现这类风险早有伏笔——一条库存流水查询接口带全表聚合，页脚汇总要六秒多，人手连点就能把它拖垮；另一个条">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-22T09:05:00.000Z">
+<meta property="article:modified_time" content="2026-09-24T09:23:46.989Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="踩坑实录">
+<meta property="article:tag" content="Spring">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="架构">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-接口限流落地复盘：算法是最简单的部分，难的是宿主环境" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      接口限流落地复盘：算法是最简单的部分，难的是宿主环境
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-09-22T09:05:00.000Z" itemprop="datePublished">2026-09-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Redis/" rel="tag">Redis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Spring/" rel="tag">Spring</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <p>最近在一套服务端渲染的制造执行系统（Spring Boot 2.1 + Spring Cloud 老版本微服务，JSP + EasyUI 前端，十几个业务服务）里做了一个统一接口限流组件。起因不是优化诉求，是一次生产事故：疑似客户侧用脚本对系统做批量数据查询，请求洪峰把业务服务直接打死了。复盘时发现这类风险早有伏笔——一条库存流水查询接口带全表聚合，页脚汇总要六秒多，人手连点就能把它拖垮；另一个条码查询接口早被脚本连点过，业务同事在 Service 里手写了一段”十五秒内只许查一次”的私有判断，散落在业务代码里。事故只是把这些既有脆弱点一次性引爆。</p>
+<p>做完整个工程回头盘点，一个感受越来越清晰：<strong>Redis 固定窗口计数是全部工作里最简单的部分，两个小时就写完了；真正花时间、真正值得复盘的，是算法之外的一切</strong>——拦截器在哪类应用里会静默失效、限流键从哪取身份、被拦的响应长什么样、Redis 挂了限流器怎么办、运维怎么不重启调参、前端怎么消化”被限流”这个新的失败模式。</p>
+<p>市面上九成的限流文章在对比算法：固定窗口的边界突刺、滑动窗口的内存开销、令牌桶的突发容忍、再补一段 Lua 脚本保证原子性。这些内容对，但它们回答的是”怎么实现一个限流器”，而不是”怎么在一个跑了十年、前后端契约刻在化石里的系统里落地限流”。这篇文章讲后者。</p>
+<a id="more"></a>
+
+<h2 id="一、先定威胁模型，再谈算法：为什么固定窗口就够"><a href="#一、先定威胁模型，再谈算法：为什么固定窗口就够" class="headerlink" title="一、先定威胁模型，再谈算法：为什么固定窗口就够"></a>一、先定威胁模型，再谈算法：为什么固定窗口就够</h2><p>教科书对固定窗口的批评是标准的：窗口交界处可能放进 2N 个请求——第一窗口末尾 N 个、第二窗口开头 N 个，限了等于没限。于是结论总是”生产环境应该用滑动窗口或令牌桶”。</p>
+<p>这个推理跳过了一步：<strong>你的敌人是谁？</strong></p>
+<p>我们的威胁清单里没有 DDoS——那是网关和边缘层的事，应用层限流防不了也不该防。应用层限流真正要防的是：手快连点的用户、没有节流的前端轮询、把接口当数据源批量拉数的脚本（这次事故的元凶，一个持有合法账号的”好用户”）、以及”查询本身很贵，谁都点不起”的接口。对这类威胁，固定窗口的边界突刺完全无害：3 秒窗口最坏情况某用户 3 秒内进了 6 次而不是 3 次，业务无损。而为消除这个理论上无害的突刺，滑动窗口要付出每次请求多个计数器往返、令牌桶要付出 Lua 脚本和时钟语义——在这个威胁模型下，这些复杂度是负资产。</p>
+<p>同理，限流键的维度也不是理论题。按 IP 限？内网系统所有请求都经网关转发，后端看到的 IP 要么是网关的、要么全公司一个出口——按 IP 限等于全公司共享一个配额，第一个人点三下，所有人都被拦。所以键维度只能是<strong>业务用户标识</strong>，粒度问题到此为止，不需要更多论证。</p>
+<p>算法选型真正需要的是威胁模型四问，而不是算法对比表：</p>
+<ol>
+<li>防谁——人、脚本、还是自己系统的缺陷？</li>
+<li>按什么键限——IP、用户、租户、还是接口？</li>
+<li>Redis 挂了怎么办——fail-open 还是 fail-closed？</li>
+<li>被拦的响应长什么样——前端能不能消化？</li>
+</ol>
+<p>顺便说清楚什么<strong>不该</strong>用这个限流器：导出接口（点击一次跑一个长任务，限点击频率不解决任何问题，配套手段是分页大小上限和异步导出）；服务间 Feign 内部调用（无会话身份，且内部调用的”频率”由上游业务节奏决定，限它只会断自己）。</p>
+<h2 id="二、组件形态：注解驱动-约定优于配置"><a href="#二、组件形态：注解驱动-约定优于配置" class="headerlink" title="二、组件形态：注解驱动 + 约定优于配置"></a>二、组件形态：注解驱动 + 约定优于配置</h2><p>组件放在公共 utils 模块，业务侧的接入目标是一行注解：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// module/rule 缺省自动取值，只需声明窗口与文案</span></span><br><span class="line"><span class="meta">@RateLimit</span>(interval = <span class="number">3</span>,</span><br><span class="line">           messageKey = <span class="string">"com.xxx.inventoryoplog.ratelimit.frequent"</span>)</span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">queryInventoryOpLogList</span><span class="params">(...)</span> </span>&#123; ... &#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>两个标识都不用手填：</p>
+<ul>
+<li><strong>module</strong> 取 <code>spring.application.name</code> 去掉统一前缀（<code>app-wms</code> → <code>wms</code>）；</li>
+<li><strong>rule</strong> 取 <code>Controller 简名.方法名</code>（<code>WmsInventoryController.queryInventoryOpLogList</code>），应用内天然唯一，零命名成本。</li>
+</ul>
+<p>这版设计是评审改出来的。第一版注解里要显式写 <code>module = &quot;wms&quot;, rule = &quot;oplog&quot;</code>，被挑战”这两个值为什么还要人填”——确实，appName 配置里有，方法签名上有，手填引入的只是抄写错误这一整类 bug（拼错、复制粘贴忘改、两个接口撞名）。改成自动解析后，配置键可以从代码推导（运维看到日志里的规则名，反手就能 HGETALL 到对应配置），显式赋值的口子仍然保留给特殊口径。</p>
+<p>整体链路：</p>
+<pre class="mermaid">sequenceDiagram
+    autonumber
+    participant C as "浏览器"
+    participant I as "限流拦截器"
+    participant R as "Redis"
+    participant B as "业务Controller"
+    C->>I: 请求
+    I->>I: 无注解方法快速放行
+    I->>I: 解析module与rule 显式值优先
+    I->>R: 读配置hash取开关与窗口
+    R-->>I: 开关开 窗口3秒
+    I->>R: 计数key自增
+    alt count为1或key无TTL
+        I->>R: 补设TTL为窗口秒数
+        I->>B: 放行
+        B-->>C: 正常业务响应
+    else count大于1且在窗口内
+        I->>I: 取i18n文案
+        I-->>C: HTTP 200加error与successful为0
+        I->>I: 写拦截记录表 try捕获Throwable
+    end</pre>
+
+<p>Redis 侧就两个结构：计数用 <code>ratelimit:&lt;module&gt;:&lt;rule&gt;:&lt;user&gt;</code> 的 hash（字段 <code>count</code>，窗口首请求补 TTL）；配置用另一个 hash，字段 <code> &lt;module&gt;.&lt;rule&gt;.check</code> &#x2F; <code>.interval</code>，外加一个全局落库开关 <code>log.check</code>。</p>
+<h2 id="三、与宿主环境的五场战争"><a href="#三、与宿主环境的五场战争" class="headerlink" title="三、与宿主环境的五场战争"></a>三、与宿主环境的五场战争</h2><p>这部分是全文的主体，也是其他限流文章不讲的部分。</p>
+<h3 id="3-1-拦截器自动挂载的静默失效"><a href="#3-1-拦截器自动挂载的静默失效" class="headerlink" title="3.1 拦截器自动挂载的静默失效"></a>3.1 拦截器自动挂载的静默失效</h3><p>标准姿势是写一个 <code>WebMvcConfigurer</code> 把拦截器注册到 <code>/**</code>，组件在公共包里，各业务服务靠组件扫描自动生效——标准应用确实零配置就挂上了。</p>
+<p>但有一类应用继承了 <code>WebMvcConfigurationSupport</code>（为了接管 MVC 配置的老应用很常见），此时 Spring Boot 的 MVC 自动配置整体退位，<strong>你的 WebMvcConfigurer 根本不会被调用</strong>。没有报错，没有日志，拦截器就是不注册——这类应用拿到的限流保护是零，而所有人都以为组件已经全覆盖了。</p>
+<p>对策只有两条：文档里写死这类应用的显式挂载方式（在该应用自己的配置类里 <code>addInterceptors</code>），并把”哪些应用继承了 WebMvcConfigurationSupport”列为接入核对清单。教训泛化一下：<strong>任何依赖自动配置的横切组件，都必须列出”自动配置不生效”的应用类目清单，否则覆盖面是一个幻觉</strong>。</p>
+<h3 id="3-2-身份从哪来"><a href="#3-2-身份从哪来" class="headerlink" title="3.2 身份从哪来"></a>3.2 身份从哪来</h3><p>限流键要用用户标识，但用户标识藏在哪？这套系统的现实是：框架每请求把 usercode 注入参数Map，登录态在 session 里，而网关转发的内部调用两者皆无。于是解析顺序是：<strong>请求参数 → session → 都取不到则不限，直接放行</strong>。</p>
+<p>“取不到就放行”听起来纵容，其实是对身份体系现实的妥协：按 IP 限会误伤（见第一节）；把无身份请求拦掉会斩断内部调用链。限流器的身份解析必须顺着宿主系统的身份体系走，而不是自带一套理想化的。</p>
+<h3 id="3-3-响应契约：HTTP-429-是正确的，也是错位的"><a href="#3-3-响应契约：HTTP-429-是正确的，也是错位的" class="headerlink" title="3.3 响应契约：HTTP 429 是正确的，也是错位的"></a>3.3 响应契约：HTTP 429 是正确的，也是错位的</h3><p>REST 语义下被限流应该返回 <code>429 Too Many Requests</code>。但这套系统的前端是 EasyUI datagrid，它理解的失败契约是 **HTTP 200 + <code>{&quot;error&quot;: &quot;文案&quot;, &quot;successful&quot;: 0}</code>**——全系统十几年的前端都按这个契约写。返回 429 意味着每一个接入限流的页面都要加一层对新型失败响应的处理。</p>
+<p>结论：限流器是客人，别让全系统的前端为你改契约。被拦响应就按宿主契约返回 200 + error，文案走 i18n（这套系统四语言），messageKey 由注解声明、各模块资源包自持，i18n 取值异常兜底返回 key 原串——不能让文案系统故障把拦截响应变成 500。</p>
+<h3 id="3-4-fail-open，但必须吵闹"><a href="#3-4-fail-open，但必须吵闹" class="headerlink" title="3.4 fail-open，但必须吵闹"></a>3.4 fail-open，但必须吵闹</h3><p>Redis 故障时限流器怎么办？fail-closed（拒绝所有请求）把一个防护组件升级成了单点故障源；我们的选择是 fail-open——开关读不到按开启、计数失败按放行。理由很朴素：<strong>限流是保护措施，不是安全控制；保护措施失效不应该变成业务中断</strong>。</p>
+<p>但 fail-open 必须配 error 级日志。静默的 fail-open 是暗雷：某天 Redis 悄悄挂了两小时，限流保护实际为零，而没有人知道。降级可以，降级必须留下证据。</p>
+<h3 id="3-5-遥测不能成为新的故障源"><a href="#3-5-遥测不能成为新的故障源" class="headerlink" title="3.5 遥测不能成为新的故障源"></a>3.5 遥测不能成为新的故障源</h3><p>每次拦截写一条记录表（谁、哪个规则、哪个接口、窗口多大），这张表后来长出了一个统计报表。但落库代码在拦截路径上，于是两个防御：</p>
+<ul>
+<li>DAO 用 <code>@Autowired(required = false)</code> 注入——组件在公共 jar 里，宿主应用里有的没开 MyBatis 扫描，强注入会让这类应用启动失败；注入不到就降级为只拦不记；</li>
+<li>落库调用包 <code>try-catch (Throwable)</code>——记录写失败绝不影响拦截响应本身。</li>
+</ul>
+<p>遥测是防护的一部分，但遥测故障绝不能变成新的故障源。</p>
+<h2 id="四、运维性：限流器的下半场在生产环境"><a href="#四、运维性：限流器的下半场在生产环境" class="headerlink" title="四、运维性：限流器的下半场在生产环境"></a>四、运维性：限流器的下半场在生产环境</h2><p>写完组件只是上半场。限流器的生命周期大半在生产环境，三个设计决定了它好不好运维：</p>
+<p><strong>配置自初始化</strong>。配置 hash 第一次被读时，把缺省值写回去。效果是运维 <code>HGETALL</code> 一下就能看到全部可调项——配置是可发现的，不需要翻代码或文档才知道有哪些开关。配置可发现性这个属性平时没人提，事故时价值连城。</p>
+<p><strong>不重启调参</strong>。某接口被脚本盯上的半夜，运维 <code>HSET</code> 把 interval 从 3 改到 30，下一个请求即生效。如果调参要发版，那这个参数等于不可调。</p>
+<p><strong>开关缺省开、仅显式关</strong>。规则开关的语义设计成”缺省开启，仅显式 <code>false</code>&#x2F;<code>0</code> 关闭”。这是反向的 allow-list：新接入的注解立即受保护，不需要先去配置中心登记；而”谁关了哪个规则”这件事在 Redis 里留有痕迹，可审计。反过来设计（缺省关、要显式开）会让一半接入点在”等配置”的过渡期裸奔。</p>
+<p>顺带一个量级判断：记录只在被拦时落库，正常放行一条不写。内部管理系统的防连点场景里，被拦本身就是异常路径（人手滑多点两下 &#x3D; 一两条记录），量级天然小，同步 insert 足够；真被脚本打爆时还有 <code>log.check</code> 全局开关可以只停落库不停限流。不需要队列削峰。</p>
+<h2 id="五、前端配套：限流改变的是系统的失败模式"><a href="#五、前端配套：限流改变的是系统的失败模式" class="headerlink" title="五、前端配套：限流改变的是系统的失败模式"></a>五、前端配套：限流改变的是系统的失败模式</h2><p>接入限流后，”查询太频繁”从一种服务端隐忍变成了前端会真实收到的错误响应。这意味着前端必须把它当成一种<strong>正常失败模式</strong>处理，三件事配套做：</p>
+<ol>
+<li><strong>查询防抖对齐后端窗口</strong>：后端 3 秒窗口，前端查询按钮防抖 3 秒，正常操作下用户根本撞不到限流——限流兜的是脚本和异常路径，不该惩罚正常用户；</li>
+<li><strong>翻页被拦的兜底</strong>：datagrid 翻页请求被限流时，loadFilter 里把页码回退到最近成功值、表格保持原数据、弹出后端 i18n 文案。没有这个兜底，用户的体验是”翻页偶尔卡死”，没人会联想到限流；</li>
+<li><strong>错误文案说人话</strong>：<code>operate_too_frequent</code> 的文案是”操作过于频繁，请稍后再试”，不是”限流触发”。</li>
+</ol>
+<p>每一条被拦的响应都是一次 UX 事件。前端不配套，限流器就是在给用户埋雷。</p>
+<h2 id="六、实现细节里真正的坑"><a href="#六、实现细节里真正的坑" class="headerlink" title="六、实现细节里真正的坑"></a>六、实现细节里真正的坑</h2><h3 id="6-1-无-TTL-孤儿-key：比窗口边界突刺严重得多的正确性问题"><a href="#6-1-无-TTL-孤儿-key：比窗口边界突刺严重得多的正确性问题" class="headerlink" title="6.1 无 TTL 孤儿 key：比窗口边界突刺严重得多的正确性问题"></a>6.1 无 TTL 孤儿 key：比窗口边界突刺严重得多的正确性问题</h3><p>计数实现是教科书套路：INCR 后如果是首个请求（count &#x3D;&#x3D; 1）补设 TTL。非原子，两步之间进程崩溃就留下一个<strong>没有 TTL 的计数 key</strong>——它永远不过期，计数只增不减，该用户该接口<strong>从此被永久拦截</strong>。</p>
+<p>教科书忙着批评固定窗口的”边界双倍”，但边界双倍无害；真正的正确性风险是这个孤儿 key 的永久误拦。解法不必上 Lua：每次自增后检查 <code>count == 1 || TTL == -1</code> 就重设 TTL，孤儿 key 在下一次请求到达时自愈。一行防御，换来的是”最坏情况退化一个窗口”，而不是”最坏情况永久拦截某个用户”。</p>
+<h3 id="6-2-INCR-EXPIRE-要不要-Lua-化"><a href="#6-2-INCR-EXPIRE-要不要-Lua-化" class="headerlink" title="6.2 INCR&#x2F;EXPIRE 要不要 Lua 化"></a>6.2 INCR&#x2F;EXPIRE 要不要 Lua 化</h3><p>有了 6.1 的分析，这个问题的答案就清楚了：Lua 化消灭的是两步之间的崩溃窗口，代价是每个请求多一层脚本调用与维护成本；而自愈检查已经把崩溃窗口的后果降为”多拦一个窗口”。又回到威胁模型——这不是并发竞态问题（同一用户同接口的并发突刺无害），是崩溃恢复问题，防御性检查比原子性更对症。</p>
+<h3 id="6-3-拦截器挂在-上的性能声称"><a href="#6-3-拦截器挂在-上的性能声称" class="headerlink" title="6.3 拦截器挂在 &#x2F;** 上的性能声称"></a>6.3 拦截器挂在 &#x2F;** 上的性能声称</h3><p>拦截器注册在 <code>/**</code>，每个请求都要过一遍。对未标注方法是”一次 instanceof + 一次注解查找后放行”——这个快路径的开销要诚实评估：注解查找在方法对象上有缓存，实测纳秒级，可忽略；但结论是”测过可忽略”，不是”理论上零开销”。横切全路径的组件，性能声称必须带测量。</p>
+<h2 id="小结：给遗留系统加限流的决策清单"><a href="#小结：给遗留系统加限流的决策清单" class="headerlink" title="小结：给遗留系统加限流的决策清单"></a>小结：给遗留系统加限流的决策清单</h2><p>复盘成清单，按顺序问：</p>
+<ol>
+<li><strong>威胁模型四问</strong>：防谁？按什么键限？Redis 挂了 open 还是 closed？被拦响应长什么样？——答完这四问，算法大概率自己选好了，且大概率是固定窗口。</li>
+<li><strong>宿主环境核对</strong>：MVC 配置方式（有没有自动配置失效的应用）？身份体系（限流键从哪取、取不到怎么办）？前端失败契约（429 还是 200+error）？i18n？公共组件的宿主差异（依赖注入可不可以失败）？</li>
+<li><strong>运维三件套</strong>：配置可发现（自初始化）、不重启调参、拦截遥测 + 统计报表。</li>
+<li><strong>前端配套</strong>：防抖对齐窗口、被拦当成正常失败模式处理、文案说人话。</li>
+<li><strong>明确不覆盖什么</strong>：导出、内部调用、真正的流量攻击——各归其位，别让应用层限流背 DDoS 的锅。</li>
+</ol>
+<p>算法文章教你造一个限流器，这份清单帮你把它落进一个系统。后者才是工作量所在。</p>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../../24/%E6%8E%A5%E5%8F%A3%E9%99%90%E6%B5%81%E8%90%BD%E5%9C%B0%E5%AE%9E%E6%88%98%EF%BC%9A%E4%BB%8ESpring%E6%8B%A6%E6%88%AA%E5%99%A8%E5%88%B0Redis%E5%9B%BA%E5%AE%9A%E7%AA%97%E5%8F%A3%E7%9A%84%E6%8A%80%E6%9C%AF%E6%8B%86%E8%A7%A3/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            接口限流落地实战：从Spring拦截器到Redis固定窗口的技术拆解
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../%E4%B8%80%E6%AC%A1%E7%8E%84%E5%AD%A6500%E6%8E%92%E6%9F%A5%E5%A4%8D%E7%9B%98%EF%BC%9ASNAPSHOT-jar%E8%A6%86%E5%86%99%E6%AF%92%E5%8C%96%E8%BF%90%E8%A1%8C%E4%B8%AD%E7%9A%84JVM/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">一次玄学500排查复盘：SNAPSHOT jar覆写毒化运行中的JVM</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/">插件开发</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Eureka/" rel="tag">Eureka</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ/" rel="tag">IntelliJ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PSI/" rel="tag">PSI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" rel="tag">SQL优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Samba/" rel="tag">Samba</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Windows/" rel="tag">Windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BA%A7%E5%93%81/" rel="tag">产品</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" rel="tag">插件开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%99%E7%A8%8B/" rel="tag">教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">源码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" rel="tag">线程模型</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" rel="tag">踩坑复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" rel="tag">运维部署</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%99%90%E6%B5%81/" rel="tag">限流</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/CI-CD/" style="font-size: 10px;">CI/CD</a> <a href="../../../../tags/CentOS/" style="font-size: 11.11px;">CentOS</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/EasyUI/" style="font-size: 11.11px;">EasyUI</a> <a href="../../../../tags/Eureka/" style="font-size: 10px;">Eureka</a> <a href="../../../../tags/GC/" style="font-size: 11.11px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.11px;">Git Bash</a> <a href="../../../../tags/GitHub-Actions/" style="font-size: 10px;">GitHub Actions</a> <a href="../../../../tags/Github/" style="font-size: 12.22px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 11.11px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 16.67px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/HttpClient/" style="font-size: 11.11px;">HttpClient</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/IntelliJ/" style="font-size: 12.22px;">IntelliJ</a> <a href="../../../../tags/JVM/" style="font-size: 18.89px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 17.78px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 13.33px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 12.22px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.11px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 13.33px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 15.56px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 11.11px;">Node.js</a> <a href="../../../../tags/PSI/" style="font-size: 10px;">PSI</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 10px;">RabbitMQ</a> <a href="../../../../tags/Redis/" style="font-size: 12.22px;">Redis</a> <a href="../../../../tags/SQL/" style="font-size: 14.44px;">SQL</a> <a href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" style="font-size: 10px;">SQL优化</a> <a href="../../../../tags/Samba/" style="font-size: 10px;">Samba</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.11px;">Shell</a> <a href="../../../../tags/Spring/" style="font-size: 14.44px;">Spring</a> <a href="../../../../tags/Spring-Cloud/" style="font-size: 11.11px;">Spring Cloud</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 12.22px;">WebSocket</a> <a href="../../../../tags/Windows/" style="font-size: 10px;">Windows</a> <a href="../../../../tags/XtraBackup/" style="font-size: 11.11px;">XtraBackup</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/Zuul/" style="font-size: 10px;">Zuul</a> <a href="../../../../tags/hexo/" style="font-size: 11.11px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.11px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.11px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E4%BA%A7%E5%93%81/" style="font-size: 10px;">产品</a> <a href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" style="font-size: 10px;">体验优化</a> <a href="../../../../tags/%E5%89%8D%E7%AB%AF/" style="font-size: 11.11px;">前端</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" style="font-size: 11.11px;">实战教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E5%8F%91/" style="font-size: 11.11px;">并发</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.11px;">微服务</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 17.78px;">排查实战</a> <a href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" style="font-size: 12.22px;">插件开发</a> <a href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" style="font-size: 11.11px;">故障复盘</a> <a href="../../../../tags/%E6%95%99%E7%A8%8B/" style="font-size: 10px;">教程</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" style="font-size: 11.11px;">数据备份</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12.22px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 13.33px;">架构</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">源码解析</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.11px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12.22px;">竹云</a> <a href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" style="font-size: 10px;">线程模型</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12.22px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" style="font-size: 10px;">踩坑复盘</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" style="font-size: 18.89px;">踩坑实录</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" style="font-size: 10px;">运维部署</a> <a href="../../../../tags/%E9%99%90%E6%B5%81/" style="font-size: 10px;">限流</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../24/%E9%99%90%E6%B5%81%E5%99%A8%E7%9A%84%E4%B8%8B%E5%8D%8A%E5%9C%BA%EF%BC%9A%E5%BD%93%E6%9E%B6%E6%9E%84%E5%B8%88%E4%B8%8E%E4%BA%A7%E5%93%81%E7%BB%8F%E7%90%86%E5%86%B3%E5%AE%9A%E6%8A%8A%E5%AE%83%E5%81%9A%E6%88%90%E4%BA%A7%E5%93%81/">限流器的下半场：当架构师与产品经理决定把它做成产品</a>
+          </li>
+        
+          <li>
+            <a href="../../24/%E6%8E%A5%E5%8F%A3%E9%99%90%E6%B5%81%E8%90%BD%E5%9C%B0%E5%AE%9E%E6%88%98%EF%BC%9A%E4%BB%8ESpring%E6%8B%A6%E6%88%AA%E5%99%A8%E5%88%B0Redis%E5%9B%BA%E5%AE%9A%E7%AA%97%E5%8F%A3%E7%9A%84%E6%8A%80%E6%9C%AF%E6%8B%86%E8%A7%A3/">接口限流落地实战：从Spring拦截器到Redis固定窗口的技术拆解</a>
+          </li>
+        
+          <li>
+            <a href="">接口限流落地复盘：算法是最简单的部分，难的是宿主环境</a>
+          </li>
+        
+          <li>
+            <a href="../%E4%B8%80%E6%AC%A1%E7%8E%84%E5%AD%A6500%E6%8E%92%E6%9F%A5%E5%A4%8D%E7%9B%98%EF%BC%9ASNAPSHOT-jar%E8%A6%86%E5%86%99%E6%AF%92%E5%8C%96%E8%BF%90%E8%A1%8C%E4%B8%AD%E7%9A%84JVM/">一次玄学500排查复盘：SNAPSHOT jar覆写毒化运行中的JVM</a>
+          </li>
+        
+          <li>
+            <a href="../../18/SQL%E8%AF%AD%E6%B3%95%E9%94%99%E8%AF%AF%E4%BD%86SQL%E6%B2%A1%E9%94%99%EF%BC%9AJDBC-URL%E9%87%8C%E7%AC%AC%E4%BA%8C%E4%B8%AA%E9%97%AE%E5%8F%B7%E5%BA%9F%E6%8E%89allowMultiQueries%E7%9A%84%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/">SQL语法错误但SQL没错：JDBC URL里第二个问号废掉allowMultiQueries的排查实录</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>

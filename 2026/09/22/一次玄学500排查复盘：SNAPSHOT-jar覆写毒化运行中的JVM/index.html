@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>一次玄学500排查复盘：SNAPSHOT jar覆写毒化运行中的JVM | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="一个平静的下午，测试环境的报表页面突然打不开，接口 500。报错是 Spring 的参数名解析失败——而相关代码（一个所有微服务共享的框架 jar）已经几周没人动过。更玄学的是：同一个 URL 两种异常交替出现；部署着完全相同 jar 的其他服务，同款请求全部 200。 最后定位到的根因与代码无关：一次再普通不过的 Maven 构建，把本地仓库里的 SNAPSHOT 依赖 jar 原地覆写成了新构">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一次玄学500排查复盘：SNAPSHOT jar覆写毒化运行中的JVM">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/09/22/%E4%B8%80%E6%AC%A1%E7%8E%84%E5%AD%A6500%E6%8E%92%E6%9F%A5%E5%A4%8D%E7%9B%98%EF%BC%9ASNAPSHOT-jar%E8%A6%86%E5%86%99%E6%AF%92%E5%8C%96%E8%BF%90%E8%A1%8C%E4%B8%AD%E7%9A%84JVM/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="一个平静的下午，测试环境的报表页面突然打不开，接口 500。报错是 Spring 的参数名解析失败——而相关代码（一个所有微服务共享的框架 jar）已经几周没人动过。更玄学的是：同一个 URL 两种异常交替出现；部署着完全相同 jar 的其他服务，同款请求全部 200。 最后定位到的根因与代码无关：一次再普通不过的 Maven 构建，把本地仓库里的 SNAPSHOT 依赖 jar 原地覆写成了新构">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-22T07:28:27.000Z">
+<meta property="article:modified_time" content="2026-09-24T09:23:46.989Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Maven">
+<meta property="article:tag" content="Spring">
+<meta property="article:tag" content="踩坑复盘">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-一次玄学500排查复盘：SNAPSHOT-jar覆写毒化运行中的JVM" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      一次玄学500排查复盘：SNAPSHOT jar覆写毒化运行中的JVM
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-09-22T07:28:27.000Z" itemprop="datePublished">2026-09-22</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Spring/" rel="tag">Spring</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" rel="tag">踩坑复盘</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <p>一个平静的下午，测试环境的报表页面突然打不开，接口 500。报错是 Spring 的参数名解析失败——而相关代码（一个所有微服务共享的框架 jar）已经几周没人动过。更玄学的是：同一个 URL 两种异常交替出现；部署着完全相同 jar 的其他服务，同款请求全部 200。</p>
+<p>最后定位到的根因与代码无关：一次再普通不过的 Maven 构建，把本地仓库里的 SNAPSHOT 依赖 jar <strong>原地覆写</strong>成了新构建，毒化了所有在覆写之前启动的 JVM。这篇文章完整记录排查链路、毒化机制（JVM 为什么会”握着旧文件视图”）、修复过程，以及顺手踩到的 Windows 临时端口坑。</p>
+<a id="more"></a>
+
+<h2 id="一、症状：一个”不可能”的报错"><a href="#一、症状：一个”不可能”的报错" class="headerlink" title="一、症状：一个”不可能”的报错"></a>一、症状：一个”不可能”的报错</h2><p>页面请求一个 i18n 资源接口，返回：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JSON"><figure class="iseeu highlight /json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="attr">"status"</span>: <span class="number">500</span>,</span><br><span class="line">  <span class="attr">"message"</span>: <span class="string">"Name for argument type [java.lang.String] not available,</span></span><br><span class="line"><span class="string">              and parameter name information not found in class file either."</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>这个报错的语义是：Spring MVC 在解析 <code>@PathVariable</code> &#x2F; <code>@RequestParam</code> 注解的参数时，注解上<strong>没有写显式参数名</strong>（如 <code>@PathVariable String mould</code>），于是框架退回去从字节码里反推参数名——反射（需要编译时带 <code>-parameters</code>）和 LocalVariableTable 调试信息（需要编译时带 <code>-g</code>）两条路<strong>都失败</strong>了，才会抛这个错。</p>
+<p>反编译框架 jar 确认：这个方法确实是裸写 <code>@PathVariable String mould</code>，但 class 文件里 LVT（局部变量表，含参数名）<strong>完好存在</strong>。也就是说按理说不可能报这个错。</p>
+<p>还有两个加重玄学色彩的细节：</p>
+<ul>
+<li><strong>同一接口两种异常交替</strong>：前端看到的报错是上面的参数名错误，但服务的接口监控日志表里记录的 errmsg 却是 <code>NoClassDefFoundError</code>——某个框架内部类加载失败；</li>
+<li><strong>同 jar 不同命</strong>：微服务架构下十几个服务共享部署这个框架 jar，其中四个服务收到完全相同的请求，全部正常返回，唯独报表服务炸。</li>
+</ul>
+<h2 id="二、排查：三条线索收敛"><a href="#二、排查：三条线索收敛" class="headerlink" title="二、排查：三条线索收敛"></a>二、排查：三条线索收敛</h2><h3 id="线索1：反编译排除”新构建丢了调试信息”"><a href="#线索1：反编译排除”新构建丢了调试信息”" class="headerlink" title="线索1：反编译排除”新构建丢了调试信息”"></a>线索1：反编译排除”新构建丢了调试信息”</h3><p>第一反应是怀疑框架组的新构建没带调试信息。把本地仓库里新旧两个 SNAPSHOT 构建的 jar 拉出来对比：出问题的类文件 <strong>md5 完全一致</strong>，LVT 齐全。排除。</p>
+<p>这一步很关键——它证明磁盘上的 jar 是好的，问题必然出在<strong>运行中的进程眼里</strong>。</p>
+<h3 id="线索2：同一请求两种异常-类加载损坏"><a href="#线索2：同一请求两种异常-类加载损坏" class="headerlink" title="线索2：同一请求两种异常 &#x3D; 类加载损坏"></a>线索2：同一请求两种异常 &#x3D; 类加载损坏</h3><p>一个 handler 方法，要么参数解析失败（IllegalArgumentException），要么进入方法体后类加载失败（NoClassDefFoundError），二者本来不可能同时出现。而监控日志显示同一 URL 先后抛出这两种异常——这是<strong>运行时类加载视图损坏</strong>的典型特征，与注解写法无关。</p>
+<h3 id="线索3：时间线拼图，凶手浮出水面"><a href="#线索3：时间线拼图，凶手浮出水面" class="headerlink" title="线索3：时间线拼图，凶手浮出水面"></a>线索3：时间线拼图，凶手浮出水面</h3><p>把三个时间戳摆在一起，答案自己跳了出来：</p>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>事件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>11:49</td>
+<td>报表服务进程启动（本地开发，<code>mvn spring-boot:run</code> 直跑）</td>
+</tr>
+<tr>
+<td>14:17</td>
+<td>某次构建刷新了 SNAPSHOT 更新策略（默认 daily），拉取到框架组当天中午发布的新构建</td>
+</tr>
+<tr>
+<td><strong>14:18</strong></td>
+<td><strong>本地仓库的 <code>xxx-1.0.0-SNAPSHOT.jar</code> 文件被原地覆写为新构建</strong></td>
+</tr>
+<tr>
+<td>14:33</td>
+<td>该服务进程生命周期内<strong>第一次</strong>调用 i18n 接口 → 炸</td>
+</tr>
+</tbody></table>
+<p>进程启动早于 jar 覆写，覆写早于首错。嫌疑锁定。</p>
+<h2 id="三、根因：jar-在-JVM-眼里被”偷梁换柱”"><a href="#三、根因：jar-在-JVM-眼里被”偷梁换柱”" class="headerlink" title="三、根因：jar 在 JVM 眼里被”偷梁换柱”"></a>三、根因：jar 在 JVM 眼里被”偷梁换柱”</h2><pre class="mermaid">flowchart TD
+    A["JVM 启动,打开 classpath 上的 SNAPSHOT jar"] --> B["读取 zip 中央目录,缓存每个条目的字节偏移"]
+    B --> C["文件句柄终生不关闭,目录快照定格"]
+    D["另一终端的 Maven 构建拉到新 SNAPSHOT"] --> E["覆写同一个 jar 文件"]
+    E --> F["磁盘文件已换,JVM 毫无感知"]
+    F --> G["此后首次读条目 = 按旧偏移读新内容"]
+    C --> G
+    G --> H["读出损坏字节"]
+    H --> I["首次类加载 -> NoClassDefFoundError"]
+    H --> J["请求时现读 class 字节码解析参数名失败 -> 500"]</pre>
+
+<h3 id="JVM-为什么会”握着旧文件视图”"><a href="#JVM-为什么会”握着旧文件视图”" class="headerlink" title="JVM 为什么会”握着旧文件视图”"></a>JVM 为什么会”握着旧文件视图”</h3><p>这是整个案例最值得写明白的部分，四个事实叠出这颗延时炸弹：</p>
+<p><strong>事实1：zip 的读取方式决定了”打开即快照”。</strong> JDK 里 classpath 上的每个 jar 由 <code>java.util.zip.ZipFile</code> 表示。它打开时只做一件事：从文件尾部读出 zip 的中央目录——每个条目的名字和它在文件中的<strong>字节偏移量</strong>，缓存在一个数组里；之后每次 <code>getInputStream()</code> 都按这些偏移量 seek 过去直接读数据。也就是说，<strong>JVM 对这个 jar 的全部认知（里面有哪些类、每个类的数据在文件哪个位置），在打开那一刻就定格成内存里的快照了</strong>。</p>
+<p><strong>事实2：这个句柄终生不释放。</strong> 应用类加载器持有 <code>URLClassPath</code>，每个 jar 对应一个 <code>JarLoader</code> 包着的 <code>ZipFile</code>，从打开到进程退出从不 close。JVM 没有”文件变了就重新打开”的机制——classpath 本质上是启动命令里的一串<strong>文件路径</strong>，JVM 默认这些路径背后的内容永远不变。</p>
+<p><strong>事实3：Maven 的覆写对运行中进程是静默的。</strong> SNAPSHOT 新构建落地时，Maven 用”临时文件 + rename&#x2F;copy”把新内容写进<strong>同一个文件名</strong>。对已经打开这个文件的进程来说，这是一次毫无通知的偷换：</p>
+<ul>
+<li>若 rename 替换成功：旧句柄仍指向旧数据块，读到的是”旧字节”；而磁盘路径已经指向新文件。新旧两套认知并存；</li>
+<li>若原地覆写：句柄没变、内容变了——内存里缓存的偏移量是按旧文件布局算的，读到的却是新文件的字节，<strong>偏移错位，读出来的就是垃圾</strong>。</li>
+</ul>
+<p>两种方式的共同点：<strong>JVM 内存里的目录快照与磁盘真实内容脱钩，且没有任何报错、任何日志</strong>。你不会收到一个警告说”classpath 上的文件变了”。</p>
+<p><strong>事实4：崩溃只发生在”覆写之后的第一次读取”。</strong> 已经加载过的类，<code>Class</code> 对象常驻方法区，不再需要碰 jar——这就是毒化之后服务看起来一切正常的原因。而覆写之后才发生的<strong>首次</strong>读取才会撞上坏数据：第一次加载某个此前没用过的类（→ NoClassDefFoundError），或框架在请求到来时才现读 class 字节码的路径（→ 参数名解析失败）。</p>
+<h3 id="为什么炸的是参数名解析"><a href="#为什么炸的是参数名解析" class="headerlink" title="为什么炸的是参数名解析"></a>为什么炸的是参数名解析</h3><p>Spring 5.x 的 <code>LocalVariableTableParameterNameDiscoverer</code> 拿参数名的方式出人意料：它不是从已加载的 <code>Class</code> 对象获取（反射拿不到，除非编译带 <code>-parameters</code>），而是 <code>clazz.getResourceAsStream(类文件名)</code> <strong>把 .class 文件字节重新读一遍</strong>，用 ASM 解析其中的 LocalVariableTable。</p>
+<p>这个”重新读”走的就是上面已被毒化的 jar 视图——读出坏流，解析不出参数名，返回 null；而 <code>@PathVariable String mould</code> 没写显式名，两条兜底路全断，于是抛出开头那个”不可能”的报错。<strong>一个和接口参数毫无关系的 jar 替换，引爆点却是参数解析</strong>，这正是它玄学的原因。</p>
+<h3 id="为什么拖到-14-33-才爆、为什么别的服务没事"><a href="#为什么拖到-14-33-才爆、为什么别的服务没事" class="headerlink" title="为什么拖到 14:33 才爆、为什么别的服务没事"></a>为什么拖到 14:33 才爆、为什么别的服务没事</h3><ul>
+<li>前端 i18n 预载脚本有 4 小时的 localStorage 缓存，14:33 恰好是缓存过期后该浏览器会话的第一次回源，也是这个进程生命周期内第一次调此接口——炸弹等到第一次有人踩才响；</li>
+<li>其他正常的服务分两类：一类是在 jar 覆写<strong>之后</strong>才启动的（打开的就是新文件，干净）；另一类虽然启动得早，但 Spring 的 <code>namedValueInfoCache</code> 早就把参数名解析结果缓存了，不再现读 jar——它们只是<strong>还没炸</strong>，任何一次未加载类的首次触碰同样会炸。</li>
+</ul>
+<h2 id="四、修复与一个小插曲"><a href="#四、修复与一个小插曲" class="headerlink" title="四、修复与一个小插曲"></a>四、修复与一个小插曲</h2><p><strong>修复判定规则</strong>只有一条：<code>进程启动时间 &lt; jar 文件 mtime</code> 且该模块 classpath 里有这个 jar → 中招，重启；覆写之后启动的模块不用动。按此规则重启了 8 个模块，复测原接口 200，问题关闭。</p>
+<p><strong>插曲</strong>：重启认证服务时，仓储服务被启动脚本误杀了。原因是认证服务监听的端口（5000）恰好落在 Windows 默认临时端口段（49152–65535）内，仓储服务的一条出站连接被系统分配了 5000 作为<strong>源端口</strong>；启动脚本发现”端口被占”，按清理策略把占用进程整个杀掉了。两点教训：</p>
+<ul>
+<li>服务监听端口尽量避开系统临时端口段（Linux 默认 32768+，Windows 默认 49152+，均可调）；</li>
+<li>自动化脚本清理端口前，应区分”监听占用”与”出站连接源端口占用”——前者才需要清理。</li>
+</ul>
+<h2 id="五、经验清单"><a href="#五、经验清单" class="headerlink" title="五、经验清单"></a>五、经验清单</h2><ol>
+<li><strong>SNAPSHOT + 长驻进程 &#x3D; 隐形炸弹。</strong> 本地起着的开发服务，任何一次拉新 SNAPSHOT 的构建（哪怕是别的模块在编译）都可能静默毒化它们。拉到新框架构建后，把在跑的服务重启一遍；或者本地编译加 <code>-o</code>（离线）、锁死版本号。</li>
+<li><strong>多实例对比是最好的照妖镜。</strong> 同一个 jar 多处部署时，”只有一处炸”几乎总意味着那一处的运行环境（类加载器、文件视图、缓存状态）有问题，而不是代码。</li>
+<li><strong>别只信前端看到的报错。</strong> 这个案例里前端看到的是参数名错误，服务端监控日志记录的却是 NoClassDefFoundError——两种异常并存直接指明了类加载损坏的方向。</li>
+<li><strong>时间线拼图法</strong>：进程启动时间、文件 mtime、首错时间，三个时间戳摆在一起往往凶手自现。</li>
+<li><strong>写 Spring 注解永远带显式名</strong>：<code>@PathVariable(&quot;mould&quot;) String mould</code>。把参数名从”运行时反推字节码”变成”编译期常量”，零成本免疫这一整类环境问题。</li>
+<li><strong>理解 classpath 的真实语义</strong>：它是一串文件路径的快照，JVM 假设其内容终身不变。任何在运行中替换这些文件的操作，都是在 JVM 不知情的情况下改写它的记忆。</li>
+</ol>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../%E6%8E%A5%E5%8F%A3%E9%99%90%E6%B5%81%E8%90%BD%E5%9C%B0%E5%A4%8D%E7%9B%98%EF%BC%9A%E7%AE%97%E6%B3%95%E6%98%AF%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84%E9%83%A8%E5%88%86%EF%BC%8C%E9%9A%BE%E7%9A%84%E6%98%AF%E5%AE%BF%E4%B8%BB%E7%8E%AF%E5%A2%83/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            接口限流落地复盘：算法是最简单的部分，难的是宿主环境
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../../18/SQL%E8%AF%AD%E6%B3%95%E9%94%99%E8%AF%AF%E4%BD%86SQL%E6%B2%A1%E9%94%99%EF%BC%9AJDBC-URL%E9%87%8C%E7%AC%AC%E4%BA%8C%E4%B8%AA%E9%97%AE%E5%8F%B7%E5%BA%9F%E6%8E%89allowMultiQueries%E7%9A%84%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">SQL语法错误但SQL没错：JDBC URL里第二个问号废掉allowMultiQueries的排查实录</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/">插件开发</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Eureka/" rel="tag">Eureka</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ/" rel="tag">IntelliJ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PSI/" rel="tag">PSI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" rel="tag">SQL优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Samba/" rel="tag">Samba</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Windows/" rel="tag">Windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BA%A7%E5%93%81/" rel="tag">产品</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" rel="tag">插件开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%99%E7%A8%8B/" rel="tag">教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">源码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" rel="tag">线程模型</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" rel="tag">踩坑复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" rel="tag">运维部署</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%99%90%E6%B5%81/" rel="tag">限流</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/CI-CD/" style="font-size: 10px;">CI/CD</a> <a href="../../../../tags/CentOS/" style="font-size: 11.11px;">CentOS</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/EasyUI/" style="font-size: 11.11px;">EasyUI</a> <a href="../../../../tags/Eureka/" style="font-size: 10px;">Eureka</a> <a href="../../../../tags/GC/" style="font-size: 11.11px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 11.11px;">Git Bash</a> <a href="../../../../tags/GitHub-Actions/" style="font-size: 10px;">GitHub Actions</a> <a href="../../../../tags/Github/" style="font-size: 12.22px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 11.11px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 16.67px;">Hadoop</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/HttpClient/" style="font-size: 11.11px;">HttpClient</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/IntelliJ/" style="font-size: 12.22px;">IntelliJ</a> <a href="../../../../tags/JVM/" style="font-size: 18.89px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaScript/" style="font-size: 17.78px;">JavaScript</a> <a href="../../../../tags/Linux/" style="font-size: 13.33px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 12.22px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 11.11px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 13.33px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 13.33px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 15.56px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 11.11px;">Node.js</a> <a href="../../../../tags/PSI/" style="font-size: 10px;">PSI</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 10px;">RabbitMQ</a> <a href="../../../../tags/Redis/" style="font-size: 12.22px;">Redis</a> <a href="../../../../tags/SQL/" style="font-size: 14.44px;">SQL</a> <a href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" style="font-size: 10px;">SQL优化</a> <a href="../../../../tags/Samba/" style="font-size: 10px;">Samba</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 11.11px;">Shell</a> <a href="../../../../tags/Spring/" style="font-size: 14.44px;">Spring</a> <a href="../../../../tags/Spring-Cloud/" style="font-size: 11.11px;">Spring Cloud</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WebSocket/" style="font-size: 12.22px;">WebSocket</a> <a href="../../../../tags/Windows/" style="font-size: 10px;">Windows</a> <a href="../../../../tags/XtraBackup/" style="font-size: 11.11px;">XtraBackup</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/Zuul/" style="font-size: 10px;">Zuul</a> <a href="../../../../tags/hexo/" style="font-size: 11.11px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 11.11px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 11.11px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E4%BA%A7%E5%93%81/" style="font-size: 10px;">产品</a> <a href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" style="font-size: 10px;">体验优化</a> <a href="../../../../tags/%E5%89%8D%E7%AB%AF/" style="font-size: 11.11px;">前端</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" style="font-size: 11.11px;">实战教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B9%B6%E5%8F%91/" style="font-size: 11.11px;">并发</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 11.11px;">微服务</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 17.78px;">排查实战</a> <a href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" style="font-size: 12.22px;">插件开发</a> <a href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" style="font-size: 11.11px;">故障复盘</a> <a href="../../../../tags/%E6%95%99%E7%A8%8B/" style="font-size: 10px;">教程</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" style="font-size: 11.11px;">数据备份</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12.22px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 13.33px;">架构</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">源码解析</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 11.11px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 12.22px;">竹云</a> <a href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" style="font-size: 10px;">线程模型</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 12.22px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" style="font-size: 10px;">踩坑复盘</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" style="font-size: 18.89px;">踩坑实录</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" style="font-size: 10px;">运维部署</a> <a href="../../../../tags/%E9%99%90%E6%B5%81/" style="font-size: 10px;">限流</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../24/%E9%99%90%E6%B5%81%E5%99%A8%E7%9A%84%E4%B8%8B%E5%8D%8A%E5%9C%BA%EF%BC%9A%E5%BD%93%E6%9E%B6%E6%9E%84%E5%B8%88%E4%B8%8E%E4%BA%A7%E5%93%81%E7%BB%8F%E7%90%86%E5%86%B3%E5%AE%9A%E6%8A%8A%E5%AE%83%E5%81%9A%E6%88%90%E4%BA%A7%E5%93%81/">限流器的下半场：当架构师与产品经理决定把它做成产品</a>
+          </li>
+        
+          <li>
+            <a href="../../24/%E6%8E%A5%E5%8F%A3%E9%99%90%E6%B5%81%E8%90%BD%E5%9C%B0%E5%AE%9E%E6%88%98%EF%BC%9A%E4%BB%8ESpring%E6%8B%A6%E6%88%AA%E5%99%A8%E5%88%B0Redis%E5%9B%BA%E5%AE%9A%E7%AA%97%E5%8F%A3%E7%9A%84%E6%8A%80%E6%9C%AF%E6%8B%86%E8%A7%A3/">接口限流落地实战：从Spring拦截器到Redis固定窗口的技术拆解</a>
+          </li>
+        
+          <li>
+            <a href="../%E6%8E%A5%E5%8F%A3%E9%99%90%E6%B5%81%E8%90%BD%E5%9C%B0%E5%A4%8D%E7%9B%98%EF%BC%9A%E7%AE%97%E6%B3%95%E6%98%AF%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84%E9%83%A8%E5%88%86%EF%BC%8C%E9%9A%BE%E7%9A%84%E6%98%AF%E5%AE%BF%E4%B8%BB%E7%8E%AF%E5%A2%83/">接口限流落地复盘：算法是最简单的部分，难的是宿主环境</a>
+          </li>
+        
+          <li>
+            <a href="">一次玄学500排查复盘：SNAPSHOT jar覆写毒化运行中的JVM</a>
+          </li>
+        
+          <li>
+            <a href="../../18/SQL%E8%AF%AD%E6%B3%95%E9%94%99%E8%AF%AF%E4%BD%86SQL%E6%B2%A1%E9%94%99%EF%BC%9AJDBC-URL%E9%87%8C%E7%AC%AC%E4%BA%8C%E4%B8%AA%E9%97%AE%E5%8F%B7%E5%BA%9F%E6%8E%89allowMultiQueries%E7%9A%84%E6%8E%92%E6%9F%A5%E5%AE%9E%E5%BD%95/">SQL语法错误但SQL没错：JDBC URL里第二个问号废掉allowMultiQueries的排查实录</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>
