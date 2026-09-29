@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>MES+WMS 面试备战（七）：规范篇——数据库的地基：标准字段、软删除的和解与字典三表 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="面试里有类问题最不起眼也最见真章：”你们的表有什么设计约定？””软删除和唯一索引冲突怎么处理？””增量同步怎么做的？”——这些题不涉及高并发也不涉及分布式，但答不好比架构题答不好更伤：架构方案可以背，地基习惯背不出来，它暴露的是你有没有真的维护过一张被人天天写的表。 本篇是系列的地基篇。前面的库存篇讲了账本怎么运转，本篇往下一层，讲这套能服役十几年的系统，建表规范、软删除、索引范式、字典体系这些”">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MES+WMS 面试备战（七）：规范篇——数据库的地基：标准字段、软删除的和解与字典三表">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/09/29/MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%B8%83%EF%BC%89%EF%BC%9A%E8%A7%84%E8%8C%83%E7%AF%87%E2%80%94%E2%80%94%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E5%9C%B0%E5%9F%BA%EF%BC%9A%E6%A0%87%E5%87%86%E5%AD%97%E6%AE%B5%E3%80%81%E8%BD%AF%E5%88%A0%E9%99%A4%E7%9A%84%E5%92%8C%E8%A7%A3%E4%B8%8E%E5%AD%97%E5%85%B8%E4%B8%89%E8%A1%A8/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="面试里有类问题最不起眼也最见真章：”你们的表有什么设计约定？””软删除和唯一索引冲突怎么处理？””增量同步怎么做的？”——这些题不涉及高并发也不涉及分布式，但答不好比架构题答不好更伤：架构方案可以背，地基习惯背不出来，它暴露的是你有没有真的维护过一张被人天天写的表。 本篇是系列的地基篇。前面的库存篇讲了账本怎么运转，本篇往下一层，讲这套能服役十几年的系统，建表规范、软删除、索引范式、字典体系这些”">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-29T04:09:23.000Z">
+<meta property="article:modified_time" content="2026-09-29T13:56:05.187Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="SQL优化">
+<meta property="article:tag" content="架构">
+<meta property="article:tag" content="面试考点">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-MES-WMS-面试备战（七）：规范篇——数据库的地基：标准字段、软删除的和解与字典三表" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      MES+WMS 面试备战（七）：规范篇——数据库的地基：标准字段、软删除的和解与字典三表
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-09-29T04:09:23.000Z" itemprop="datePublished">2026-09-29</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" rel="tag">SQL优化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9/" rel="tag">面试考点</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <p>面试里有类问题最不起眼也最见真章：”你们的表有什么设计约定？””软删除和唯一索引冲突怎么处理？””增量同步怎么做的？”——这些题不涉及高并发也不涉及分布式，但答不好比架构题答不好更伤：<strong>架构方案可以背，地基习惯背不出来，它暴露的是你有没有真的维护过一张被人天天写的表</strong>。</p>
+<p>本篇是系列的地基篇。前面的<a href="/2026/09/29/MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E5%85%AD%EF%BC%89%EF%BC%9A%E5%BA%93%E5%AD%98%E7%AF%87%E2%80%94%E2%80%94%E8%B4%A6%E5%AE%9E%E4%B8%80%E8%87%B4%E7%9A%84%E7%BB%84%E5%90%88%E6%8B%B3%EF%BC%9A%E4%B8%89%E7%BB%B4%E7%8A%B6%E6%80%81%E3%80%81%E5%8E%9F%E8%AF%AD%E6%94%B6%E6%95%9B%E4%B8%8E%E4%B8%89%E6%AE%B5%E5%BC%8F%E7%B0%BF%E8%AE%B0/" title="库存篇">库存篇</a>讲了账本怎么运转，本篇往下一层，讲这套能服役十几年的系统，建表规范、软删除、索引范式、字典体系这些”没有技术含量”的地基是怎么打的——以及它们埋过的坑。规范类文章最容易写成流水账，我的写法是每条规范都配一个”为什么”和一个”翻车现场”。</p>
+<a id="more"></a>
+
+<h2 id="一、一张表的-anatomy：标准字段七件套"><a href="#一、一张表的-anatomy：标准字段七件套" class="headerlink" title="一、一张表的 anatomy：标准字段七件套"></a>一、一张表的 anatomy：标准字段七件套</h2><p>这套系统的建表规范是成文的：表名按 <code>biz_模块_业务名</code> 命名，从表用固定后缀；字段全小写下划线；主键统一叫 <code>id</code>、外键叫 <code>&lt;单数&gt;id</code> 且注释里标注关联目标；不用数据库外键约束；InnoDB 加 utf8mb4，每表每字段必须有 COMMENT。</p>
+<p>业务主表有标准字段七件套：<strong>id（自增）、factoryid（多租户）、delflag（软删除）、maintainer（维护人）、maintaintime（维护时间）、creator、createtime</strong>。每一件都有存在理由：factoryid 是<a href="/2026/09/28/MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%EF%BC%89%EF%BC%9A%E7%99%BB%E5%BD%95%E4%BC%9A%E8%AF%9D%E7%AF%87%E2%80%94%E2%80%94Session-%E5%9C%A8%E4%BA%8C%E5%8D%81%E4%B8%AA%E6%9C%8D%E5%8A%A1%E9%97%B4%E4%B8%8D%E4%B8%A2%EF%BC%8C%E4%B8%80%E4%B8%AA-factoryid-%E7%9A%84%E7%8E%AF%E7%90%83%E6%97%85%E8%A1%8C/" title="登录会话篇">登录会话篇</a>讲过的行级租户命脉；delflag 和两个维护字段是审计链；creator&#x2F;createtime 的实现取巧——插入时直接复用维护人和维护时间的值，一次赋值两处生效。</p>
+<p>三个值得在面试里展开的细节：</p>
+<p><strong>主键就是 int 自增，不装。</strong> 不是 bigint，不是雪花 ID，从表里还有一部分走框架的序列服务发号。诚实地说这是个历史欠账：int 上限 21 亿，十几年的系统新表还在用 int(11)，靠的是”单表数据量到不了”这个朴素事实。面试被问”为什么不用分布式 ID”时，标准答案不是辩护，而是<strong>指出分布式 ID 解决的是分库分表后的全局唯一，而这套系统分的是库不是表，库内自增够用</strong>——选型跟着架构形态走，不跟着潮流走。</p>
+<p><strong>主键查询也叠 factoryid。</strong> 按主键查详情的 SQL 写的是 <code>where id = #{id} and factoryid = #{factoryid}</code>——主键已经唯一了还要租户条件，图什么？图的是<strong>越权防护的双保险</strong>：拿到别的工厂的单据 ID 伪造请求，单加 factoryid 条款就直接查空。多租户系统的主键查询不带租户条件，等于把”猜 ID”变成了攻击面。</p>
+<p><strong>规范有弹性空间。</strong> 字典、分组这类配置型小表没有全套七件套（没有 delflag 和创建字段），1936 个模型文件里执行程度不一。规范的真实生命力不在”百分之百执行”，在<strong>核心交易表铁律、配置表放宽</strong>的分寸感——全库一刀切的规范，最后会死在执行率上。</p>
+<h2 id="二、软删除与唯一索引的和解"><a href="#二、软删除与唯一索引的和解" class="headerlink" title="二、软删除与唯一索引的和解"></a>二、软删除与唯一索引的和解</h2><p>软删除是业务系统的标配：删除不执行 DELETE，而是 UPDATE 把 delflag 置 1，顺带刷维护人和维护时间——<strong>连删除都要留审计痕迹</strong>。全库 mapper 里 delflag 出现近两千处，查询统一带 <code>delflag = 0</code>。</p>
+<p>然后经典冲突来了：唯一索引怎么和软删除共存？同一个编码删了再建，唯一索引会撞——已删除的旧行还占着唯一键。这个问题有三个主流解法，这套系统选了最有意思的一种：</p>
+<p><strong>解法一（最常见也最脆）：唯一索引带上 delflag。</strong> 缺陷在于 delflag 只有两个值——同一编码删除两次，两行 delflag&#x3D;1 的记录照样撞。要真解决得在删除时把唯一键置空或替换成时间戳，索引语义从此变得诡异。</p>
+<p><strong>解法二：唯一索引不含业务键，验重全靠代码。</strong> 这套系统的选择：唯一索引只覆盖 <code>(factoryid, 条码)</code> 这类天然不可重复的组合，编码类防重交给代码层——验重 SQL 只查活数据（delflag&#x3D;0），查到重复才报错。</p>
+<p><strong>解法三（本系统的精髓）：查到已删行就复活。</strong> 验重通过后、真正插入前，再查一次同键的<strong>已删除行</strong>——查到就把那行的 delflag 改回 0、更新内容，走 UPDATE 而不是 INSERT。这一手”复活”在工程上同时解决了三件事：唯一索引不冲突、历史单据对旧记录的引用不断链（外键还在指着它）、编码的历史沿革可追溯（它”回来”了而不是”重来”）。</p>
+<p>面试聊到这道题，值得主动点破各方案的适用边界：解法一适合”删除极少发生”的表；解法二简单但放弃了数据库层的最后防线；解法三最好但要求插入路径全部收口（<a href="/2026/09/29/MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E5%85%AD%EF%BC%89%EF%BC%9A%E5%BA%93%E5%AD%98%E7%AF%87%E2%80%94%E2%80%94%E8%B4%A6%E5%AE%9E%E4%B8%80%E8%87%B4%E7%9A%84%E7%BB%84%E5%90%88%E6%8B%B3%EF%BC%9A%E4%B8%89%E7%BB%B4%E7%8A%B6%E6%80%81%E3%80%81%E5%8E%9F%E8%AF%AD%E6%94%B6%E6%95%9B%E4%B8%8E%E4%B8%89%E6%AE%B5%E5%BC%8F%E7%B0%BF%E8%AE%B0/" title="库存篇">库存篇</a>讲的原语收敛正是它的前提）——<strong>如果插入散落在二十个模块，复活逻辑根本维护不住</strong>。地基规范和架构决策是咬合的，不是孤立的。</p>
+<h2 id="三、maintaintime：一个字段的三重身份"><a href="#三、maintaintime：一个字段的三重身份" class="headerlink" title="三、maintaintime：一个字段的三重身份"></a>三、maintaintime：一个字段的三重身份</h2><p>维护时间字段是全库最有故事的字段，它同时扮演三个角色。</p>
+<p><strong>第一身份：审计时间戳。</strong> 所有 UPDATE 强制刷新它——不是靠开发者记得写，而是几乎每条 update 语句都带 <code>maintaintime = now()</code>，连 <code>on duplicate key update</code> 的 upsert 也不放过。这条纪律的强度可以从反面看出：漏刷维护时间的 SQL 会被当作 bug 而不是风格差异。</p>
+<p><strong>第二身份：增量同步的水位线。</strong> 报表和跨系统同步靠它做增量：本厂水位 &#x3D; 当前最大的 maintaintime，下一轮只拉”维护时间 &gt; 上一轮水位”的行；本轮落表时间戳成为下一轮的水位，窗口起点回退五分钟制造重叠——<strong>宁可拉重、不可拉漏</strong>，重了由下游按主键幂等覆盖（又是幂等），漏了就是永久丢数据。这个”水位回退 + 幂等落表”的组合是增量同步的标准姿势，比”精确不重不漏”的幻想工程化得多。</p>
+<p><strong>第三身份：关账口径。</strong> <a href="/2026/09/29/MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E5%85%AD%EF%BC%89%EF%BC%9A%E5%BA%93%E5%AD%98%E7%AF%87%E2%80%94%E2%80%94%E8%B4%A6%E5%AE%9E%E4%B8%80%E8%87%B4%E7%9A%84%E7%BB%84%E5%90%88%E6%8B%B3%EF%BC%9A%E4%B8%89%E7%BB%B4%E7%8A%B6%E6%80%81%E3%80%81%E5%8E%9F%E8%AF%AD%E6%94%B6%E6%95%9B%E4%B8%8E%E4%B8%89%E6%AE%B5%E5%BC%8F%E7%B0%BF%E8%AE%B0/" title="库存篇">库存篇</a>讲过，倒冲扣料回写时把簿记时间压到关账前一秒——操作的也是维护时间。</p>
+<p>一个字段三种语义，好处是不加表结构就让增量、审计、账期三套机制跑起来；代价是语义耦合——任何”修正历史数据”的脚本都要意识到：<strong>你改的不只是值，还有水位</strong>。改历史行的 maintaintime 会把那行重新推给所有增量消费者，这类修复脚本必须连消费者一起评估。这曾在真实修复事故里炸过（改值没改时间戳、或改了时间戳引发幻影增量），教训沉淀成了”改值必配时间戳策略”的检查项。</p>
+<h2 id="四、索引范式：从规范到两次真实提速"><a href="#四、索引范式：从规范到两次真实提速" class="headerlink" title="四、索引范式：从规范到两次真实提速"></a>四、索引范式：从规范到两次真实提速</h2><p>索引规范只有一句话好背：<strong>高频查询配联合索引，租户字段打头，<code>(factoryid, status, 时间列)</code> 是状态类查询的标准形状</strong>。这套系统所有索引几乎都以 factoryid 开头——多租户和索引设计在这里合流。</p>
+<p>但规范的真正价值要看提速实例，挑两个讲：</p>
+<p><strong>实例一：覆盖索引救了 403 万行的聚合。</strong> 库存操作流水表（上一部库存篇的主角）按工厂汇总的 footer 查询要 6.2 秒——查询模式固定是”按工厂 + 时间范围聚合流量类型和数量”。解法是把 <code>(factoryid, createtime)</code> 的普通索引扩成 <code>(factoryid, createtime, flowtype, quantity, 结余)</code> 五列覆盖索引：查询所需的所有列都在索引里，回表归零，6.2 秒变 0.12 秒。配套的工程细节是<strong>MySQL 5.7 的 INPLACE 在线重建</strong>——403 万行的表加索引不能锁死业务，在线 DDL 的锁表窗口评估是必答题。</p>
+<p><strong>实例二：union 派生表的过滤下推。</strong> 报表爱写”各业务表 union 成派生表再统一过滤”的 SQL，坑在于外层的时间条件不会自动下推到每个内层子查询——全量数据先 union 再过滤，派生表内部再玩关联子查询，无索引列的关联直接组合出三千万行的笛卡尔积。规范化的写法是<strong>时间条件写进每个内层子查询、派生表内禁止无索引列关联</strong>，配合 EXPLAIN 里 <code>DEPENDENT SUBQUERY + type:ALL</code> 这个特征组合做扫描识别。</p>
+<p>这两个实例的共性：<strong>慢 SQL 的修复不是加索引就完事，是把查询形态和索引形状对齐</strong>——先有确定的查询模式，才有对的索引；反过来给所有查询配所有索引，写放大和优化器误选会一起找上门。</p>
+<h2 id="五、字典三表：可维护枚举的完整形态"><a href="#五、字典三表：可维护枚举的完整形态" class="headerlink" title="五、字典三表：可维护枚举的完整形态"></a>五、字典三表：可维护枚举的完整形态</h2><p>业务系统一半以上的下拉框是”分类字典”——物料类型、检验类型、维护类别。硬编码枚举改个显示名要发版，这套系统给可维护字典设计了三表结构：</p>
+<ul>
+<li><strong>字典表</strong>：<code>编码、父分组编码、序号、i18n 外键</code>——存的是”有哪些码、怎么排序”；</li>
+<li><strong>词条表</strong>：<code>KEY、类型(dict)</code>——存翻译的锚点；</li>
+<li><strong>语言版本表</strong>：<code>词条外键、语言、译文</code>——简繁英越四种语言各一行。</li>
+</ul>
+<p>三表的关键设计是<strong>翻译不放在字典表里，而是字典表通过外键指向词条锚点</strong>——同一套词条基础设施同时服务页面文案和字典显示名，新增一种语言不需要动任何业务表。查询时的 union 也值得看：系统字典 union 上工厂级自定义字典（工厂自己补的字典项带租户字段），用一列”是否系统级”区分来源，验重时两表一起查——<strong>平台管规范，工厂管扩展</strong>，多租户思想又一次渗透到了最细的数据结构里。</p>
+<p>字典和代码枚举的双轨制分界也很清晰：<strong>流程状态是枚举</strong>（orderstate 那十八种，改它等于改流程，必须发版）；<strong>业务分类是字典</strong>（物料类型今天加一种，运营页面自己配）。两者的显示名共享同一个翻译命名空间——跨模块声明同一枚举时显示名自动一致。</p>
+<p>最后是一个工程化细节，DBA 同学会很共鸣：新增字典的 SQL 模板。字典要过三张表，主键有的库自增有的不是，脚本怎么做到<strong>跨环境可重跑</strong>？答案是业务键幂等——每张表用业务锚点（分组+编码、KEY 唯一索引、词条+语言）先查再插，主键用运行时 <code>MAX+1</code> 现算而不是写死（写死 ID 跨环境必撞），两表 ID 空间还要互相避让。**”这条 SQL 可以在任何环境重跑任意次”是数据变更脚本的质量标准**——多少线上事故源于一个”只在 dev 试过一次”的变更脚本。</p>
+<h2 id="六、时区与精度：两个通用大坑的实录"><a href="#六、时区与精度：两个通用大坑的实录" class="headerlink" title="六、时区与精度：两个通用大坑的实录"></a>六、时区与精度：两个通用大坑的实录</h2><p><strong>时区坑</strong>：某个应用的写入时间和数据库 NOW() 差了 12 小时。排查结果是连接串参数漂移——主链路连接串不带时区参数，新加的 WMS 数据源带了；两个数据源对”应用时区 vs 数据库时区”的解释不一致，写入时间就各自为政。这类坑的阴险在于<strong>平时全对，某个新数据源上线才炸</strong>，且 12 小时不是常见的 8 小时偏移（UTC 对半），按常规思路排查会先排除时区。规范化的解法：连接串时区参数进统一模板，全库数据源不允许各自为政。</p>
+<p><strong>精度坑</strong>：库存数量用 <code>decimal(20,10)</code>，快照类用 <code>decimal(19,6)</code>——精度不统一本身就是坑的温床，规范里为此立了自查项：”存储字段精度截断过的值，不能拿去验证全精度的源数据”。翻译成人话：库里的数量已经被截断到 4 位小数了，就别拿它去和精确到 10 位的上游数据对账，永远差那么一点点还查不出原因。<strong>数值对账前先对精度口径</strong>，这个意识比任何具体 SQL 都值钱。</p>
+<h2 id="七、归档框架：大表治理的常态化"><a href="#七、归档框架：大表治理的常态化" class="headerlink" title="七、归档框架：大表治理的常态化"></a>七、归档框架：大表治理的常态化</h2><p>流水和快照类大表的归档在这套系统里已经框架化：一张配置注册表声明”哪张表、按年还是按月归档、按哪个时间字段切”，运行时自动 <code>create table like</code> 出归档子表、登记清单；查询服务按时间范围自动路由到对应归档表，查不到子表回退主表。业务代码对归档无感知。</p>
+<p>落地踩过的坑也很有代表性：按月归档的子表名带月后缀，格式形如”2026-08”——<strong>表名里的连字符在 SQL 里会被解析成减法</strong>，所有引用必须反引号包住。这类坑的价值在于提醒：自动化框架的边角（命名、转义）往往比框架本身更容易出事。配合<a href="/2026/09/29/MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E5%85%AD%EF%BC%89%EF%BC%9A%E5%BA%93%E5%AD%98%E7%AF%87%E2%80%94%E2%80%94%E8%B4%A6%E5%AE%9E%E4%B8%80%E8%87%B4%E7%9A%84%E7%BB%84%E5%90%88%E6%8B%B3%EF%BC%9A%E4%B8%89%E7%BB%B4%E7%8A%B6%E6%80%81%E3%80%81%E5%8E%9F%E8%AF%AD%E6%94%B6%E6%95%9B%E4%B8%8E%E4%B8%89%E6%AE%B5%E5%BC%8F%E7%B0%BF%E8%AE%B0/" title="库存篇">库存篇</a>讲过的组级短事务搬运纪律，大表治理在这套系统里完成了从”救火”到”机制”的转变——早年的 28GB 单表在线瘦身是救火，归档框架是让下一次救火不必发生。</p>
+<h2 id="八、面试视角：六个问题拆到底"><a href="#八、面试视角：六个问题拆到底" class="headerlink" title="八、面试视角：六个问题拆到底"></a>八、面试视角：六个问题拆到底</h2><p><strong>Q1：自增主键和分布式 ID 怎么选？</strong></p>
+<p>答：看分片形态。分库不分表、库内单写，自增够用且最省心；分表或多写才需要全局发号——雪花或号段模式。这套系统主键 int 自增，从表部分走序列服务，历史欠账是 int 容量和新表迁移成本，我的立场是承认欠账、指出它和”单库单写”的架构形态是自洽的，而不是盲目追新。</p>
+<p><strong>Q2：软删除和唯一索引冲突怎么解？</strong></p>
+<p>答：三个方案——唯一键含 delflag（脆，两次删除就撞）、唯一键不含业务键靠代码验重（简单、丢数据库防线）、删除行复活（最好、要求插入路径收口）。我们的选择是第三种加第二种混合：天然不可重复的组合（如条码）保留唯一索引，编码类防重走”验重只查活数据 + 已删行复活”，历史引用不断链是它独有的收益。</p>
+<p><strong>Q3：跨系统增量同步怎么做？</strong></p>
+<p>答：维护时间水位线：水位取 max(maintaintime)，窗口起点回退若干分钟制造重叠，重叠部分靠下游按主键幂等覆盖消化。要点是放弃”精确不重不漏”的幻想，把不漏交给重叠窗口、把不重交给幂等，两者都比精确调度便宜。</p>
+<p><strong>Q4：字典表、代码枚举、配置表怎么分界？</strong></p>
+<p>答：看变更主体。流程状态是代码语义的一部分，用枚举发版管理；业务分类由运营维护，用字典三表（字典 + 词条 + 语言版本）管理，翻译外置共享一套词条基础设施；跨系统映射类才进配置表。多租户场景再加一层：平台字典管规范，工厂级扩展字典带租户字段 union 进来。</p>
+<p><strong>Q5：大表怎么治理？</strong></p>
+<p>答：查询侧覆盖索引（配合在线 DDL 的窗口评估）、写入侧短事务搬运归档、机制上框架化——配置注册表声明归档策略，运行时自动建子表、查询自动路由，业务无感知。前提是查询模式先收敛，否则索引和归档都在给 chaos 付费。</p>
+<p><strong>Q6：为什么不用数据库外键？</strong></p>
+<p>答：三个原因：性能（每写一次都要做约束检查，高并发写入路径不划算）、运维（分库、归档、批量修数时外键是障碍）、以及多租户与复活机制的存在让”引用完整性”本来就要在应用层管理（已删行复活、跨厂数据引用）。用注释标注关联目标替代外键，把约束检查的成本花在业务真正需要的地方。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>标准字段是系统的骨架习惯</strong>：七件套各有职责，规范的生命力在”交易表铁律、配置表放宽”的分寸；</li>
+<li>**软删除与唯一索引的和解靠”复活”**：验重只查活数据、已删同键行走 UPDATE 回来，历史引用不断链；</li>
+<li><strong>maintaintime 一字段三用</strong>：审计、增量水位、账期口径——用它的代价是任何修复脚本都要评估水位影响；</li>
+<li><strong>索引跟着查询形态走</strong>：<code>(factoryid,status,时间)</code> 是形状模板，覆盖索引和过滤下推是两次真实提速的方法论；</li>
+<li><strong>字典三表的关键是翻译外置</strong>：一套词条基础设施服务所有显示名，平台字典 + 工厂扩展 union 是多租户的又一次渗透；</li>
+<li><strong>变更脚本的质量标准是跨环境可重跑</strong>：业务键幂等 + 运行时算 ID，写死 ID 的脚本就是定时炸弹；</li>
+<li><strong>时区和精度是通用大坑</strong>：连接参数进统一模板，对账先对精度口径。</li>
+</ul>
+<p>下一篇按规划收尾数据线：<strong>导出与归档的集成篇</strong>——已有导出改造长文的机制要点浓缩 + 下载中心兜底 + 归档机制的拼图整合；或者按你的优先级切回主线（MQ 事件总线 &#x2F; 定时任务 &#x2F; IoT）。默认按预告走，想调头直接说。</p>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E5%85%AB%EF%BC%89%EF%BC%9A%E6%80%BB%E7%BA%BF%E7%AF%87%E2%80%94%E2%80%94%E5%85%B1%E4%BA%AB-jar-%E9%87%8C%E7%9A%84%E8%87%AA%E5%BB%BA%E4%BA%8B%E4%BB%B6%E6%80%BB%E7%BA%BF%EF%BC%9A%E4%BD%8D%E7%BC%96%E7%A0%81%E3%80%81%E8%87%AA%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%B9%BF%E6%92%AD/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            MES+WMS 面试备战（八）：总线篇——共享 jar 里的自建事件总线：位编码、自注册与广播
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E5%85%AD%EF%BC%89%EF%BC%9A%E5%BA%93%E5%AD%98%E7%AF%87%E2%80%94%E2%80%94%E8%B4%A6%E5%AE%9E%E4%B8%80%E8%87%B4%E7%9A%84%E7%BB%84%E5%90%88%E6%8B%B3%EF%BC%9A%E4%B8%89%E7%BB%B4%E7%8A%B6%E6%80%81%E3%80%81%E5%8E%9F%E8%AF%AD%E6%94%B6%E6%95%9B%E4%B8%8E%E4%B8%89%E6%AE%B5%E5%BC%8F%E7%B0%BF%E8%AE%B0/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">MES+WMS 面试备战（六）：库存篇——账实一致的组合拳：三维状态、原语收敛与三段式簿记</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/">插件开发</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/AI/" rel="tag">AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Android/" rel="tag">Android</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ArkTS/" rel="tag">ArkTS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C/" rel="tag">C#</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClassLoader/" rel="tag">ClassLoader</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ERP/" rel="tag">ERP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Eureka/" rel="tag">Eureka</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HarmonyOS/" rel="tag">HarmonyOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ/" rel="tag">IntelliJ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ-IDEA/" rel="tag">IntelliJ IDEA</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaAgent/" rel="tag">JavaAgent</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Kubernetes/" rel="tag">Kubernetes</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/OptaPlanner/" rel="tag">OptaPlanner</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PSI/" rel="tag">PSI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PowerShell/" rel="tag">PowerShell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Prometheus/" rel="tag">Prometheus</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Quartz/" rel="tag">Quartz</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" rel="tag">SQL优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SaaS/" rel="tag">SaaS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Samba/" rel="tag">Samba</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WPF/" rel="tag">WPF</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebView/" rel="tag">WebView</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Windows/" rel="tag">Windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BA%A7%E5%93%81/" rel="tag">产品</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag">分布式</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" rel="tag">分布式事务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" rel="tag">分布式锁</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%9B%BE%E8%AE%BA/" rel="tag">图论</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8D/" rel="tag">备份恢复</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B7%A5%E6%8E%A7/" rel="tag">工控</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/" rel="tag">工程效能</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag">性能优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" rel="tag">插件开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%99%E7%A8%8B/" rel="tag">教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/" rel="tag">数据同步</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%B7%B7%E5%90%88%E5%BC%80%E5%8F%91/" rel="tag">混合开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">源码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AE%80%E5%8E%86/" rel="tag">简历</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" rel="tag">线程模型</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" rel="tag">踩坑复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E6%8A%80%E8%83%BD/" rel="tag">软技能</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" rel="tag">运维部署</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%99%90%E6%B5%81/" rel="tag">限流</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9/" rel="tag">面试考点</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/AI/" style="font-size: 10px;">AI</a> <a href="../../../../tags/Android/" style="font-size: 10px;">Android</a> <a href="../../../../tags/ArkTS/" style="font-size: 10px;">ArkTS</a> <a href="../../../../tags/C/" style="font-size: 10px;">C#</a> <a href="../../../../tags/CI-CD/" style="font-size: 10px;">CI/CD</a> <a href="../../../../tags/CentOS/" style="font-size: 10.77px;">CentOS</a> <a href="../../../../tags/ClassLoader/" style="font-size: 10px;">ClassLoader</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="../../../../tags/ERP/" style="font-size: 10px;">ERP</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/EasyUI/" style="font-size: 10.77px;">EasyUI</a> <a href="../../../../tags/Eureka/" style="font-size: 10px;">Eureka</a> <a href="../../../../tags/GC/" style="font-size: 10.77px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 10.77px;">Git Bash</a> <a href="../../../../tags/GitHub-Actions/" style="font-size: 10px;">GitHub Actions</a> <a href="../../../../tags/Github/" style="font-size: 11.54px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 10.77px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 14.62px;">Hadoop</a> <a href="../../../../tags/HarmonyOS/" style="font-size: 10px;">HarmonyOS</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/HttpClient/" style="font-size: 10.77px;">HttpClient</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/IntelliJ/" style="font-size: 11.54px;">IntelliJ</a> <a href="../../../../tags/IntelliJ-IDEA/" style="font-size: 10.77px;">IntelliJ IDEA</a> <a href="../../../../tags/JVM/" style="font-size: 16.92px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaAgent/" style="font-size: 10px;">JavaAgent</a> <a href="../../../../tags/JavaScript/" style="font-size: 15.38px;">JavaScript</a> <a href="../../../../tags/Kubernetes/" style="font-size: 10px;">Kubernetes</a> <a href="../../../../tags/Linux/" style="font-size: 12.31px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 13.85px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 10.77px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 12.31px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 13.08px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 17.69px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 10.77px;">Node.js</a> <a href="../../../../tags/OptaPlanner/" style="font-size: 10px;">OptaPlanner</a> <a href="../../../../tags/PSI/" style="font-size: 10px;">PSI</a> <a href="../../../../tags/PowerShell/" style="font-size: 10px;">PowerShell</a> <a href="../../../../tags/Prometheus/" style="font-size: 10px;">Prometheus</a> <a href="../../../../tags/Quartz/" style="font-size: 10px;">Quartz</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 11.54px;">RabbitMQ</a> <a href="../../../../tags/Redis/" style="font-size: 13.08px;">Redis</a> <a href="../../../../tags/SQL/" style="font-size: 13.08px;">SQL</a> <a href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" style="font-size: 10.77px;">SQL优化</a> <a href="../../../../tags/SaaS/" style="font-size: 11.54px;">SaaS</a> <a href="../../../../tags/Samba/" style="font-size: 10px;">Samba</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 10.77px;">Shell</a> <a href="../../../../tags/Spring/" style="font-size: 15.38px;">Spring</a> <a href="../../../../tags/Spring-Cloud/" style="font-size: 10.77px;">Spring Cloud</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WPF/" style="font-size: 10px;">WPF</a> <a href="../../../../tags/WebSocket/" style="font-size: 11.54px;">WebSocket</a> <a href="../../../../tags/WebView/" style="font-size: 10px;">WebView</a> <a href="../../../../tags/Windows/" style="font-size: 10px;">Windows</a> <a href="../../../../tags/XtraBackup/" style="font-size: 11.54px;">XtraBackup</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/Zuul/" style="font-size: 10px;">Zuul</a> <a href="../../../../tags/hexo/" style="font-size: 10.77px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 10.77px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 10.77px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E4%BA%A7%E5%93%81/" style="font-size: 10px;">产品</a> <a href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" style="font-size: 10px;">体验优化</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F/" style="font-size: 10px;">分布式</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">分布式事务</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" style="font-size: 10px;">分布式锁</a> <a href="../../../../tags/%E5%89%8D%E7%AB%AF/" style="font-size: 11.54px;">前端</a> <a href="../../../../tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 10px;">图论</a> <a href="../../../../tags/%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8D/" style="font-size: 10px;">备份恢复</a> <a href="../../../../tags/%E5%A4%8D%E7%9B%98/" style="font-size: 10.77px;">复盘</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" style="font-size: 10.77px;">实战教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B7%A5%E6%8E%A7/" style="font-size: 10px;">工控</a> <a href="../../../../tags/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/" style="font-size: 11.54px;">工程效能</a> <a href="../../../../tags/%E5%B9%B6%E5%8F%91/" style="font-size: 11.54px;">并发</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 16.15px;">微服务</a> <a href="../../../../tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" style="font-size: 10px;">性能优化</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 16.15px;">排查实战</a> <a href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" style="font-size: 11.54px;">插件开发</a> <a href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" style="font-size: 10.77px;">故障复盘</a> <a href="../../../../tags/%E6%95%99%E7%A8%8B/" style="font-size: 10px;">教程</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/" style="font-size: 10px;">数据同步</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" style="font-size: 10.77px;">数据备份</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 11.54px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 18.46px;">架构</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="../../../../tags/%E6%B7%B7%E5%90%88%E5%BC%80%E5%8F%91/" style="font-size: 10.77px;">混合开发</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">源码解析</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 10.77px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.54px;">竹云</a> <a href="../../../../tags/%E7%AE%80%E5%8E%86/" style="font-size: 10.77px;">简历</a> <a href="../../../../tags/%E7%AE%97%E6%B3%95/" style="font-size: 10.77px;">算法</a> <a href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" style="font-size: 10px;">线程模型</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 11.54px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 10px;">设计模式</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" style="font-size: 10.77px;">踩坑复盘</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" style="font-size: 16.15px;">踩坑实录</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a> <a href="../../../../tags/%E8%BD%AF%E6%8A%80%E8%83%BD/" style="font-size: 11.54px;">软技能</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4/" style="font-size: 10.77px;">运维</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" style="font-size: 10px;">运维部署</a> <a href="../../../../tags/%E9%99%90%E6%B5%81/" style="font-size: 10px;">限流</a> <a href="../../../../tags/%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9/" style="font-size: 19.23px;">面试考点</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../%E7%AE%80%E5%8E%86%E5%AE%9E%E6%88%98%C2%B7%E4%B8%8B%E2%80%94%E2%80%94%E7%9C%9F%E5%AE%9E%E7%AE%80%E5%8E%86%E6%A8%A1%E6%9D%BF%EF%BC%9A%E5%90%8E%E7%AB%AF%E5%B7%A5%E7%A8%8B%E5%B8%88%E7%89%88%EF%BC%8C%E5%8F%AF%E7%9B%B4%E6%8E%A5%E6%94%B9%E7%94%A8/">简历实战·下——真实简历模板：后端工程师版，可直接改用</a>
+          </li>
+        
+          <li>
+            <a href="../%E7%AE%80%E5%8E%86%E5%AE%9E%E6%88%98%C2%B7%E4%B8%8A%E2%80%94%E2%80%94%E6%92%B0%E5%86%99%E4%B8%8E%E7%BE%8E%E5%8C%96%EF%BC%9A%E6%8A%8A%E4%BA%8C%E5%8D%81%E4%B8%83%E7%AF%87%E7%B4%A0%E6%9D%90%E5%86%99%E6%88%90%E4%B8%80%E4%BB%BD%E8%83%BD%E6%8B%BF%E5%88%B0%E9%9D%A2%E8%AF%95%E7%9A%84%E7%AE%80%E5%8E%86/">简历实战·上——撰写与美化：把二十七篇素材写成一份能拿到面试的简历</a>
+          </li>
+        
+          <li>
+            <a href="../MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%E5%8D%81%E4%B8%83%EF%BC%89%EF%BC%9A%E8%BF%90%E7%BB%B4%E7%AF%87%C2%B7%E4%B8%8B%E2%80%94%E2%80%94%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%B8%80%E9%94%AE%E5%8C%96%EF%BC%9A%E5%A2%9E%E9%87%8F%E9%93%BE%E7%9A%84%E8%87%AA%E6%84%88%E4%B8%8E%E6%81%A2%E5%A4%8D%E6%BC%94%E7%BB%83/">MES+WMS 面试备战（二十七）：运维篇·下——物理备份一键化：增量链的自愈与恢复演练</a>
+          </li>
+        
+          <li>
+            <a href="../MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%E5%8D%81%E5%85%AD%EF%BC%89%EF%BC%9A%E8%BF%90%E7%BB%B4%E7%AF%87%C2%B7%E4%B8%8A%E2%80%94%E2%80%94%E6%8A%8A-MES-%E6%90%AC%E4%B8%8A-K8s%EF%BC%9A%E9%83%A8%E7%BD%B2%E6%B8%85%E5%8D%95%E3%80%81%E7%A8%B3%E5%AE%9A%E5%9F%9F%E5%90%8D%E4%B8%8E%E8%87%AA%E5%BB%BA%E7%9B%91%E6%8E%A7%E6%A0%88/">MES+WMS 面试备战（二十六）：运维篇·上——把 MES 搬上 K8s：部署清单、稳定域名与自建监控栈</a>
+          </li>
+        
+          <li>
+            <a href="../MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%E5%8D%81%E4%BA%94%EF%BC%89%EF%BC%9A%E7%BB%88%E5%B1%80%E7%AF%87%E2%80%94%E2%80%94%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E6%B8%85%E5%8D%95%E3%80%81%E8%BF%BD%E9%97%AE%E6%A0%91%E4%B8%8E%E5%8F%8D%E9%97%AE%E7%8E%AF%E8%8A%82/">MES+WMS 面试备战（二十五）：终局篇——高频问题清单、追问树与反问环节</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>

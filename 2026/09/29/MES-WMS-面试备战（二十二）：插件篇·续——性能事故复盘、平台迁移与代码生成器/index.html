@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>MES+WMS 面试备战（二十二）：插件篇·续——性能事故复盘、平台迁移与代码生成器 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="上一篇插件篇讲了给自研框架补 IDE 断链的插件怎么长出来，本篇讲它的下半场——三件把”内部小工具”推向”团队基础设施”的事：一次”打开文件即卡加 Full GC”的性能事故及其沉淀的性能铁律、插件平台从 1.x 到 2.x 的整体迁移、以及在此基础上长出的MES 代码生成器。中间还穿插一次真实的密钥泄漏事故复盘。 内部工具的下半场都长这样：功能不再是问题，性能、可维护性和安全性才是。这三件事的共">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MES+WMS 面试备战（二十二）：插件篇·续——性能事故复盘、平台迁移与代码生成器">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/09/29/MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%E5%8D%81%E4%BA%8C%EF%BC%89%EF%BC%9A%E6%8F%92%E4%BB%B6%E7%AF%87%C2%B7%E7%BB%AD%E2%80%94%E2%80%94%E6%80%A7%E8%83%BD%E4%BA%8B%E6%95%85%E5%A4%8D%E7%9B%98%E3%80%81%E5%B9%B3%E5%8F%B0%E8%BF%81%E7%A7%BB%E4%B8%8E%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90%E5%99%A8/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="上一篇插件篇讲了给自研框架补 IDE 断链的插件怎么长出来，本篇讲它的下半场——三件把”内部小工具”推向”团队基础设施”的事：一次”打开文件即卡加 Full GC”的性能事故及其沉淀的性能铁律、插件平台从 1.x 到 2.x 的整体迁移、以及在此基础上长出的MES 代码生成器。中间还穿插一次真实的密钥泄漏事故复盘。 内部工具的下半场都长这样：功能不再是问题，性能、可维护性和安全性才是。这三件事的共">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-29T10:13:05.000Z">
+<meta property="article:modified_time" content="2026-09-29T13:56:05.187Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="IntelliJ IDEA">
+<meta property="article:tag" content="工程效能">
+<meta property="article:tag" content="面试考点">
+<meta property="article:tag" content="性能优化">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-MES-WMS-面试备战（二十二）：插件篇·续——性能事故复盘、平台迁移与代码生成器" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      MES+WMS 面试备战（二十二）：插件篇·续——性能事故复盘、平台迁移与代码生成器
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-09-29T10:13:05.000Z" itemprop="datePublished">2026-09-29</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/IntelliJ-IDEA/" rel="tag">IntelliJ IDEA</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/" rel="tag">工程效能</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag">性能优化</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9/" rel="tag">面试考点</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <p>上一篇<a href="/2026/09/29/MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%E5%8D%81%E4%B8%80%EF%BC%89%EF%BC%9A%E6%8F%92%E4%BB%B6%E7%AF%87%E2%80%94%E2%80%94%E7%BB%99%E8%87%AA%E7%A0%94%E6%A1%86%E6%9E%B6%E5%86%99-IDEA-%E6%8F%92%E4%BB%B6%EF%BC%9APSI-%E4%B8%8E%E6%96%AD%E9%93%BE%E4%BF%AE%E5%A4%8D/" title="插件篇">插件篇</a>讲了给自研框架补 IDE 断链的插件怎么长出来，本篇讲它的下半场——三件把”内部小工具”推向”团队基础设施”的事：<strong>一次”打开文件即卡加 Full GC”的性能事故及其沉淀的性能铁律</strong>、<strong>插件平台从 1.x 到 2.x 的整体迁移</strong>、以及在此基础上长出的<strong>MES 代码生成器</strong>。中间还穿插一次真实的密钥泄漏事故复盘。</p>
+<p>内部工具的下半场都长这样：功能不再是问题，性能、可维护性和安全性才是。这三件事的共同教训一句话预告：<strong>工具代码和业务代码遵循完全相同的工程纪律，但工具的错误成本发生在所有人每天的编辑器里</strong>——它出问题时，受害者是全部用户，且每天受害。</p>
+<a id="more"></a>
+
+<h2 id="一、性能事故：打开文件即卡与-Full-GC"><a href="#一、性能事故：打开文件即卡与-Full-GC" class="headerlink" title="一、性能事故：打开文件即卡与 Full GC"></a>一、性能事故：打开文件即卡与 Full GC</h2><p>事故现象：插件某版本之后，用户打开特定文件编辑器就卡顿数秒，IDE 偶发 Full GC 假死。排查定位到折叠功能：<strong>FoldingBuilder 的完整阶段回调里执行了全项目索引查询</strong>——每次打开文件、每次文档变更，插件都在全项目范围扫描多语言资源文件对齐 key。</p>
+<p>这里要先补一个平台机制：FoldingBuilder 的回调分两个阶段——<strong>快速阶段</strong>（只允许廉价的文本级判断，同步阻塞编辑器渲染）和<strong>完整阶段</strong>（允许较重的计算，但也有预算）。我的实现把资源查找放在了完整阶段，”合规”地写，但<strong>回调频率 × 每次回调的成本</strong>这个乘积失控了：编辑器回调是全项目最高频的事件之一，哪怕每次几十毫秒的索引查询，叠加起来就是持续的卡顿和 GC 压力。</p>
+<p>修复分两层：<strong>缓存层</strong>——多语言资源扫描改成进程内缓存加文件变更监听刷新（key 到译文的映射常驻内存，文件改动才失效重扫）；<strong>形态层</strong>——折叠回调里只查内存缓存，索引查询彻底移出编辑器回调。事故之后沉淀了一份”插件性能铁律”清单，四条全都值得背：</p>
+<ol>
+<li><strong>热路径回调里禁用全局索引查询</strong>——编辑器回调是全 IDE 频率最高的事件，O(项目) 的逻辑进去就是事故；</li>
+<li><strong>消息总线订阅必须携带生命周期连接</strong>——不带 Disposable 的订阅在插件卸载或组件销毁后仍然存活，监听器随使用累积，这是 IDE 插件最典型的内存泄漏模式；</li>
+<li><strong>编辑器组件要正确注册释放</strong>——不实现释放接口的编辑器持有对象在关闭文件后仍被引用，泄漏形态更隐蔽；</li>
+<li><strong>quick 语义是红线</strong>——文档里的”快速阶段”不是建议，是平台团队对回调预算的合同条款。</li>
+</ol>
+<p>这条事故的面试价值在于它把一个通用认知具象化了：**”回调频率乘以单次成本”是所有事件驱动系统的性能公式**——IDE 插件、消息消费者、浏览器扩展、Web 的过滤器，全部适用。</p>
+<h2 id="二、平台迁移：从-1-x-脚手架到-2-x"><a href="#二、平台迁移：从-1-x-脚手架到-2-x" class="headerlink" title="二、平台迁移：从 1.x 脚手架到 2.x"></a>二、平台迁移：从 1.x 脚手架到 2.x</h2><p>插件平台的官方脚手架出了 2.x 大版本，构建体系和 API 都有破坏性变更。迁移本身是机械活（新脚手架、JVM 工具链升到 17、兼容窗口抬到新版本线），真正有价值的是<strong>借迁移把发布链路固化了</strong>：原来发版是手工序列——构建、改版本描述、上传存储——每步都可能漏；迁移时用构建脚本的自定义任务把”生成本地更新描述文件”和”上传发布”写成了构建的一部分，<strong>发版从手工序列变成一条命令</strong>，发布产物目录里每版归档可溯。</p>
+<p>内部工具的可信度有一条隐含公式：<strong>发版越顺滑，迭代越勤，用户信任越高</strong>。手工发版的工具会不自觉地降低发版频率（因为烦），然后被用户贴上”更新了也不知道修了啥”的标签。工具链的 DevOps 和业务系统的 DevOps 一样是产品力。</p>
+<h2 id="三、代码生成器：从一次抱怨到一条流水线"><a href="#三、代码生成器：从一次抱怨到一条流水线" class="headerlink" title="三、代码生成器：从一次抱怨到一条流水线"></a>三、代码生成器：从一次抱怨到一条流水线</h2><p>插件长出的最大新能力是代码生成器。起点是一次真实抱怨：客户要一个 ERP 同步失败日志的查询页，按框架的五层约定（Controller、Service、DAO、Mapper XML、页面布局加页面模板——<a href="/2026/09/29/MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%B8%89%EF%BC%89%EF%BC%9A%E6%A1%86%E6%9E%B6%E7%AF%87%E2%80%94%E2%80%94%E8%87%AA%E7%A0%94%E9%A1%B5%E9%9D%A2%E5%BC%95%E6%93%8E%E6%80%8E%E4%B9%88%E8%AE%A9%E5%87%A0%E5%8D%81%E4%B8%AA%E6%A8%A1%E5%9D%97%E9%95%BF%E4%B8%80%E4%B8%AA%E6%A0%B7/" title="框架篇">框架篇</a>的标准五件套）手写要两三个小时，而且这种查询页高度同构——<strong>第三十个这种页面的时候，生成器就该立项了</strong>。</p>
+<p>生成的难点不在模板，在**”生成的代码必须和手写的一模一样”**。框架的约定细节（注解参数、命名规则、XML 属性顺序、字典翻译的配置口径）散落在存量代码里，凭记忆写模板必然漂移。解法是一条三段式质量流水线：</p>
+<p><strong>第一段：反编译取证。</strong> 从框架 jar 反编译核心类，把生成口径逐项对齐真实手写代码——模板的每个变量、每段注解都有存量代码作证，不靠记忆。</p>
+<p><strong>第二段：静态护栏。</strong> 模板引擎（FreeMarker）渲染出六个文件后，自动跑单测比对——测试数量从一百二十几涨到一百四十多，每一个生成场景都有断言；再加 <strong>golden 快照</strong>：把”标准输入生成的六件套”固化成基准文件，任何模板改动导致输出漂移都会被测试逮住——<strong>模板的重构从此有了安全网</strong>。</p>
+<p><strong>第三段：沙箱验证。</strong> 静态比对过了不等于”装到 IDE 里真的能生成”，用 IDE 的沙箱运行模式加界面自动化驱动，真实走一遍”选表、点生成、文件落盘、编译通过”的全链路——<strong>生成器自己也是插件功能，也要在真环境里验收</strong>。</p>
+<p>代码生成器上线后的定位值得明确：它不替代开发者，替代的是”第三十个查询页”的体力劳动；生成的代码落盘后和手写代码一视同仁地被修改——**生成器的价值是给同构代码一个”零差异的起点”**，而不是维护什么”低代码平台”。</p>
+<h2 id="四、密钥泄漏事故：发布产物的内容审计"><a href="#四、密钥泄漏事故：发布产物的内容审计" class="headerlink" title="四、密钥泄漏事故：发布产物的内容审计"></a>四、密钥泄漏事故：发布产物的内容审计</h2><p>还有一次不该发生的事故：插件的翻译功能调用外部翻译接口，<strong>接口密钥被打进了发布包</strong>——从某个版本起，凡是下载插件的 zip 里都能翻出密钥，持续了十几个版本才被发现。修复分三层：构建时注入（密钥改为构建期从本地未入库的配置注入，仓库和产物里都不再出现）、历史作废（旧密钥全部轮换失效）、流程补丁（<strong>发布前产物内容审计进检查清单</strong>）。</p>
+<p>复盘的教训比修复本身值钱：<strong>内部工具因为”不对外”而放松了安全纪律，但它的分发面（团队全体加私服可达者）并不比小产品小</strong>；密钥进包的根因是”本地能跑就行”的开发习惯没有在构建链路上被拦截——<strong>凡是产物，就要审计产物里有什么</strong>，这条对插件、对 fat jar、对镜像同样成立。</p>
+<h2 id="五、面试视角：五个问题拆到底"><a href="#五、面试视角：五个问题拆到底" class="headerlink" title="五、面试视角：五个问题拆到底"></a>五、面试视角：五个问题拆到底</h2><p><strong>Q1：IDE 插件为什么会拖卡整个编辑器？</strong></p>
+<p>答：编辑器回调是全 IDE 频率最高的事件，插件在回调里做了 O(项目大小) 的索引查询——回调频率乘单次成本失控，叠加成持续卡顿和 GC 压力。修复是缓存加异步：资源映射常驻内存、文件变更才失效，索引查询彻底移出编辑器回调。沉淀成铁律：热路径回调禁全局索引，回调的”合规阶段”不等于”预算无限”。</p>
+<p><strong>Q2：IDE 插件最典型的内存泄漏是什么？</strong></p>
+<p>答：订阅不带生命周期——消息总线监听、编辑器持有的对象，如果没有正确注册到释放体系，插件组件销毁后它们仍然存活，随使用累积。修复的纪律是<strong>一切订阅和持有都显式挂生命周期</strong>，卸载即回收。这类泄漏的排查靠内存快照对比（开关文件前后做增量分析），工具平台自带支持。</p>
+<p><strong>Q3：平台大版本迁移的坑和收益？</strong></p>
+<p>答：坑是构建体系和 API 的破坏性变更，机械但量大。真正的收益是借迁移做架构升级——我们把手工发版序列固化成构建任务（本地更新描述生成加上传一条命令），发版频率显著上升。经验是<strong>迁移的价值要主动榨取</strong>：单纯的 API 翻译不值得做，带着工程债清单一起迁才值。</p>
+<p><strong>Q4：代码生成器怎么保证生成代码的正确性？</strong></p>
+<p>答：三段式：反编译框架取证（生成口径对齐存量手写代码，不靠记忆）；静态护栏（单测断言加 golden 快照——模板改动导致输出漂移会被逮住）；沙箱全链路验收（真实 IDE 环境里跑完选表、生成、编译）。核心观念是<strong>生成器和编译器同类：它输出的东西必须可验证，而且验证要自动化</strong>。</p>
+<p><strong>Q5：密钥打进发布包的事故，根因是什么？</strong></p>
+<p>答：表层是”本地能跑就行”的配置习惯，根因是发布链路没有产物审计环节——密钥进包十几个版本无人发现。修复三层：构建期注入加本地配置不入库、密钥全部轮换、发布前产物内容审计进检查清单。通用化：<strong>审计的对象是产物不是源码</strong>——源码干净不代表产物干净，依赖打包、资源合并都会把不该带的东西带进去。</p>
+<p><strong>Q6：AI 时代，这类自研工具链还有价值吗？</strong></p>
+<p>答：导航类断链修复（跳转、引用）AI 短期替代不了——它需要精确的工程语义而不是生成。生成器类工具和 AI 是竞合关系：同构代码的生成 AI 也能做，但 golden 快照那套”输出必须零漂移可验证”的纪律恰恰是 AI 生成缺的——<strong>未来形态大概率是 AI 负责生成初稿、工具链负责验证护栏</strong>。工具链的长期价值在它沉淀的工程纪律，不在某个具体功能。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><ul>
+<li><strong>“回调频率乘单次成本”是事件驱动系统的通用性能公式</strong>：编辑器回调、消息消费、过滤器全适用——热路径禁全局索引是第一铁律；</li>
+<li><strong>订阅不带生命周期就是泄漏</strong>：IDE 插件的内存问题几乎全是 Disposable 纪律问题；</li>
+<li><strong>迁移的价值要主动榨取</strong>：平台升级时把发版手工序列固化成构建任务，工具的 DevOps 也是产品力；</li>
+<li><strong>代码生成器的本质是编译器</strong>：反编译取证对齐口径、golden 快照防漂移、沙箱全链路验收——输出可验证才配叫生成；</li>
+<li><strong>审计产物而不是源码</strong>：密钥进包十几个版本的教训，对插件、fat jar、镜像同样成立；</li>
+<li><strong>工具链的长期价值是沉淀的工程纪律</strong>：AI 时代的分工是 AI 生成初稿、工具链守验证护栏。</li>
+</ul>
+<p>下一篇预告：<strong>盘点篇</strong>——二十一篇机制与交付的考点索引（按面试官的提问路径组织）、导出与归档的拼图整合，以及”一个底座、多种交付、多端工具链”的项目经历地图。</p>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%E5%8D%81%E4%B8%89%EF%BC%89%EF%BC%9A%E7%9B%98%E7%82%B9%E7%AF%87%E2%80%94%E2%80%94%E5%85%A8%E7%B3%BB%E5%88%97%E8%80%83%E7%82%B9%E7%B4%A2%E5%BC%95%E4%B8%8E%E9%A1%B9%E7%9B%AE%E7%BB%8F%E5%8E%86%E5%9C%B0%E5%9B%BE/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            MES+WMS 面试备战（二十三）：盘点篇——全系列考点索引与项目经历地图
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%E5%8D%81%E4%B8%80%EF%BC%89%EF%BC%9A%E6%8F%92%E4%BB%B6%E7%AF%87%E2%80%94%E2%80%94%E7%BB%99%E8%87%AA%E7%A0%94%E6%A1%86%E6%9E%B6%E5%86%99-IDEA-%E6%8F%92%E4%BB%B6%EF%BC%9APSI-%E4%B8%8E%E6%96%AD%E9%93%BE%E4%BF%AE%E5%A4%8D/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">MES+WMS 面试备战（二十一）：插件篇——给自研框架写 IDEA 插件：PSI 与断链修复</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/">插件开发</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/AI/" rel="tag">AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Android/" rel="tag">Android</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ArkTS/" rel="tag">ArkTS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C/" rel="tag">C#</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClassLoader/" rel="tag">ClassLoader</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ERP/" rel="tag">ERP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Eureka/" rel="tag">Eureka</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HarmonyOS/" rel="tag">HarmonyOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ/" rel="tag">IntelliJ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ-IDEA/" rel="tag">IntelliJ IDEA</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaAgent/" rel="tag">JavaAgent</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Kubernetes/" rel="tag">Kubernetes</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/OptaPlanner/" rel="tag">OptaPlanner</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PSI/" rel="tag">PSI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PowerShell/" rel="tag">PowerShell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Prometheus/" rel="tag">Prometheus</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Quartz/" rel="tag">Quartz</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" rel="tag">SQL优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SaaS/" rel="tag">SaaS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Samba/" rel="tag">Samba</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WPF/" rel="tag">WPF</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebView/" rel="tag">WebView</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Windows/" rel="tag">Windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BA%A7%E5%93%81/" rel="tag">产品</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag">分布式</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" rel="tag">分布式事务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" rel="tag">分布式锁</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%9B%BE%E8%AE%BA/" rel="tag">图论</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8D/" rel="tag">备份恢复</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B7%A5%E6%8E%A7/" rel="tag">工控</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/" rel="tag">工程效能</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag">性能优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" rel="tag">插件开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%99%E7%A8%8B/" rel="tag">教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/" rel="tag">数据同步</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%B7%B7%E5%90%88%E5%BC%80%E5%8F%91/" rel="tag">混合开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">源码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AE%80%E5%8E%86/" rel="tag">简历</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" rel="tag">线程模型</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" rel="tag">踩坑复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E6%8A%80%E8%83%BD/" rel="tag">软技能</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" rel="tag">运维部署</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%99%90%E6%B5%81/" rel="tag">限流</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9/" rel="tag">面试考点</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/AI/" style="font-size: 10px;">AI</a> <a href="../../../../tags/Android/" style="font-size: 10px;">Android</a> <a href="../../../../tags/ArkTS/" style="font-size: 10px;">ArkTS</a> <a href="../../../../tags/C/" style="font-size: 10px;">C#</a> <a href="../../../../tags/CI-CD/" style="font-size: 10px;">CI/CD</a> <a href="../../../../tags/CentOS/" style="font-size: 10.77px;">CentOS</a> <a href="../../../../tags/ClassLoader/" style="font-size: 10px;">ClassLoader</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="../../../../tags/ERP/" style="font-size: 10px;">ERP</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/EasyUI/" style="font-size: 10.77px;">EasyUI</a> <a href="../../../../tags/Eureka/" style="font-size: 10px;">Eureka</a> <a href="../../../../tags/GC/" style="font-size: 10.77px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 10.77px;">Git Bash</a> <a href="../../../../tags/GitHub-Actions/" style="font-size: 10px;">GitHub Actions</a> <a href="../../../../tags/Github/" style="font-size: 11.54px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 10.77px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 14.62px;">Hadoop</a> <a href="../../../../tags/HarmonyOS/" style="font-size: 10px;">HarmonyOS</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/HttpClient/" style="font-size: 10.77px;">HttpClient</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/IntelliJ/" style="font-size: 11.54px;">IntelliJ</a> <a href="../../../../tags/IntelliJ-IDEA/" style="font-size: 10.77px;">IntelliJ IDEA</a> <a href="../../../../tags/JVM/" style="font-size: 16.92px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaAgent/" style="font-size: 10px;">JavaAgent</a> <a href="../../../../tags/JavaScript/" style="font-size: 15.38px;">JavaScript</a> <a href="../../../../tags/Kubernetes/" style="font-size: 10px;">Kubernetes</a> <a href="../../../../tags/Linux/" style="font-size: 12.31px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 13.85px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 10.77px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 12.31px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 13.08px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 17.69px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 10.77px;">Node.js</a> <a href="../../../../tags/OptaPlanner/" style="font-size: 10px;">OptaPlanner</a> <a href="../../../../tags/PSI/" style="font-size: 10px;">PSI</a> <a href="../../../../tags/PowerShell/" style="font-size: 10px;">PowerShell</a> <a href="../../../../tags/Prometheus/" style="font-size: 10px;">Prometheus</a> <a href="../../../../tags/Quartz/" style="font-size: 10px;">Quartz</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 11.54px;">RabbitMQ</a> <a href="../../../../tags/Redis/" style="font-size: 13.08px;">Redis</a> <a href="../../../../tags/SQL/" style="font-size: 13.08px;">SQL</a> <a href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" style="font-size: 10.77px;">SQL优化</a> <a href="../../../../tags/SaaS/" style="font-size: 11.54px;">SaaS</a> <a href="../../../../tags/Samba/" style="font-size: 10px;">Samba</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 10.77px;">Shell</a> <a href="../../../../tags/Spring/" style="font-size: 15.38px;">Spring</a> <a href="../../../../tags/Spring-Cloud/" style="font-size: 10.77px;">Spring Cloud</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WPF/" style="font-size: 10px;">WPF</a> <a href="../../../../tags/WebSocket/" style="font-size: 11.54px;">WebSocket</a> <a href="../../../../tags/WebView/" style="font-size: 10px;">WebView</a> <a href="../../../../tags/Windows/" style="font-size: 10px;">Windows</a> <a href="../../../../tags/XtraBackup/" style="font-size: 11.54px;">XtraBackup</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/Zuul/" style="font-size: 10px;">Zuul</a> <a href="../../../../tags/hexo/" style="font-size: 10.77px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 10.77px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 10.77px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E4%BA%A7%E5%93%81/" style="font-size: 10px;">产品</a> <a href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" style="font-size: 10px;">体验优化</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F/" style="font-size: 10px;">分布式</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">分布式事务</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" style="font-size: 10px;">分布式锁</a> <a href="../../../../tags/%E5%89%8D%E7%AB%AF/" style="font-size: 11.54px;">前端</a> <a href="../../../../tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 10px;">图论</a> <a href="../../../../tags/%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8D/" style="font-size: 10px;">备份恢复</a> <a href="../../../../tags/%E5%A4%8D%E7%9B%98/" style="font-size: 10.77px;">复盘</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" style="font-size: 10.77px;">实战教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B7%A5%E6%8E%A7/" style="font-size: 10px;">工控</a> <a href="../../../../tags/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/" style="font-size: 11.54px;">工程效能</a> <a href="../../../../tags/%E5%B9%B6%E5%8F%91/" style="font-size: 11.54px;">并发</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 16.15px;">微服务</a> <a href="../../../../tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" style="font-size: 10px;">性能优化</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 16.15px;">排查实战</a> <a href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" style="font-size: 11.54px;">插件开发</a> <a href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" style="font-size: 10.77px;">故障复盘</a> <a href="../../../../tags/%E6%95%99%E7%A8%8B/" style="font-size: 10px;">教程</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/" style="font-size: 10px;">数据同步</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" style="font-size: 10.77px;">数据备份</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 11.54px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 18.46px;">架构</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="../../../../tags/%E6%B7%B7%E5%90%88%E5%BC%80%E5%8F%91/" style="font-size: 10.77px;">混合开发</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">源码解析</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 10.77px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.54px;">竹云</a> <a href="../../../../tags/%E7%AE%80%E5%8E%86/" style="font-size: 10.77px;">简历</a> <a href="../../../../tags/%E7%AE%97%E6%B3%95/" style="font-size: 10.77px;">算法</a> <a href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" style="font-size: 10px;">线程模型</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 11.54px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 10px;">设计模式</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" style="font-size: 10.77px;">踩坑复盘</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" style="font-size: 16.15px;">踩坑实录</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a> <a href="../../../../tags/%E8%BD%AF%E6%8A%80%E8%83%BD/" style="font-size: 11.54px;">软技能</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4/" style="font-size: 10.77px;">运维</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" style="font-size: 10px;">运维部署</a> <a href="../../../../tags/%E9%99%90%E6%B5%81/" style="font-size: 10px;">限流</a> <a href="../../../../tags/%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9/" style="font-size: 19.23px;">面试考点</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../%E7%AE%80%E5%8E%86%E5%AE%9E%E6%88%98%C2%B7%E4%B8%8B%E2%80%94%E2%80%94%E7%9C%9F%E5%AE%9E%E7%AE%80%E5%8E%86%E6%A8%A1%E6%9D%BF%EF%BC%9A%E5%90%8E%E7%AB%AF%E5%B7%A5%E7%A8%8B%E5%B8%88%E7%89%88%EF%BC%8C%E5%8F%AF%E7%9B%B4%E6%8E%A5%E6%94%B9%E7%94%A8/">简历实战·下——真实简历模板：后端工程师版，可直接改用</a>
+          </li>
+        
+          <li>
+            <a href="../%E7%AE%80%E5%8E%86%E5%AE%9E%E6%88%98%C2%B7%E4%B8%8A%E2%80%94%E2%80%94%E6%92%B0%E5%86%99%E4%B8%8E%E7%BE%8E%E5%8C%96%EF%BC%9A%E6%8A%8A%E4%BA%8C%E5%8D%81%E4%B8%83%E7%AF%87%E7%B4%A0%E6%9D%90%E5%86%99%E6%88%90%E4%B8%80%E4%BB%BD%E8%83%BD%E6%8B%BF%E5%88%B0%E9%9D%A2%E8%AF%95%E7%9A%84%E7%AE%80%E5%8E%86/">简历实战·上——撰写与美化：把二十七篇素材写成一份能拿到面试的简历</a>
+          </li>
+        
+          <li>
+            <a href="../MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%E5%8D%81%E4%B8%83%EF%BC%89%EF%BC%9A%E8%BF%90%E7%BB%B4%E7%AF%87%C2%B7%E4%B8%8B%E2%80%94%E2%80%94%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%B8%80%E9%94%AE%E5%8C%96%EF%BC%9A%E5%A2%9E%E9%87%8F%E9%93%BE%E7%9A%84%E8%87%AA%E6%84%88%E4%B8%8E%E6%81%A2%E5%A4%8D%E6%BC%94%E7%BB%83/">MES+WMS 面试备战（二十七）：运维篇·下——物理备份一键化：增量链的自愈与恢复演练</a>
+          </li>
+        
+          <li>
+            <a href="../MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%E5%8D%81%E5%85%AD%EF%BC%89%EF%BC%9A%E8%BF%90%E7%BB%B4%E7%AF%87%C2%B7%E4%B8%8A%E2%80%94%E2%80%94%E6%8A%8A-MES-%E6%90%AC%E4%B8%8A-K8s%EF%BC%9A%E9%83%A8%E7%BD%B2%E6%B8%85%E5%8D%95%E3%80%81%E7%A8%B3%E5%AE%9A%E5%9F%9F%E5%90%8D%E4%B8%8E%E8%87%AA%E5%BB%BA%E7%9B%91%E6%8E%A7%E6%A0%88/">MES+WMS 面试备战（二十六）：运维篇·上——把 MES 搬上 K8s：部署清单、稳定域名与自建监控栈</a>
+          </li>
+        
+          <li>
+            <a href="../MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%E5%8D%81%E4%BA%94%EF%BC%89%EF%BC%9A%E7%BB%88%E5%B1%80%E7%AF%87%E2%80%94%E2%80%94%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E6%B8%85%E5%8D%95%E3%80%81%E8%BF%BD%E9%97%AE%E6%A0%91%E4%B8%8E%E5%8F%8D%E9%97%AE%E7%8E%AF%E8%8A%82/">MES+WMS 面试备战（二十五）：终局篇——高频问题清单、追问树与反问环节</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>

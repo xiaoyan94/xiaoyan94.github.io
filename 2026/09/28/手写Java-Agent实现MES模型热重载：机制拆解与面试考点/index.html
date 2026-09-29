@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>手写Java Agent实现MES模型热重载：机制拆解与面试考点 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="接手 MES 系统的第一周就被一个问题教育了：这套系统是模型驱动的——页面、接口、校验规则全部由各模块的模型 XML 声明，启动时统一注册进内存容器。改一行 XML 想看效果？重启整个后端，喝完一杯水回来还没好。而所谓”改模型”恰恰是日常开发里最高频的动作。 于是写了一个两三百行的 Java Agent：改完 XML、mvn compile 落盘，运行中的 JVM 两秒内自动重载新模型，不用重启。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="手写Java Agent实现MES模型热重载：机制拆解与面试考点">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/09/28/%E6%89%8B%E5%86%99Java-Agent%E5%AE%9E%E7%8E%B0MES%E6%A8%A1%E5%9E%8B%E7%83%AD%E9%87%8D%E8%BD%BD%EF%BC%9A%E6%9C%BA%E5%88%B6%E6%8B%86%E8%A7%A3%E4%B8%8E%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="接手 MES 系统的第一周就被一个问题教育了：这套系统是模型驱动的——页面、接口、校验规则全部由各模块的模型 XML 声明，启动时统一注册进内存容器。改一行 XML 想看效果？重启整个后端，喝完一杯水回来还没好。而所谓”改模型”恰恰是日常开发里最高频的动作。 于是写了一个两三百行的 Java Agent：改完 XML、mvn compile 落盘，运行中的 JVM 两秒内自动重载新模型，不用重启。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-28T09:51:32.000Z">
+<meta property="article:modified_time" content="2026-09-29T13:56:05.187Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="JVM">
+<meta property="article:tag" content="架构">
+<meta property="article:tag" content="ClassLoader">
+<meta property="article:tag" content="JavaAgent">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-手写Java-Agent实现MES模型热重载：机制拆解与面试考点" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      手写Java Agent实现MES模型热重载：机制拆解与面试考点
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-09-28T09:51:32.000Z" itemprop="datePublished">2026-09-28</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/ClassLoader/" rel="tag">ClassLoader</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/JavaAgent/" rel="tag">JavaAgent</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <p>接手 MES 系统的第一周就被一个问题教育了：这套系统是<strong>模型驱动</strong>的——页面、接口、校验规则全部由各模块的模型 XML 声明，启动时统一注册进内存容器。改一行 XML 想看效果？重启整个后端，喝完一杯水回来还没好。而所谓”改模型”恰恰是日常开发里最高频的动作。</p>
+<p>于是写了一个两三百行的 Java Agent：改完 XML、<code>mvn compile</code> 落盘，运行中的 JVM <strong>两秒内自动重载新模型</strong>，不用重启。这个项目体量很小，但把 Java Agent、Attach API、ClassLoader、NIO 文件监听这几块面试高频知识全部串了一遍。这篇文章拆解它的机制与原理，每部分附上对应的面试考点，文末还附一版按真实追问链演练的模拟面试——这个小项目完全可以当 JVM 方向的自我介绍弹药库。</p>
+<a id="more"></a>
+
+<h2 id="一、背景：模型驱动架构下，为什么改-XML-必须重启"><a href="#一、背景：模型驱动架构下，为什么改-XML-必须重启" class="headerlink" title="一、背景：模型驱动架构下，为什么改 XML 必须重启"></a>一、背景：模型驱动架构下，为什么改 XML 必须重启</h2><p>MES 系统里大量业务是”声明式”的：每个模块用模型 XML 描述业务对象（字段、类型、校验、列表列、i18n 文案），启动时由各模块的启动类（下文统称 <code>Activatar</code>）把这些 XML 解析后注册进两个<strong>静态容器</strong>：</p>
+<ul>
+<li><strong>模型容器</strong>（化名 <code>ModelMgr</code>）：所有业务对象的元数据，接口层、页面层都从这取定义；</li>
+<li><strong>i18n 资源容器</strong>（化名 <code>I18nMgr</code>）：属性文件里的多语言文案。</li>
+</ul>
+<p>这套架构带来运行期的灵活性，代价是开发期的笨重：XML 只在启动时被读一次，之后容器就”冻住”了。改模型 → 编译 → 重启 → 等所有模块初始化完 → 验证，一个循环轻松吃掉几分钟。而改模型恰恰是 MES 开发里最高频的操作。</p>
+<p>问题本质很清晰：<strong>启动期执行的那段”扫描注册”逻辑，能不能在运行期再跑一遍？</strong> 只要 JVM 里还握着容器的引用和各模块启动类的引用，逻辑上完全可以——缺的只是一个”从外部进入 JVM”的通道。</p>
+<h2 id="二、总体设计"><a href="#二、总体设计" class="headerlink" title="二、总体设计"></a>二、总体设计</h2><pre class="mermaid">flowchart LR
+    DEV["开发者改模型 XML"] --> MVN["mvn compile 资源拷贝"]
+    MVN --> TC["target/classes 下的 XML 落盘"]
+    TC -->|"文件变更事件"| WS["Agent 的 WatchService 监听线程"]
+    WS --> D["800ms 防抖<br>等待文件落盘"]
+    D --> RL["reloadNow<br>反射重扫"]
+    RL --> MM["模型容器 ModelMgr"]
+    RL --> IM["i18n 容器 I18nMgr"]
+    MM --> EFF["接口与页面立即使用新模型"]
+    IM --> EFF</pre>
+
+<p>Agent 本体是一个独立的小 jar，不含任何业务类，通过两种方式进入目标 JVM：</p>
+<ul>
+<li><strong>启动注入</strong>：<code>-javaagent</code> 参数随模块启动，触发 <code>premain</code>；</li>
+<li><strong>运行期注入</strong>：本机的启动器进程通过 Attach API 把 agent 挂到运行中的 JVM，触发 <code>agentmain</code>。挂载时带 <code>watch</code> 参数就常驻监听，带 <code>reload</code> 参数就一次性重扫后退出——后者是文件监听失效时的手动兜底通道。</li>
+</ul>
+<p>进入 JVM 后分两步走：先用 <code>Instrumentation</code> 扫出所有模块启动类，再为每个模块起 WatchService 盯住它 <code>target/classes</code> 下的模型目录和 i18n 目录。XML 或 properties 变更 → 防抖 → 等文件写完 → 反射重跑各启动类的注册逻辑（镜像启动期的调用序列）→ 容器焕然一新。</p>
+<p><strong>一个关键的架构决策</strong>：为什么不用 <code>Instrumentation.redefineClasses</code> 做字节码级热替换？因为它有硬限制——不能增删方法、不能改字段、不能改继承关系，而且我们要”热更”的其实不是 class 文件，而是<strong>运行期的模型注册表数据</strong>。真正要复用的资产是启动期那段初始化逻辑，直接反射重跑它，比改字节码简单一个数量级、可靠一个数量级。JRebel 走的是全量字节码热替换（商业级复杂度），Spring Boot DevTools 本质是快速重启，而”重跑初始化逻辑”是在两者之间的第三条路：<strong>不动字节码，只重放业务初始化</strong>。这个选型对比是面试里很好展开的一段。</p>
+<h2 id="三、挂载机制：premain-与-agentmain"><a href="#三、挂载机制：premain-与-agentmain" class="headerlink" title="三、挂载机制：premain 与 agentmain"></a>三、挂载机制：premain 与 agentmain</h2><p>Java Agent 有两个入口，本项目两个都用了，它们触发的时机和方式完全不同：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>premain</th>
+<th>agentmain</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>进入方式</td>
+<td><code>-javaagent:xxx.jar</code> 启动参数</td>
+<td>运行期 Attach API 注入</td>
+</tr>
+<tr>
+<td>触发时机</td>
+<td>main 方法之前</td>
+<td>JVM 运行中任意时刻</td>
+</tr>
+<tr>
+<td>前提</td>
+<td>必须在启动时决定</td>
+<td>可对任何已运行的 JVM 补挂</td>
+</tr>
+<tr>
+<td>MANIFEST 声明</td>
+<td><code>Premain-Class</code></td>
+<td><code>Agent-Class</code></td>
+</tr>
+</tbody></table>
+<p>运行期注入的实现只有几行核心代码，但背后是完整的 Attach API 链路：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">VirtualMachine vm = VirtualMachine.attach(pid);</span><br><span class="line">vm.loadAgent(agentJar, mode);   <span class="comment">// mode = "watch" 或 "reload"</span></span><br><span class="line">vm.detach();</span><br></pre></td></tr></table></figure></div>
+
+<pre class="mermaid">sequenceDiagram
+    autonumber
+    participant ENG as 开发引擎进程
+    participant ATT as Attach 启动器
+    participant JVM as 目标 JVM
+    participant AG as Agent 入口
+    ENG->>ATT: 传目标 pid 与模式
+    ATT->>JVM: VirtualMachine.attach + loadAgent
+    JVM->>AG: 目标 JVM 触发 agentmain
+    AG->>AG: 扫描已加载类找各模块启动类
+    alt watch 模式
+        AG->>JVM: 起 WatchService 常驻监听
+    else reload 模式
+        AG->>JVM: 一次性重扫后返回
+    end</pre>
+
+<p>一个容易被忽视的细节：agent 以 <code>reload</code> 模式 attach 时是<strong>一次性</strong>的（重扫完就返回），以 <code>watch</code> 模式 attach 才常驻。而且 agent 在目标 JVM 里只会加载一次，所以入口做了<strong>幂等保护</strong>——<code>volatile boolean started</code> 标记 + 重复进入直接跳过，保证 premain 已驻留后再 attach 不会起两套监听线程。</p>
+<blockquote>
+<p><strong>面试考点 1</strong>：premain 和 agentmain 的区别？agentmain 靠什么机制进入目标 JVM？<br>答题要点：Attach API 的实现原理——每个 JVM 起来后内置一个 Attach Listener 线程，监听本机的 domain socket（Windows 上是命名管道）；attach 方进程通过同一套机制连上去，发送 load 指令，目标 JVM 就在自己的进程内加载 agent jar 并调用 agentmain。这也是 Arthas 能”无侵入连上任意 JVM”的原理。</p>
+</blockquote>
+<h2 id="四、动态发现：不配置模块清单，扫已加载类"><a href="#四、动态发现：不配置模块清单，扫已加载类" class="headerlink" title="四、动态发现：不配置模块清单，扫已加载类"></a>四、动态发现：不配置模块清单，扫已加载类</h2><p>Agent 怎么知道要盯哪些模块？最直觉的做法是写配置文件列出模块清单，但那样每加一个模块都要维护配置，而且 attach 到不同进程时清单也不一样。</p>
+<p>实际做法是利用 <code>Instrumentation</code> 的能力<strong>反向发现</strong>：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (Class&lt;?&gt; c : inst.getAllLoadedClasses()) &#123;</span><br><span class="line">    <span class="keyword">if</span> (c.getName().endsWith(<span class="string">".startup.Activatar"</span>)) &#123; found.add(c); &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>每个模块的启动类都有统一的命名约定 <code>*.startup.Activatar</code>，扫一遍已加载类就能拿到全部模块，零配置、天然幂等。这里还有个时序问题：<strong>premain 执行时，应用类一个都还没加载</strong>（它跑在 main 之前）。所以 agent 不能在 premain 里干活，而是起一个等待线程，每秒轮询一次”启动类出现了没有”，最多等 180 秒——等应用启动到位、模块类都加载完，才开始注册文件监听。等不到就打日志放弃，绝不影响应用本身。</p>
+<blockquote>
+<p><strong>面试考点 2</strong>：<code>getAllLoadedClasses</code> 是怎么拿到的？Instrumentation 接口的底层是什么？<br>答题要点：Instrumentation 实例由 JVM 注入给 agent 入口方法，底层是 JVMTI（JVM Tool Interface）——JVM 暴露给 native agent 的能力面（类的枚举&#x2F;重定义、堆遍历、断点等），java.lang.instrument 是它的 Java 封装。同族的 getAllLoadedClasses &#x2F; redefineClasses &#x2F; retransformClasses &#x2F; appendToBootstrapClassLoaderSearch 各自的用途和限制值得展开。</p>
+</blockquote>
+<h2 id="五、文件监听：WatchService-的正确打开方式"><a href="#五、文件监听：WatchService-的正确打开方式" class="headerlink" title="五、文件监听：WatchService 的正确打开方式"></a>五、文件监听：WatchService 的正确打开方式</h2><p>监听用的是 NIO 的 <code>WatchService</code>，几个工程细节决定了它”能不能用稳”：</p>
+<p><strong>1. 递归注册 + 新目录动态纳入。</strong> WatchService 只监听注册过的目录本身，不递归。模型和 i18n 目录下有多层子目录，所以注册时 <code>Files.walk</code> 把所有子目录全部注册；同时处理 <code>ENTRY_CREATE</code> 事件时判断”新出现的是不是目录”，是就把新目录也注册进去——覆盖掉运行中新增的层级。</p>
+<p><strong>2. 事件类型要收窄。</strong> 只关心文件名以 <code>.xml</code> &#x2F; <code>.properties</code> 结尾的变更，其他事件（比如临时文件、编辑器备份文件）直接忽略。每次保存 IDE 或 Maven 会产生一串事件，一条条对应处理毫无意义。</p>
+<p><strong>3. 防抖：800ms 时间窗。</strong> 一次保存往往触发 modify + create 等多个事件、一次 Maven 资源拷贝更是连删带建一串。做法是记录上次重扫时间戳，距上次不足 800ms 的整批事件合并为一次重扫。防抖是处理文件系统事件风暴的标准姿势。</p>
+<p><strong>4. 最隐蔽的坑：Maven 拷贝资源是”先删后建”。</strong> 事件到达时，被改的文件可能正处于”已被删除、新文件还没写完”的中间态。如果这时立刻去枚举目录重扫，<strong>刚改的那个文件会缺席本次加载</strong>——表现为”改了但不生效，改第二次才生效”，极具迷惑性。解法是就绪检测：轮询等待所有事件涉及的文件重新存在且可读（上限约 1.5 秒，50ms 步进），文件齐了再补 100ms 稳定期，然后才重扫。这是本项目里最值得讲的工程细节：<strong>不是盲等固定时长，而是以”文件就绪”为条件的短步重试</strong>，既不漏加载，也不在快速构建上白等。</p>
+<p><strong>5. 两个必须处理的边界。</strong> <code>OVERFLOW</code> 事件（OS 事件队列溢出，JDK 明确不保证事件完整送达）——本项目选择直接跳过该事件，靠下一轮真实事件兜底；<code>key.reset()</code> 返回 false（监听目录失效，比如整个目录被删）——监听线程退出而不是空转。另外 WatchService 的 <code>take()</code> 是阻塞的，放在独立线程里跑，不占业务线程。</p>
+<blockquote>
+<p><strong>面试考点 3</strong>：WatchService 的底层原理与局限？<br>答题要点：各平台有原生机制（Linux inotify、Windows ReadDirectoryChangesW），JDK 封装成统一 API；局限包括只监听注册目录本身、事件不保证不丢（OVERFLOW）、大批量变更时事件风暴需要应用层防抖、网络文件系统&#x2F;部分 IDE 的写入方式可能不产生预期事件——所以保留一个手动 reload 的兜底通道。</p>
+</blockquote>
+<h2 id="六、重扫执行：类加载器的两个深坑"><a href="#六、重扫执行：类加载器的两个深坑" class="headerlink" title="六、重扫执行：类加载器的两个深坑"></a>六、重扫执行：类加载器的两个深坑</h2><p>重扫是整个 agent 里离 JVM 原理最近的部分。需求很朴素：目标 JVM 里，启动类在启动期调用过”模型容器的注册方法”（形如 <code>ModelMgr.addAppModels(moduleName, activatarClass)</code>），现在要通过反射再调一遍。但直接写会连环踩坑。</p>
+<p><strong>坑一：LinkageError——同一个类，两个类加载器。</strong></p>
+<p>agent jar 是独立打包的，如果把模型容器类打进 agent jar，或者用 agent 自己的类加载器去 <code>Class.forName(&quot;ModelMgr&quot;)</code>，JVM 里就会出现两个 <code>ModelMgr</code>：业务侧一个、agent 侧一个。它们字节码相同，但<strong>由不同 ClassLoader 加载的同一个类，JVM 视为两个完全不同的类型</strong>，互相赋值直接抛 <code>ClassCastException</code>，混着用抛 <code>LinkageError</code>。</p>
+<p>解法分两层：</p>
+<ul>
+<li><strong>agent jar 里坚决不打包任何业务类</strong>（构建上强制），agent 只做”胶水”；</li>
+<li>反射调用前，<strong>用目标应用自身的类加载器</strong>去加载容器类：</li>
+</ul>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ClassLoader cl = activatarClass.getClassLoader();</span><br><span class="line">Class&lt;?&gt; mgr = cl.loadClass(<span class="string">"ModelMgr"</span>);   <span class="comment">// 和业务侧同一个 Class 对象</span></span><br><span class="line">mgr.getMethod(<span class="string">"addAppModels"</span>, String<span class="class">.<span class="keyword">class</span>, <span class="title">Class</span>.<span class="title">class</span>).<span class="title">invoke</span>(<span class="title">null</span>, <span class="title">name</span>, <span class="title">activatar</span>)</span>;</span><br></pre></td></tr></table></figure></div>
+
+<p>这样拿到的 <code>Class</code> 对象和业务代码里用的是同一个，反射调用自然无缝。</p>
+<p><strong>坑二：线程上下文类加载器（TCCL）——ClassNotFoundException 从哪来。</strong></p>
+<p>第一版重扫时，容器注册逻辑内部要按配置反射加载某个业务依赖的第三方库，结果在 agent 线程里稳定抛 <code>ClassNotFoundException</code>——这个依赖明明在应用里用得好好的。</p>
+<p>根因：容器内部用的是 <code>Thread.currentThread().getContextClassLoader()</code>。JVM 里每个线程的 TCCL 默认继承自创建它的线程，而 <strong>agent 的 attach 线程和 watch 线程是 JVM 侧创建的，TCCL 是系统类加载器（AppClassLoader）</strong>——它只看得到启动类路径，看不到应用容器里内层类加载器管的那些业务依赖 jar，自然找不到。</p>
+<p>解法：重扫前显式切换上下文类加载器，扫完在 finally 里恢复原值：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ClassLoader prev = Thread.currentThread().getContextClassLoader();</span><br><span class="line">Thread.currentThread().setContextClassLoader(appClassLoader);</span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">// 反射执行重扫，期间容器内部用 TCCL 加载业务依赖，一切正常</span></span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    Thread.currentThread().setContextClassLoader(prev);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<blockquote>
+<p><strong>面试考点 4</strong>：什么是破坏双亲委派？TCCL 和它什么关系？<br>答题要点：双亲委派是类加载的默认规则，但存在合理的”破坏”场景。TCCL 的存在就是为了解决<strong>父加载器需要”反向”使用子加载器才能看到的类</strong>的问题——比如 JDBC：核心库（父）要加载各厂商驱动（子&#x2F;应用侧），只能借线程上下文类加载器过桥。SPI、JNDI、Spring 的各种资源加载都是这套机制。本题实战场景（agent&#x2F;JVM 侧线程 TCCL 看不到应用内层依赖，须显式切换并 finally 恢复）是把 TCCL 讲透的绝佳案例。</p>
+</blockquote>
+<blockquote>
+<p><strong>面试考点 5</strong>：为什么”由不同类加载器加载的同一个类”会出问题？<br>答题要点：JVM 中类的唯一性由”类加载器 + 全限定名”共同决定（命名空间隔离）。这是容器化隔离（Tomcat 多 webapp）、OSGi 的基石，也是 agent 开发最常见的事故来源。规避三板斧：agent 不带业务类、反射一律用目标类加载器、必要时 appendToBootstrapClassLoaderSearch。</p>
+</blockquote>
+<h2 id="七、并发与工程化细节"><a href="#七、并发与工程化细节" class="headerlink" title="七、并发与工程化细节"></a>七、并发与工程化细节</h2><p>几个小而关键的点，都是实际跑起来后补上的：</p>
+<ul>
+<li><strong>幂等</strong>：<code>volatile started</code> 防止 premain 与 attach 双路径重复初始化——agent 类在 JVM 里只加载一次，但入口方法可能被触发多次；</li>
+<li><strong>优雅降级</strong>：模块没有模型目录就跳过该模块并打日志；180 秒等不到启动类就整体放弃；任何一步失败都不影响应用主流程——<strong>开发辅助工具的第一原则是永远不能成为新的故障点</strong>；</li>
+<li><strong>差异化处理</strong>：个别模块注册完还有额外步骤（如重建数据库级 i18n 资源），重扫逻辑里按启动类名单独补偿，忠实镜像启动期的调用序列——重扫的正确性标准就是”和重启后的容器状态等价”；</li>
+<li><strong>日志带时间戳、带模式标注</strong>：出问题时能从应用日志直接还原”哪次变更、哪个模式、扫了哪些模块”，排查成本几乎为零。</li>
+</ul>
+<h2 id="八、面试考点速查"><a href="#八、面试考点速查" class="headerlink" title="八、面试考点速查"></a>八、面试考点速查</h2><p>这个项目的妙处在于：一个两三百行的工具，覆盖了一整套 JVM 方向的面试题，且每一问你都有真实踩坑经历背书：</p>
+<table>
+<thead>
+<tr>
+<th>考点</th>
+<th>对应本文</th>
+<th>亮出的实战证据</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Java Agent：premain &#x2F; agentmain &#x2F; Attach API 原理</td>
+<td>第三节</td>
+<td>两种挂载模式双通道设计，幂等保护</td>
+</tr>
+<tr>
+<td>JVMTI 与 Instrumentation 能力面</td>
+<td>第四节</td>
+<td>getAllLoadedClasses 做模块自动发现</td>
+</tr>
+<tr>
+<td>双亲委派与类加载器命名空间</td>
+<td>坑一</td>
+<td>agent 与业务的 LinkageError 规避</td>
+</tr>
+<tr>
+<td>线程上下文类加载器</td>
+<td>坑二</td>
+<td>agent 线程 ClassNotFoundException 的根因与修复</td>
+</tr>
+<tr>
+<td>redefineClasses 的能力边界</td>
+<td>第二节</td>
+<td>为什么选重跑初始化逻辑而非字节码替换</td>
+</tr>
+<tr>
+<td>NIO 文件监听原理与事件风暴</td>
+<td>第五节</td>
+<td>防抖、OVERFLOW、就绪检测、手动兜底</td>
+</tr>
+</tbody></table>
+<p>面试时讲项目的常见失败姿势是堆功能清单。这个项目反过来，<strong>每个功能点背后都是一个原理题的实战版本</strong>：被问 TCCL 时，讲 agent 线程看不到业务依赖导致 ClassNotFoundException、setContextClassLoader + finally 恢复的修复；被问类加载器隔离时，讲”字节码相同 ≠ 同一个类”；被问 WatchService 时，讲 Maven 先删后建导致”改第二次才生效”的诡异现象。原理 + 事故现场 + 修复方案三件套，比背概念的说服力强得多。</p>
+<h2 id="九、面试模拟实战：按追问链演练"><a href="#九、面试模拟实战：按追问链演练" class="headerlink" title="九、面试模拟实战：按追问链演练"></a>九、面试模拟实战：按追问链演练</h2><p>上一节的表格是索引，这一节是演练。真实面试里面试官不会照题库提问，而是<strong>顺着你上句话里的名词层层下钻</strong>，所以这里按追问链组织：每轮给出可以口头复述的参考回答（口语化，控制在 30~60 秒说完），并附面试官为什么追问。</p>
+<h3 id="开场：30-秒电梯陈述"><a href="#开场：30-秒电梯陈述" class="headerlink" title="开场：30 秒电梯陈述"></a>开场：30 秒电梯陈述</h3><p><strong>面试官：介绍一个你最有成就感的项目。</strong></p>
+<p>参考回答：</p>
+<blockquote>
+<p>我挑一个工程上不大、但 JVM 知识密度高的：MES 系统的模型热重载 Agent。我们的系统是模型驱动的，页面和接口的行为都由启动期注册进静态容器的模型 XML 决定，改一行 XML 要重启几分钟的 JVM 才能验证。我写了一个两三百行的 Java Agent，用 Attach API 注入运行中的 JVM，用 WatchService 监听编译产物里的模型文件，变更后反射重跑启动期的注册逻辑，改完模型两秒内生效，全程不用重启。项目不大，但类加载器、Attach、NIO 文件监听这几块我实打实踩了一遍坑，可以随便追问。</p>
+</blockquote>
+<p>要点：**”痛点—方案—效果—含金量”四句式**，数字要具体（两三百行、两秒、几分钟）；最后一句”可以随便追问”是主动递刀，把面试官引向你最熟的领域。</p>
+<h3 id="第一轮：Attach-API-下钻"><a href="#第一轮：Attach-API-下钻" class="headerlink" title="第一轮：Attach API 下钻"></a>第一轮：Attach API 下钻</h3><p><strong>面试官：你这个 Agent 是怎么”进入”一个已经在跑的 JVM 的？</strong></p>
+<p>参考回答：</p>
+<blockquote>
+<p>两条路。启动期就确定要用的话，加 <code>-javaagent</code> 参数，JVM 在 main 之前回调 premain；我的场景更多是模块已经在跑，走运行期 attach：本机起一个启动器进程，<code>VirtualMachine.attach(pid)</code> 连上目标 JVM，<code>loadAgent</code> 传 agent jar 路径和参数，目标 JVM 内部的 Attach Listener 线程收到指令后加载 agent jar、回调 agentmain。agentmain 里按参数分模式：带 watch 就常驻监听，带 reload 就一次性重扫完立即返回，不驻留。<br>幂等上有个细节：agent 类在目标 JVM 里只会加载一次，但入口方法可能被触发多次——比如 premain 已经驻留监听，又有人 attach。我用 volatile 标记保护，重复进入直接跳过，不会起两套监听线程。</p>
+</blockquote>
+<p><strong>面试官（追问）：Attach Listener 是什么？为什么 attach 只能连本机进程？</strong></p>
+<p>参考回答：</p>
+<blockquote>
+<p>每个 JVM 都内置一个 Attach Listener 线程，Linux 上是懒加载的——第一次有人 attach 时先给目标进程发信号把它拉起来，之后双方通过 unix domain socket（一个固定位置的临时文件）通信；Windows 上走命名管道。通信端点在本机文件系统里、且要求同用户，所以 attach 天然只能连本机同用户的进程。这也是它和 JMX 的本质区别：Attach 是进程级运维通道，JMX 是跨网络的服务管理协议，安全性模型完全不同。</p>
+</blockquote>
+<h3 id="第二轮：为什么不用字节码热替换"><a href="#第二轮：为什么不用字节码热替换" class="headerlink" title="第二轮：为什么不用字节码热替换"></a>第二轮：为什么不用字节码热替换</h3><p><strong>面试官：既然叫热更新，为什么不用 <code>Instrumentation.redefineClasses</code> 直接改类？</strong></p>
+<p>参考回答：</p>
+<blockquote>
+<p>两个层面。第一是能力边界：redefineClasses 限制很死——方法体可以改，但不能增删方法、不能加字段、不能改继承关系，而且只对已加载的类生效。第二是更根本的：我要热更的对象根本不是字节码。模型 XML 编译后不产生新的 class 文件，它改变的是启动期注册进静态容器的运行期数据。真正可复用的资产是”启动类里那段扫描注册逻辑”，那直接反射把它再跑一遍就行，不动任何字节码，天然规避了 redefine 的全部限制。所以选型是<strong>重放初始化逻辑</strong>，不是<strong>替换类定义</strong>。JRebel 那种全量字节码热替换要适配海量框架的内存态，是另一个数量级的工程；Spring Boot DevTools 则干脆是快速重启。这三种路线的取舍本身就是一道好题。</p>
+</blockquote>
+<h3 id="第三轮：LinkageError-事故现场"><a href="#第三轮：LinkageError-事故现场" class="headerlink" title="第三轮：LinkageError 事故现场"></a>第三轮：LinkageError 事故现场</h3><p><strong>面试官：说说你踩过的类加载器的坑。</strong></p>
+<p>参考回答：</p>
+<blockquote>
+<p>最典型的是 LinkageError。agent 和业务是两个 jar，如果 agent 用自己的类加载器去 <code>Class.forName</code> 业务容器类，JVM 里就会出现两个”同名类”：业务侧一个、agent 侧一个。JVM 里类的唯一性由<strong>定义类加载器 + 全限定名</strong>共同决定，两个加载器加载的同名类是两个不同的 Class 对象——互相赋值直接 ClassCastException，方法签名混用就是 LinkageError。<br>我的规避是三层：构建上 agent jar 强制不打包任何业务类，它只做胶水；反射时一律用目标类自身的 <code>getClassLoader()</code> 去 loadClass，保证拿到的是和业务侧同一个 Class 对象；工具类确需暴露给启动类路径时，才考虑 appendToBootstrapClassLoaderSearch。</p>
+</blockquote>
+<p><strong>面试官（追问）：双亲委派不是保证了类的唯一性吗？</strong></p>
+<p>参考回答：</p>
+<blockquote>
+<p>它保证的是** Bootstrap 可见的核心类**全局唯一——比如 <code>java.lang.String</code> 只会被根加载器加载一次。但应用类不在这个保护范围里：父加载器对子加载器是不可见的，同一份字节码被两个加载器各加载一次，JVM 层面就是两个类型。这个”隔离”其实是特性而不是缺陷：Tomcat 每个 webapp 一个加载器实现多应用隔离、OSGi 的模块化、Spring Boot fat jar 的启动类加载器隔离，靠的都是这个语义。理解”什么时候它是特性、什么时候它是事故”，是 agent 开发的必修课。</p>
+</blockquote>
+<h3 id="第四轮：TCCL-追问链"><a href="#第四轮：TCCL-追问链" class="headerlink" title="第四轮：TCCL 追问链"></a>第四轮：TCCL 追问链</h3><p><strong>面试官：线程上下文类加载器是什么？什么场景会用到？</strong></p>
+<p>参考回答：</p>
+<blockquote>
+<p>先说它为什么存在。双亲委派是”子委托父”，方向是单向的，父加载器永远看不到子加载器里的类。但有些场景恰恰是<strong>父层代码要加载子层的实现</strong>——最经典是 JDBC：<code>java.sql</code> 在核心库里（父），驱动在应用 classpath 上（子），核心库想加载驱动，按委派规则走不通。JDK 的解法就是 TCCL：每个线程可以携带一个类加载器引用，父层代码不用自己的加载器，而是取 <code>Thread.currentThread().getContextClassLoader()</code> 去 load，相当于给”父找子”开了个口子——这是对双亲委派最常见的一种破坏。SPI、JNDI、Spring 的资源加载都是这套机制。</p>
+</blockquote>
+<p><strong>面试官（追问）：具体讲讲你项目里 TCCL 出的问题。</strong></p>
+<p>参考回答：</p>
+<blockquote>
+<p>重扫逻辑跑在 agent 的线程里，容器内部代码会用 TCCL 加载业务依赖。而 agent 的 attach 线程和 watch 线程是 JVM 侧创建的，TCCL 默认继承的是系统类加载器——它只看得到启动类路径，看不到应用容器内层加载器管的那些业务 jar，一跑就 ClassNotFoundException，而同一个类在业务线程里用得好好的。<br>修复就两行：重扫前 <code>setContextClassLoader(应用类加载器)</code>，finally 里恢复原值——不恢复的话，这个线程后续跑的其他任务会继承被污染的上下文。修完之后我意识到这其实和”JDBC 驱动加载不到”是同一类问题：<strong>谁提供的类，就用谁的加载器去加载</strong>，TCCL 只是把这条规则运行时化。</p>
+</blockquote>
+<h3 id="第五轮：WatchService-追问链"><a href="#第五轮：WatchService-追问链" class="headerlink" title="第五轮：WatchService 追问链"></a>第五轮：WatchService 追问链</h3><p><strong>面试官：文件监听有哪些坑？你怎么保证改一次就生效？</strong></p>
+<p>参考回答：</p>
+<blockquote>
+<p>四个坑，各有一个对应处理。一是不递归：WatchService 只监听注册过的目录本身，我注册时用 Files.walk 把模型和 i18n 的全部子目录注册掉，并且处理 ENTRY_CREATE 时发现新目录就动态补注册。二是事件风暴：一次保存、一次 Maven 资源拷贝都是一串事件，我做 800ms 防抖，时间窗内整批合并为一次重扫。三是最隐蔽的：Maven 拷贝资源是<strong>先删后建</strong>，事件到达时文件可能正处在删除和写入之间的中间态，这时候立刻枚举目录重扫，刚改的文件会缺席加载——线上表现是”改第二次才生效”，非常迷惑。我的处理是就绪检测：轮询等所有涉案文件重新存在且可读（短步重试、设上限），齐了再候 100ms 稳定期才重扫——条件触发，不是盲等固定时长。四是 OVERFLOW：OS 事件队列不保证不丢，OVERFLOW 到了就放弃本批靠下轮兜底；另外 <code>key.reset()</code> 返回 false 说明监听目录失效，线程要退出而不是空转。</p>
+</blockquote>
+<p><strong>面试官（追问）：如果监听机制本身不可靠呢？</strong></p>
+<p>参考回答：</p>
+<blockquote>
+<p>确实不可靠到需要兜底：网络文件系统、某些 IDE 的写入方式，可能根本不产生预期事件，OVERFLOW 也意味着丢事件在协议上是被允许的。所以监听之外我保留了一条手动通道：attach 时带 reload 参数，一次性重扫后返回。自动通道追求省心，手动通道保证底线——任何自动化机制都应该问一句”它失效时人能干什么”。</p>
+</blockquote>
+<h3 id="第六轮：举一反三的系统设计题"><a href="#第六轮：举一反三的系统设计题" class="headerlink" title="第六轮：举一反三的系统设计题"></a>第六轮：举一反三的系统设计题</h3><p><strong>面试官：如果要把这个开发期工具做成生产级热更新，你觉得还差什么？</strong></p>
+<p>参考回答：</p>
+<blockquote>
+<p>我会先划边界：开发期工具追求简单可靠，生产化要补的是<strong>一致性和可运维性</strong>。至少五件事：一是原子切换，重扫期间容器里可能一半新一半旧，生产上要双 buffer 构建完用原子引用整体替换；二是失败回滚，重扫到一半失败容器可能处于半注册状态，要在副本上构建成功再切换，失败保持旧版本可用；三是审计与灰度，谁在什么时间改了什么模型要有记录，重要模块按环境灰度生效；四是并发一致性，处理中的请求引用的是旧模型定义，要约定”请求开始时取定义、处理期间不换义”的事务边界；五是配置漂移检测，容器状态和磁盘文件定期比对，不一致就告警。这五点其实和热更新本身无关，是所有”运行时可变状态”的通用要求——配置中心、DNS、在线 DDL 面对的是同一类问题。</p>
+</blockquote>
+<h3 id="这份模拟题怎么用"><a href="#这份模拟题怎么用" class="headerlink" title="这份模拟题怎么用"></a>这份模拟题怎么用</h3><p>别背答案，背<strong>事故现场</strong>。上面每一轮回答的结构都是同一个套路：先给原理的一句话定义，再讲项目里它以什么具体形态坑了你，最后讲修复和沉淀出的规则。面试官分辨”背题”和”真做过”的方式就是追问细节——背出来的答案在第二层追问就断了，而事故现场可以一直往下挖。所以真正要准备的是把本文二到七节对应的现象、报错信息、排查动作在脑子里过成自己的经历，回答只是把它们按”原理—现场—修复”重新排列。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>这个热重载 Agent 的完整链路：Attach API 注入 → 扫已加载类动态发现模块 → WatchService 监听 target&#x2F;classes → 防抖与落盘检测 → 反射 + 目标类加载器 + TCCL 切换重跑初始化逻辑。工程上它只是个开发期工具，但把 JVM 类加载体系、Java Agent 机制、NIO 文件监听这几块知识全部落地成了可讲、可演示、可追溯的实战故事。类似的技术栈在 Arthas、JRebel、各路 APM agent 里都能看到影子——读懂了这个两三百行的小项目，再去读那些明星工具的公开资料，会顺很多。</p>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%B8%80%EF%BC%89%EF%BC%9A%E5%85%A8%E6%99%AF%E7%AF%87%E2%80%94%E2%80%94%E8%BF%99%E5%A5%97%E5%88%B6%E9%80%A0%E4%B8%9A%E7%B3%BB%E7%BB%9F%E5%9C%A8%E5%81%9A%E4%BB%80%E4%B9%88%E3%80%81%E9%95%BF%E4%BB%80%E4%B9%88%E6%A0%B7/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            MES+WMS 面试备战（一）：全景篇——这套制造业系统在做什么、长什么样
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../%E5%BA%93%E5%AD%98%E5%8F%8C%E5%86%99%E4%BA%8B%E6%95%85%E5%A4%8D%E7%9B%98%EF%BC%9AMVCC%E5%BF%AB%E7%85%A7%E8%AF%BB%E7%9B%B2%E5%8C%BA%E3%80%81%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E5%85%9C%E5%BA%95%E4%B8%8E%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E7%9A%84%E6%AD%A3%E7%A1%AE%E5%A7%BF%E5%8A%BF/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">库存双写事故复盘：MVCC快照读盲区、唯一索引兜底与分布式锁的正确姿势</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!--引用评论框输入特效js文件-->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true; // make power mode colorful
+  POWERMODE.shake = true; // turn off shake
+  document.body.addEventListener('input', POWERMODE);
+</script>
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/">插件开发</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/AI/" rel="tag">AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Android/" rel="tag">Android</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ArkTS/" rel="tag">ArkTS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C/" rel="tag">C#</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClassLoader/" rel="tag">ClassLoader</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ERP/" rel="tag">ERP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Eureka/" rel="tag">Eureka</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HarmonyOS/" rel="tag">HarmonyOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ/" rel="tag">IntelliJ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ-IDEA/" rel="tag">IntelliJ IDEA</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaAgent/" rel="tag">JavaAgent</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Kubernetes/" rel="tag">Kubernetes</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/OptaPlanner/" rel="tag">OptaPlanner</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PSI/" rel="tag">PSI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PowerShell/" rel="tag">PowerShell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Prometheus/" rel="tag">Prometheus</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Quartz/" rel="tag">Quartz</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" rel="tag">SQL优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SaaS/" rel="tag">SaaS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Samba/" rel="tag">Samba</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WPF/" rel="tag">WPF</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebView/" rel="tag">WebView</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Windows/" rel="tag">Windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BA%A7%E5%93%81/" rel="tag">产品</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag">分布式</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" rel="tag">分布式事务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" rel="tag">分布式锁</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%9B%BE%E8%AE%BA/" rel="tag">图论</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8D/" rel="tag">备份恢复</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B7%A5%E6%8E%A7/" rel="tag">工控</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/" rel="tag">工程效能</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag">性能优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" rel="tag">插件开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%99%E7%A8%8B/" rel="tag">教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/" rel="tag">数据同步</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%B7%B7%E5%90%88%E5%BC%80%E5%8F%91/" rel="tag">混合开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">源码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AE%80%E5%8E%86/" rel="tag">简历</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" rel="tag">线程模型</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" rel="tag">踩坑复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E6%8A%80%E8%83%BD/" rel="tag">软技能</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" rel="tag">运维部署</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%99%90%E6%B5%81/" rel="tag">限流</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9/" rel="tag">面试考点</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/AI/" style="font-size: 10px;">AI</a> <a href="../../../../tags/Android/" style="font-size: 10px;">Android</a> <a href="../../../../tags/ArkTS/" style="font-size: 10px;">ArkTS</a> <a href="../../../../tags/C/" style="font-size: 10px;">C#</a> <a href="../../../../tags/CI-CD/" style="font-size: 10px;">CI/CD</a> <a href="../../../../tags/CentOS/" style="font-size: 10.77px;">CentOS</a> <a href="../../../../tags/ClassLoader/" style="font-size: 10px;">ClassLoader</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="../../../../tags/ERP/" style="font-size: 10px;">ERP</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/EasyUI/" style="font-size: 10.77px;">EasyUI</a> <a href="../../../../tags/Eureka/" style="font-size: 10px;">Eureka</a> <a href="../../../../tags/GC/" style="font-size: 10.77px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 10.77px;">Git Bash</a> <a href="../../../../tags/GitHub-Actions/" style="font-size: 10px;">GitHub Actions</a> <a href="../../../../tags/Github/" style="font-size: 11.54px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 10.77px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 14.62px;">Hadoop</a> <a href="../../../../tags/HarmonyOS/" style="font-size: 10px;">HarmonyOS</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/HttpClient/" style="font-size: 10.77px;">HttpClient</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/IntelliJ/" style="font-size: 11.54px;">IntelliJ</a> <a href="../../../../tags/IntelliJ-IDEA/" style="font-size: 10.77px;">IntelliJ IDEA</a> <a href="../../../../tags/JVM/" style="font-size: 16.92px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaAgent/" style="font-size: 10px;">JavaAgent</a> <a href="../../../../tags/JavaScript/" style="font-size: 15.38px;">JavaScript</a> <a href="../../../../tags/Kubernetes/" style="font-size: 10px;">Kubernetes</a> <a href="../../../../tags/Linux/" style="font-size: 12.31px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 13.85px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 10.77px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 12.31px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 13.08px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 17.69px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 10.77px;">Node.js</a> <a href="../../../../tags/OptaPlanner/" style="font-size: 10px;">OptaPlanner</a> <a href="../../../../tags/PSI/" style="font-size: 10px;">PSI</a> <a href="../../../../tags/PowerShell/" style="font-size: 10px;">PowerShell</a> <a href="../../../../tags/Prometheus/" style="font-size: 10px;">Prometheus</a> <a href="../../../../tags/Quartz/" style="font-size: 10px;">Quartz</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 11.54px;">RabbitMQ</a> <a href="../../../../tags/Redis/" style="font-size: 13.08px;">Redis</a> <a href="../../../../tags/SQL/" style="font-size: 13.08px;">SQL</a> <a href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" style="font-size: 10.77px;">SQL优化</a> <a href="../../../../tags/SaaS/" style="font-size: 11.54px;">SaaS</a> <a href="../../../../tags/Samba/" style="font-size: 10px;">Samba</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 10.77px;">Shell</a> <a href="../../../../tags/Spring/" style="font-size: 15.38px;">Spring</a> <a href="../../../../tags/Spring-Cloud/" style="font-size: 10.77px;">Spring Cloud</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WPF/" style="font-size: 10px;">WPF</a> <a href="../../../../tags/WebSocket/" style="font-size: 11.54px;">WebSocket</a> <a href="../../../../tags/WebView/" style="font-size: 10px;">WebView</a> <a href="../../../../tags/Windows/" style="font-size: 10px;">Windows</a> <a href="../../../../tags/XtraBackup/" style="font-size: 11.54px;">XtraBackup</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/Zuul/" style="font-size: 10px;">Zuul</a> <a href="../../../../tags/hexo/" style="font-size: 10.77px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 10.77px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 10.77px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E4%BA%A7%E5%93%81/" style="font-size: 10px;">产品</a> <a href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" style="font-size: 10px;">体验优化</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F/" style="font-size: 10px;">分布式</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">分布式事务</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" style="font-size: 10px;">分布式锁</a> <a href="../../../../tags/%E5%89%8D%E7%AB%AF/" style="font-size: 11.54px;">前端</a> <a href="../../../../tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 10px;">图论</a> <a href="../../../../tags/%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8D/" style="font-size: 10px;">备份恢复</a> <a href="../../../../tags/%E5%A4%8D%E7%9B%98/" style="font-size: 10.77px;">复盘</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" style="font-size: 10.77px;">实战教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B7%A5%E6%8E%A7/" style="font-size: 10px;">工控</a> <a href="../../../../tags/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/" style="font-size: 11.54px;">工程效能</a> <a href="../../../../tags/%E5%B9%B6%E5%8F%91/" style="font-size: 11.54px;">并发</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 16.15px;">微服务</a> <a href="../../../../tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" style="font-size: 10px;">性能优化</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 16.15px;">排查实战</a> <a href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" style="font-size: 11.54px;">插件开发</a> <a href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" style="font-size: 10.77px;">故障复盘</a> <a href="../../../../tags/%E6%95%99%E7%A8%8B/" style="font-size: 10px;">教程</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/" style="font-size: 10px;">数据同步</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" style="font-size: 10.77px;">数据备份</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 11.54px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 18.46px;">架构</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="../../../../tags/%E6%B7%B7%E5%90%88%E5%BC%80%E5%8F%91/" style="font-size: 10.77px;">混合开发</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">源码解析</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 10.77px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.54px;">竹云</a> <a href="../../../../tags/%E7%AE%80%E5%8E%86/" style="font-size: 10.77px;">简历</a> <a href="../../../../tags/%E7%AE%97%E6%B3%95/" style="font-size: 10.77px;">算法</a> <a href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" style="font-size: 10px;">线程模型</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 11.54px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 10px;">设计模式</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" style="font-size: 10.77px;">踩坑复盘</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" style="font-size: 16.15px;">踩坑实录</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a> <a href="../../../../tags/%E8%BD%AF%E6%8A%80%E8%83%BD/" style="font-size: 11.54px;">软技能</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4/" style="font-size: 10.77px;">运维</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" style="font-size: 10px;">运维部署</a> <a href="../../../../tags/%E9%99%90%E6%B5%81/" style="font-size: 10px;">限流</a> <a href="../../../../tags/%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9/" style="font-size: 19.23px;">面试考点</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../29/%E7%AE%80%E5%8E%86%E5%AE%9E%E6%88%98%C2%B7%E4%B8%8B%E2%80%94%E2%80%94%E7%9C%9F%E5%AE%9E%E7%AE%80%E5%8E%86%E6%A8%A1%E6%9D%BF%EF%BC%9A%E5%90%8E%E7%AB%AF%E5%B7%A5%E7%A8%8B%E5%B8%88%E7%89%88%EF%BC%8C%E5%8F%AF%E7%9B%B4%E6%8E%A5%E6%94%B9%E7%94%A8/">简历实战·下——真实简历模板：后端工程师版，可直接改用</a>
+          </li>
+        
+          <li>
+            <a href="../../29/%E7%AE%80%E5%8E%86%E5%AE%9E%E6%88%98%C2%B7%E4%B8%8A%E2%80%94%E2%80%94%E6%92%B0%E5%86%99%E4%B8%8E%E7%BE%8E%E5%8C%96%EF%BC%9A%E6%8A%8A%E4%BA%8C%E5%8D%81%E4%B8%83%E7%AF%87%E7%B4%A0%E6%9D%90%E5%86%99%E6%88%90%E4%B8%80%E4%BB%BD%E8%83%BD%E6%8B%BF%E5%88%B0%E9%9D%A2%E8%AF%95%E7%9A%84%E7%AE%80%E5%8E%86/">简历实战·上——撰写与美化：把二十七篇素材写成一份能拿到面试的简历</a>
+          </li>
+        
+          <li>
+            <a href="../../29/MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%E5%8D%81%E4%B8%83%EF%BC%89%EF%BC%9A%E8%BF%90%E7%BB%B4%E7%AF%87%C2%B7%E4%B8%8B%E2%80%94%E2%80%94%E7%89%A9%E7%90%86%E5%A4%87%E4%BB%BD%E4%B8%80%E9%94%AE%E5%8C%96%EF%BC%9A%E5%A2%9E%E9%87%8F%E9%93%BE%E7%9A%84%E8%87%AA%E6%84%88%E4%B8%8E%E6%81%A2%E5%A4%8D%E6%BC%94%E7%BB%83/">MES+WMS 面试备战（二十七）：运维篇·下——物理备份一键化：增量链的自愈与恢复演练</a>
+          </li>
+        
+          <li>
+            <a href="../../29/MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%E5%8D%81%E5%85%AD%EF%BC%89%EF%BC%9A%E8%BF%90%E7%BB%B4%E7%AF%87%C2%B7%E4%B8%8A%E2%80%94%E2%80%94%E6%8A%8A-MES-%E6%90%AC%E4%B8%8A-K8s%EF%BC%9A%E9%83%A8%E7%BD%B2%E6%B8%85%E5%8D%95%E3%80%81%E7%A8%B3%E5%AE%9A%E5%9F%9F%E5%90%8D%E4%B8%8E%E8%87%AA%E5%BB%BA%E7%9B%91%E6%8E%A7%E6%A0%88/">MES+WMS 面试备战（二十六）：运维篇·上——把 MES 搬上 K8s：部署清单、稳定域名与自建监控栈</a>
+          </li>
+        
+          <li>
+            <a href="../../29/MES-WMS-%E9%9D%A2%E8%AF%95%E5%A4%87%E6%88%98%EF%BC%88%E4%BA%8C%E5%8D%81%E4%BA%94%EF%BC%89%EF%BC%9A%E7%BB%88%E5%B1%80%E7%AF%87%E2%80%94%E2%80%94%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%E6%B8%85%E5%8D%95%E3%80%81%E8%BF%BD%E9%97%AE%E6%A0%91%E4%B8%8E%E5%8F%8D%E9%97%AE%E7%8E%AF%E8%8A%82/">MES+WMS 面试备战（二十五）：终局篇——高频问题清单、追问树与反问环节</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">不蒜子告之   阁下是第<span id="busuanzi_value_site_pv"></span>个访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>
