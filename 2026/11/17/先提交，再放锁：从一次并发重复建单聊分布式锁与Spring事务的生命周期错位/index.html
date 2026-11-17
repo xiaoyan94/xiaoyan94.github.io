@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>先提交，再放锁：从一次并发重复建单聊分布式锁与Spring事务的生命周期错位 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="代码评审里最有力的一种意见，不是”这里可能有空指针”，而是**”你的注释和你的代码在说两件事”**。前两天收到一条这样的评审：  batchCreatePlans 循环内 finally 提前释放分布式锁，与加锁注释的意图矛盾——并发派工会重复生成保养单。  背景是一套注塑 MES：成型工单下发时，系统要为工单所用模具生成一张”上模保养单”（模具装上机台前先做保养，保养未完成不允许开工）。同模具多">
+<meta property="og:type" content="article">
+<meta property="og:title" content="先提交，再放锁：从一次并发重复建单聊分布式锁与Spring事务的生命周期错位">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/11/17/%E5%85%88%E6%8F%90%E4%BA%A4%EF%BC%8C%E5%86%8D%E6%94%BE%E9%94%81%EF%BC%9A%E4%BB%8E%E4%B8%80%E6%AC%A1%E5%B9%B6%E5%8F%91%E9%87%8D%E5%A4%8D%E5%BB%BA%E5%8D%95%E8%81%8A%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E4%B8%8ESpring%E4%BA%8B%E5%8A%A1%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E9%94%99%E4%BD%8D/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="代码评审里最有力的一种意见，不是”这里可能有空指针”，而是**”你的注释和你的代码在说两件事”**。前两天收到一条这样的评审：  batchCreatePlans 循环内 finally 提前释放分布式锁，与加锁注释的意图矛盾——并发派工会重复生成保养单。  背景是一套注塑 MES：成型工单下发时，系统要为工单所用模具生成一张”上模保养单”（模具装上机台前先做保养，保养未完成不允许开工）。同模具多">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-17T09:21:45.000Z">
+<meta property="article:modified_time" content="2026-11-17T09:24:38.137Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="故障复盘">
+<meta property="article:tag" content="并发">
+<meta property="article:tag" content="Spring">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="分布式系统">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+  
+<link rel="stylesheet" href="../../../../css/search.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+      
+  <span class="local-search local-search-google local-search-plugin">
+      <input type="text" placeholder="站内搜索" id="local-search-input" class="local-search-input-cls" style="">
+      <div id="local-search-result" class="local-search-result-cls"></div>
+  </span>
+
+
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-先提交，再放锁：从一次并发重复建单聊分布式锁与Spring事务的生命周期错位" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      先提交，再放锁：从一次并发重复建单聊分布式锁与Spring事务的生命周期错位
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-11-17T09:21:45.000Z" itemprop="datePublished">2026-11-17</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Redis/" rel="tag">Redis</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Spring/" rel="tag">Spring</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <p>代码评审里最有力的一种意见，不是”这里可能有空指针”，而是**”你的注释和你的代码在说两件事”**。前两天收到一条这样的评审：</p>
+<blockquote>
+<p><code>batchCreatePlans</code> 循环内 <code>finally</code> 提前释放分布式锁，与加锁注释的意图矛盾——并发派工会重复生成保养单。</p>
+</blockquote>
+<p>背景是一套注塑 MES：成型工单下发时，系统要为工单所用模具生成一张”上模保养单”（模具装上机台前先做保养，保养未完成不允许开工）。同模具多腔的一组工单共享同一个组标识（<code>group_flag</code>），同组只生成一张保养单。生成入口简化后长这样——<strong>有分布式锁、有查重、查重 SQL 还按组展开</strong>，乍看固若金汤：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Service</span></span><br><span class="line"><span class="meta">@Transactional</span>(rollbackFor = Exception<span class="class">.<span class="keyword">class</span>)   // ← 类级声明式事务</span></span><br><span class="line"><span class="class"><span class="title">public</span> <span class="title">class</span> <span class="title">MaintenancePlanService</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Map&lt;String, Object&gt; <span class="title">batchCreatePlans</span><span class="params">(List&lt;Map&lt;String, Object&gt;&gt; orders)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (Map&lt;String, Object&gt; order : orders) &#123;        <span class="comment">// 批量下发一次带多张工单</span></span><br><span class="line">            String uniqueKey = factoryId + <span class="string">"-"</span> + order.get(<span class="string">"orderId"</span>);</span><br><span class="line">            <span class="keyword">if</span> (!lockService.tryLock(LOCK_NAME, uniqueKey)) &#123;</span><br><span class="line">                <span class="keyword">return</span> busyError;                          <span class="comment">// "正在生成,请稍后再试"</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (existsSamePlan(order)) &#123;               <span class="comment">// 查重: 已有同模具保养单则跳过</span></span><br><span class="line">                    existedCount++;</span><br><span class="line">                    <span class="keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                createPlan(order);                         <span class="comment">// INSERT 保养单主表 + 四张关联表</span></span><br><span class="line">            &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                lockService.unlock(LOCK_NAME, uniqueKey);  <span class="comment">// ← 评审矛头所指</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p><code>lockService</code> 是框架对 Redisson 的封装：<code>tryLock</code> 内部是 <code>getLock(key).tryLock()</code>（拿不到立即失败，不等待），<code>unlock</code> 内部是 <code>isHeldByCurrentThread() → unlock()</code>，按线程持有、可重入。保养单表上<strong>没有任何业务唯一索引</strong>，<code>existsSamePlan</code> 这一句 SELECT 是去重的唯一守卫。</p>
+<p>实测：并发下发同一张工单，库里出现两张保养单。这篇就沿着这条评审意见，拆开”分布式锁与 Spring 事务生命周期错位”的完整机制、修复模板里的版本坑、锁粒度这层更隐蔽的漏口，以及并发 bug 特有的”洋葱式”验证方法。和之前那篇单号重复事故（<a href="/2026/10/10/%E4%BB%8E%E4%B8%80%E6%AC%A1%E5%8D%95%E5%8F%B7%E9%87%8D%E5%A4%8D%E4%BA%8B%E6%95%85%EF%BC%8C%E8%81%8A%E9%80%8FRedis%E5%8E%9F%E5%AD%90%E5%8F%91%E5%8F%B7%E4%B8%8E%E9%9D%A2%E8%AF%95%E9%AB%98%E9%A2%91%E8%80%83%E7%82%B9/" title="《从一次单号重复事故，聊透Redis原子发号与面试高频考点》">《从一次单号重复事故，聊透Redis原子发号与面试高频考点》</a>）是同根同源的两类翻车：都是”查一下再写”撞上事务隔离，只是一个死在锁外、一个死在锁内。</p>
+<a id="more"></a>
+
+<h2 id="一、事故还原：有锁、有查重，为什么还会重复"><a href="#一、事故还原：有锁、有查重，为什么还会重复" class="headerlink" title="一、事故还原：有锁、有查重，为什么还会重复"></a>一、事故还原：有锁、有查重，为什么还会重复</h2><h3 id="1-1-先把执行结构看清楚：事务在方法外面，finally-在方法里面"><a href="#1-1-先把执行结构看清楚：事务在方法外面，finally-在方法里面" class="headerlink" title="1.1 先把执行结构看清楚：事务在方法外面，finally 在方法里面"></a>1.1 先把执行结构看清楚：事务在方法外面，finally 在方法里面</h3><p><code>@Transactional</code> 是 AOP 动态代理在方法<strong>外面</strong>包事务，而 <code>try-finally</code> 写在方法<strong>里面</strong>。等价的执行结构是：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 外层: Spring 事务代理（框架生成，开发者看不见）</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">proxyBatchCreatePlans</span><span class="params">(orders)</span> </span>&#123;</span><br><span class="line">    TransactionStatus tx = txManager.getTransaction(def);      <span class="comment">// 1. 开事务</span></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        Object result = target.batchCreatePlans(orders);       <span class="comment">// 2. 进内层业务方法</span></span><br><span class="line">        <span class="comment">//    内层: 拿锁 → 查重 → INSERT → finally&#123;放锁&#125; → return  ← 3~5 全部先于 commit</span></span><br><span class="line">        txManager.commit(tx);                                  <span class="comment">// 6. 内层彻底出栈后才提交</span></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        txManager.rollback(tx);</span><br><span class="line">        <span class="keyword">throw</span> e;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>Java 语法规定：finally 在控制权离开方法前（return 或抛异常时）必须立即执行，它不可能被推迟到外层代理的 <code>commit()</code> 之后。<strong>这是机制，不是写法问题</strong>——只要放锁代码写在业务方法内的 finally 里，它就必然早于事务提交。</p>
+<h3 id="1-2-竞态时序"><a href="#1-2-竞态时序" class="headerlink" title="1.2 竞态时序"></a>1.2 竞态时序</h3><pre class="mermaid">sequenceDiagram
+    autonumber
+    participant A as 线程A·下发请求
+    participant R as Redis锁
+    participant DB as MySQL
+    participant B as 线程B·并发下发同一工单
+    A->>DB: 事务开启(类级Transactional)
+    A->>R: tryLock 成功
+    A->>DB: 查重 SELECT → 空
+    A->>DB: INSERT 保养单(未提交,他人不可见)
+    A->>R: finally unlock ← 方法内 finally 先执行
+    B->>R: tryLock 成功(锁是空闲的,没毛病)
+    B->>DB: 查重 SELECT → 仍为空(MVCC读不到未提交行)
+    B->>DB: INSERT 保养单
+    A->>DB: COMMIT
+    B->>DB: COMMIT
+    Note over A,DB: 同一张工单,两张保养单</pre>
+
+<p>三个知识点叠出来的事故，和单号重复那篇同源但多了一层讽刺——<strong>这次明明有锁</strong>：</p>
+<ol>
+<li><strong>finally 的执行时机由 Java 语义钉死</strong>。方法内部任何位置的 finally 都在方法返回前执行，而 commit 在方法返回后由外层代理发起，两者中间隔着一次完整的栈帧弹出；</li>
+<li><strong>未提交的数据对并发连接不可见</strong>。INSERT 的 SQL 已经发到 MySQL、行锁已加，但事务没提交，别的连接做一致性读（普通 SELECT）读不到这行。B 拿到锁之后查重为空，不是 B 的错——它的世界里确实还没有这张保养单；</li>
+<li><strong>没有唯一索引兜底</strong>。重复行静默落库，没有 DuplicateKeyException 替我们拦一道。</li>
+</ol>
+<p>还有个容易低估的点：<strong>即使没有循环、方法体只处理一张单，最后一次 finally 依然早于 commit</strong>。循环只是把窗口放大 N 倍——批量请求 A 处理到第 3 张工单时，它自己第 1 张工单的锁早就放掉了、数据还没提交，任何人此刻并发第 1 张工单都会穿透。每次循环一把锁，等于把”没锁”的时间段切成了 N 份轮流暴露。</p>
+<h3 id="1-3-一句话定性"><a href="#1-3-一句话定性" class="headerlink" title="1.3 一句话定性"></a>1.3 一句话定性</h3><p>Redisson 的锁和 MySQL 的事务是<strong>两个互不知情的系统</strong>：锁只认 Redis 里的键，事务只认数据库连接。锁的释放时机必须人工对齐到”数据真正对他人可见”那一刻——也就是事务提交完成之后。这就是标题说的”先提交，再放锁”。</p>
+<h2 id="二、第二层漏口：锁的粒度和查重的粒度不一致"><a href="#二、第二层漏口：锁的粒度和查重的粒度不一致" class="headerlink" title="二、第二层漏口：锁的粒度和查重的粒度不一致"></a>二、第二层漏口：锁的粒度和查重的粒度不一致</h2><p>把释放时机修对之后，问题并没有穷尽。再看一眼查重 SQL 的语义（按组展开）：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> ... <span class="keyword">from</span> maintenance_plan p</span><br><span class="line"><span class="keyword">where</span> p.factory_id = <span class="comment">#&#123;factoryId&#125;</span></span><br><span class="line">  <span class="keyword">and</span> ( p.order_id = <span class="comment">#&#123;orderId&#125;</span></span><br><span class="line">        <span class="keyword">or</span> p.order_id <span class="keyword">in</span> (</span><br><span class="line">            <span class="keyword">select</span> c1.id <span class="keyword">from</span> order_child c1</span><br><span class="line">            <span class="keyword">join</span> order_child c2 <span class="keyword">on</span> c1.group_flag = c2.group_flag</span><br><span class="line">            <span class="keyword">where</span> c2.id = <span class="comment">#&#123;orderId&#125; ) )</span></span><br><span class="line"><span class="comment">-- Java 侧再比对 plan.mold_id 与当前工单模具是否一致</span></span><br></pre></td></tr></table></figure></div>
+
+<p>查重的语义是<strong>组</strong>（”这张工单、或与它同组的任何工单，已有同模具保养单”），而锁键是 <code>factoryId + orderId</code>——<strong>单</strong>。</p>
+<p>也就是说：同组两张工单 c1、c2 并发下发，A(c1) 拿 <code>1-c1</code> 的锁，B(c2) 拿 <code>1-c2</code> 的锁，两把锁互不排斥，双方都畅通无阻地走到查重——然后撞上第一节说的未提交不可见，照样重复建单。<strong>这层漏口和释放时机无关，把锁持有到天荒地老也堵不住</strong>，因为根本没互斥上。</p>
+<p>这层比时序错位更隐蔽：时序问题至少会在注释与代码的矛盾里露馅，粒度问题读单边代码完全看不出来，必须把<strong>锁键表达式</strong>和<strong>去重查询的 WHERE 语义</strong>摆在一起比对。规律一句话：</p>
+<blockquote>
+<p><strong>锁键的粒度，必须不粗于查重查询的语义粒度。</strong> 查重按组，锁就必须按组；锁比查重粗（一把大锁）正确但低效，锁比查重细（按单加锁、按组查重）就是漏。</p>
+</blockquote>
+<p>业务上还有个必须确认的口径：这套系统里<strong>非同组工单没有组标识</strong>（<code>group_flag</code> 是空串而非 NULL），所以锁键要做岔路——同组按 <code>factoryId + group_flag</code>，非同组退回 <code>factoryId + orderId</code>。这种岔路别自己拍脑袋，要和业务确认（我就确认过一轮：不能假设所有单都有组标识）。</p>
+<h2 id="三、修复：把锁的生命周期托管给事务"><a href="#三、修复：把锁的生命周期托管给事务" class="headerlink" title="三、修复：把锁的生命周期托管给事务"></a>三、修复：把锁的生命周期托管给事务</h2><p>修复后的核心循环（等价改写为通用形态，真实代码结构一致）：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (Map&lt;String, Object&gt; order : orders) &#123;</span><br><span class="line">    <span class="comment">// 锁键: 与查重语义同粒度——同组按组标识互斥, 无组标识退回自身单号</span></span><br><span class="line">    String groupFlag = (String) order.getOrDefault(<span class="string">"group_flag"</span>, <span class="string">""</span>);</span><br><span class="line">    <span class="keyword">final</span> String uniqueKey = <span class="string">""</span>.equals(groupFlag)</span><br><span class="line">            ? factoryId + <span class="string">"-"</span> + order.get(<span class="string">"orderId"</span>)</span><br><span class="line">            : factoryId + <span class="string">"-"</span> + groupFlag;</span><br><span class="line">    <span class="keyword">if</span> (!lockService.tryLock(LOCK_NAME, uniqueKey)) &#123;</span><br><span class="line">        <span class="keyword">return</span> busyError;   <span class="comment">// 提示里带单号, 方便用户定位</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 锁须持有到事务 afterCompletion 再释放: Redis 锁与数据库事务解耦,</span></span><br><span class="line">    <span class="comment">// 循环内 finally 提前释放会让并发请求在本事务 INSERT 提交前拿到锁,</span></span><br><span class="line">    <span class="comment">// 查不到未提交的保养单而重复生成; 事务同步不活跃时退回 finally 释放兜底</span></span><br><span class="line">    <span class="keyword">boolean</span> releaseByTransaction = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (TransactionSynchronizationManager.isSynchronizationActive()) &#123;</span><br><span class="line">            TransactionSynchronizationManager.registerSynchronization(<span class="keyword">new</span> TransactionSynchronizationAdapter() &#123;</span><br><span class="line">                <span class="meta">@Override</span></span><br><span class="line">                <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">afterCompletion</span><span class="params">(<span class="keyword">int</span> status)</span> </span>&#123;</span><br><span class="line">                    lockService.unlock(LOCK_NAME, uniqueKey);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;);</span><br><span class="line">            releaseByTransaction = <span class="keyword">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (existsSamePlan(order)) &#123; existedCount++; <span class="keyword">continue</span>; &#125;</span><br><span class="line">        createPlan(order);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (!releaseByTransaction) &#123;</span><br><span class="line">            lockService.unlock(LOCK_NAME, uniqueKey);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+
+<p>修复后时序：</p>
+<pre class="mermaid">sequenceDiagram
+    autonumber
+    participant A as 线程A
+    participant R as Redis锁
+    participant DB as MySQL
+    participant P as 事务代理
+    A->>R: tryLock 成功
+    A->>DB: 查重 SELECT → 空
+    A->>DB: INSERT 保养单
+    A->>P: 注册 afterCompletion 回调后 return(finally跳过放锁)
+    P->>DB: COMMIT
+    P->>R: afterCompletion → unlock
+    Note over A,R: 数据已可见,锁才释放:窗口关闭</pre>
+
+<p>配套还有一行容易漏的改动：**上游服务的下发 payload 原来没传 <code>group_flag</code>**，本服务拿不到组标识就只能退回单号粒度——加锁方和传参方必须一起改，否则修复只生效一半。</p>
+<p>下面这些实现细节，网上流传的模板几乎每一处都有人栽跟头。</p>
+<h3 id="3-1-Spring-5-1-x-必须用-Adapter，不能直接匿名实现接口"><a href="#3-1-Spring-5-1-x-必须用-Adapter，不能直接匿名实现接口" class="headerlink" title="3.1 Spring 5.1.x 必须用 Adapter，不能直接匿名实现接口"></a>3.1 Spring 5.1.x 必须用 Adapter，不能直接匿名实现接口</h3><p>很多文章写的是：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="JAVA"><figure class="iseeu highlight /java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">TransactionSynchronizationManager.registerSynchronization(<span class="keyword">new</span> TransactionSynchronization() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">afterCompletion</span><span class="params">(<span class="keyword">int</span> status)</span> </span>&#123; ... &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></div>
+
+<p>这在 Spring 5.3+ 没问题——5.3 起 <code>TransactionSynchronization</code> 接口的方法全部有了默认实现。但我们的框架停在 Spring 5.1.x，这个接口的 <code>suspend()/resume()/beforeCommit()/beforeCompletion()/afterCommit()/afterCompletion()</code> <strong>全是抽象方法</strong>，匿名类只覆写一个方法根本编译不过。5.1.x 的正确写法是继承 <code>TransactionSynchronizationAdapter</code>（空实现适配器，5.3 里已标记废弃）。</p>
+<p>动手前先看一眼自己的 spring-tx 版本，别把”新版的便利”抄进”旧版的工程”。</p>
+<h3 id="3-2-选-afterCompletion，而不是-afterCommit"><a href="#3-2-选-afterCompletion，而不是-afterCommit" class="headerlink" title="3.2 选 afterCompletion，而不是 afterCommit"></a>3.2 选 afterCompletion，而不是 afterCommit</h3><p>事务同步回调有两个释放候选点：</p>
+<ul>
+<li><code>afterCommit</code>：只在成功提交后触发。如果事务<strong>回滚</strong>，注册的释放逻辑永远不会执行——锁泄漏，只能等 Redisson 租约到期&#x2F;watchdog 断供，期间同键请求全部 busy；</li>
+<li><code>afterCompletion(status)</code>：提交、回滚都会触发，<code>status</code> 参数区分 <code>STATUS_COMMITTED</code> &#x2F; <code>STATUS_ROLLED_BACK</code>。</li>
+</ul>
+<p>放锁的语义是”这把锁的历史使命结束了”，与事务成败无关——所以选 <code>afterCompletion</code>。顺带一提，<code>afterCompletion</code> 里抛的异常会被 Spring 捕获后只打日志、不传播，释放逻辑自身要稳。</p>
+<h3 id="3-3-同线程回调，Redisson-的按线程持有才成立"><a href="#3-3-同线程回调，Redisson-的按线程持有才成立" class="headerlink" title="3.3 同线程回调，Redisson 的按线程持有才成立"></a>3.3 同线程回调，Redisson 的按线程持有才成立</h3><p>Redisson 的 <code>unlock</code> 校验持锁线程（<code>isHeldByCurrentThread</code>）。<code>afterCompletion</code> 由<strong>完成事务的那个线程</strong>回调——标准同步事务（请求线程一路执行到底）里就是业务线程本身，所以 unlock 正常。这也是不能把释放扔进异步线程池随手 unlock 的原因：换了线程，Redisson 直接 <code>IllegalMonitorStateException</code>。有的参考文章提 <code>forceUnlock</code> 或 Lua 校验锁值（不校验线程、只校验随机值），那是异步释放场景的不得已手段；既然同线程回调是标准行为，没必要引入 force 语义——它连别人的锁都能强拆。</p>
+<h3 id="3-4-匿名类里的两个小陷阱"><a href="#3-4-匿名类里的两个小陷阱" class="headerlink" title="3.4 匿名类里的两个小陷阱"></a>3.4 匿名类里的两个小陷阱</h3><ul>
+<li><code>uniqueKey</code> 被匿名类捕获，必须是 <code>final</code>（或事实 final）；</li>
+<li>匿名类里写 <code>this.getClass()</code> 拿到的是<strong>匿名类自己</strong>——如果锁名是拿类名拼的（我们的框架正是 <code>锁名 = 类名 + 方法 + 键</code>），拼出来的名字和加锁时对不上，轻则释放失败，重则两把”不同的锁”互不排斥，问题绕回原点。必须写 <code>OuterClass.this.getClass()</code>。</li>
+</ul>
+<h3 id="3-5-finally-兜底：事务同步不活跃时"><a href="#3-5-finally-兜底：事务同步不活跃时" class="headerlink" title="3.5 finally 兜底：事务同步不活跃时"></a>3.5 finally 兜底：事务同步不活跃时</h3><p><code>isSynchronizationActive()</code> 为假（方法没被事务代理包住、传播行为是 NOT_SUPPORTED、或自调用绕过了代理）时注册不生效，<code>releaseByTransaction</code> 保持 false，finally 里照常释放。<strong>注册动作放 try 里 + 标志位</strong>是这个兜底成立的关键：注册本身抛异常时标志位来不及置位，finally 仍然兜底，不会死锁。</p>
+<h3 id="3-6-可重入性救了”一个事务里锁多把键”"><a href="#3-6-可重入性救了”一个事务里锁多把键”" class="headerlink" title="3.6 可重入性救了”一个事务里锁多把键”"></a>3.6 可重入性救了”一个事务里锁多把键”</h3><p>这个循环在一次事务里对多张工单各拿各的锁（同组工单键相同、非同组键不同）。Redisson 锁可重入、按（线程, 键）计数：同一事务对同一个组键多次加锁是计数累加，每个键各自注册一次 <code>afterCompletion</code>、各自抵扣一次，互不干扰。如果换成不可重入的实现（比如裸 SETNX），还得再加一层”本请求已持有的键”去重。</p>
+<h2 id="四、被否决的方案：循环拆-REQUIRES-NEW，逐单提交逐单放锁"><a href="#四、被否决的方案：循环拆-REQUIRES-NEW，逐单提交逐单放锁" class="headerlink" title="四、被否决的方案：循环拆 REQUIRES_NEW，逐单提交逐单放锁"></a>四、被否决的方案：循环拆 REQUIRES_NEW，逐单提交逐单放锁</h2><p>通用建议会说：循环里所有锁都活到整事务结束（第 1 把锁 &#x3D; 全部 N 次插入 + 提交的总时长），不好；应该拆 <code>REQUIRES_NEW</code> 每单独立事务，”处理一条、提交一条、放一把锁”。评估过，这里<strong>不拆</strong>：</p>
+<ol>
+<li><strong>锁活到事务结束恰恰是正确性的来源，不是副作用。</strong> 去重保证的定义就是”锁保护到数据对下一个请求可见为止”。拆成子事务确实缩短持锁时间，但换来批量原子性语义变化——中途失败时前面已提交的单不回滚，调用方拿到的失败响应与库内事实不一致；</li>
+<li><strong>发号本来就不同源。</strong> 保养单号来自独立的序列服务（Redis&#x2F;DB 发号），不在这个事务里——事务回滚后号已消耗、不会退回，”全或无”本来就是近似。既然原子性并非铁板一块，为它付出 N 次事务往返 + 每次提交刷盘的代价不划算；</li>
+<li><strong>持锁时长的实际风险可控。</strong> Redisson 的 watchdog 会在持锁线程存活期间自动续期，不会”事务还没提交锁先过期”；而 <code>tryLock</code> 不等待，同键并发请求立刻收到 busy 而非排队，持锁再长也不会堆积请求线程。</li>
+</ol>
+<p>这不是说拆事务永远是错的——循环体很重（每单几百毫秒）、并发度高、且业务接受逐单提交语义时，<code>REQUIRES_NEW</code> + 逐单释放是正解。要点是：<strong>这是语义取舍，不是谁对谁错</strong>。</p>
+<p>另外记一个循环配事务的经典暗坑（本例没踩但值得一排）：循环体内 catch 单条业务异常且不抛出时，外层事务不回滚会继续跑——上面”注册放 try 内 + 标志位”的结构同时防住了这类路径下的锁泄漏。</p>
+<h2 id="五、被缓办的方案：唯一索引兜底，卡在去重键活在别的表"><a href="#五、被缓办的方案：唯一索引兜底，卡在去重键活在别的表" class="headerlink" title="五、被缓办的方案：唯一索引兜底，卡在去重键活在别的表"></a>五、被缓办的方案：唯一索引兜底，卡在去重键活在别的表</h2><p>通用建议的最后一招：给业务表建唯一索引做最终防线，防 Redis 主从切换丢锁、超长 GC 停顿等极端穿透。方向没错，落到这张表上没那么直接——</p>
+<p>去重语义是”<strong>同模具 × 同组</strong> 已有保养单（含已完结）则不建”，而”组”是工单表的属性，保养单表上存的只是触发建单的那张工单号。<code>unique(factory_id, mold_id, order_id)</code> 挡不住”同组另一张工单”这条穿透路径；要表达组语义，得把组标识冗余进保养单表，再对 <code>coalesce(group_flag, concat(&#39;order-&#39;, order_id))</code> 这类推导键建唯一索引。跨表语义进约束，意味着：存量重复数据先清、通用插入通道的报错呈现（元数据驱动的通用 insert 不认业务错误码，唯一键冲突会以裸 DB 异常怼到用户脸上）都要跟着改。锁修好后穿透需要”Redis 丢锁 + 恰好同组并发”双条件叠加，概率已压到可接受，唯一索引记为后续加固项而非本次必做。</p>
+<p>这节想说的是：**”标准建议”要过一遍自己的表语义再落地**。模板里的 <code>(设备ID, 计划周期)</code> 唯一索引很好，但你的去重键如果和这里一样活在隔壁表里，抄过来就是个心理安慰。</p>
+<h2 id="六、怎么验证：行为证据，不是日志证据"><a href="#六、怎么验证：行为证据，不是日志证据" class="headerlink" title="六、怎么验证：行为证据，不是日志证据"></a>六、怎么验证：行为证据，不是日志证据</h2><p>并发 bug 最容易被糊弄的一环是验证。这次的做法是<strong>先复现、再修复</strong>：写并发脚本直调服务接口——一张工单 X 混在批量请求 A 里首发，8 个线程错峰几十毫秒间隔重入同一张 X。修复前实锤复现：X 名下落了两张保养单，INSERT 已到库、铁证。<strong>修完不能复现，才算修完。</strong></p>
+<p>修复后三场景全绿：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>S1 同单并发（批量 + 8 线程竞入）</td>
+<td>8&#x2F;8 全部 busy、库里仅 1 张单、批量侧全部建成功</td>
+</tr>
+<tr>
+<td>S2 同组不同单并发</td>
+<td>同组两请求互斥，败方 busy——<strong>报错文案里引用的是它自己那张工单号</strong>，证明两张”不同的单号”确实争到了同一把组键锁</td>
+</tr>
+<tr>
+<td>S3 顺序回归</td>
+<td>第二次请求 existedCount&#x3D;1 跳过、无锁泄漏（锁泄漏会表现为后续请求永远 busy）</td>
+</tr>
+</tbody></table>
+<p>S2 那个文案细节值得单独说：框架的锁操作不走应用日志（logger 级别过滤，grep 不到任何锁行为记录），想证明”锁键按组生效”没有日志可看，唯一的 observable 就是 busy 报错带上请求自己的工单号——<strong>日志缺失时，把证据设计进行为里</strong>。</p>
+<p>最后补真实链路回归：走网关 → 上游工单服务 → 跨服务调用 → 本服务完整下发一遍，确认修复没破坏正常单笔路径。</p>
+<h2 id="七、修好一层互斥，露出下一层竞态"><a href="#七、修好一层互斥，露出下一层竞态" class="headerlink" title="七、修好一层互斥，露出下一层竞态"></a>七、修好一层互斥，露出下一层竞态</h2><p>真实链路的并发验证还炸出一个意外：并发下发同组两张工单，败方收到框架包装的错误码「请联系系统运维人员协助解决」。追日志发现请求<strong>根本没到本服务</strong>——死在上游工单服务的派工流程里：</p>
+<pre class="mermaid">sequenceDiagram
+    autonumber
+    participant A as 请求A·下发工单c1
+    participant DB as MySQL
+    participant B as 请求B·下发工单c2(同组)
+    A->>DB: 组展开: UPDATE 同组工单 c1,c2(顺序c1→c2)
+    B->>DB: 组展开: UPDATE 同组工单 c2,c1(顺序c2→c1)
+    A->>DB: 等待 c2 的行锁
+    B->>DB: 等待 c1 的行锁
+    DB-->>B: 死锁检测,回滚B(DeadlockLoserDataAccessException)
+    DB-->>A: 获得 c2 行锁,继续
+    Note over A,B: B被统一异常处理器包装成404类错误码,请求未达保养单服务</pre>
+
+<p>两个请求各自按组展开同组工单、以<strong>相反顺序</strong> UPDATE 同一批行，MySQL 死锁检测杀掉一个。这是个既有的并发缺陷，与本次修复无关——不做这次修复，它被锁问题挡在更外面根本看不见。但它示范了两件事：</p>
+<ol>
+<li><strong>并发缺陷是洋葱</strong>。外层时序错位修掉，才显出锁粒度层；粒度修掉，才显出上游死锁层。每修一层都要重跑并发验证，别指望一次修净；</li>
+<li>**跨服务调用的”404”不一定是”没这个接口”**。目标服务没起、目标服务处理链上的任何异常，经无 fallback 的降级包装 + 统一异常处理后长得一个样。排障要同时 grep 调用方和目标方两侧日志，先确认”请求到底到没到”，再谈别的。</li>
+</ol>
+<h2 id="八、收束成清单"><a href="#八、收束成清单" class="headerlink" title="八、收束成清单"></a>八、收束成清单</h2><p>把这次的全部教训压成可复用的检查项：</p>
+<ol>
+<li>**<code>grep unlock</code>**：凡是 <code>finally</code> 里释放分布式锁、且类&#x2F;方法带 <code>@Transactional</code> 的，先画时间线——放锁早于 commit 即有竞态窗口，与方法里有没有循环无关；</li>
+<li><strong>锁键粒度 vs 查重语义粒度</strong>逐对比对：查重 WHERE 按什么聚，锁键就按什么聚；键里有业务岔路（同组&#x2F;非同组）的，岔路口径要和业务确认；</li>
+<li>**释放点选 <code>afterCompletion</code>**（回滚也要放锁），Spring 5.1.x 用 <code>TransactionSynchronizationAdapter</code>，5.3+ 才能直接匿名实现接口；</li>
+<li><strong>注册放 try 内 + 标志位 + finally 兜底</strong>，防”事务同步不活跃”和”注册抛异常”两条路径的锁泄漏；</li>
+<li><strong>匿名类细节</strong>：捕获键加 final；<code>OuterClass.this.getClass()</code> 拿正确的锁名；</li>
+<li><strong>加锁方与传参方一起改</strong>：上游不传组标识，服务端修复就只有一半效果；</li>
+<li><strong>验证三件套</strong>：修复前实锤复现、修复后并发 + 顺序回归、真实链路单笔回归；日志看不到锁行为时，把证据设计进响应行为（busy 带定位单号）；</li>
+<li><strong>唯一索引兜底要过表语义关</strong>：去重键活在别的表里，索引就落不了地——先补冗余列再谈约束，或者明确接受残余概率；</li>
+<li><strong>每修一层并发，重跑一次并发</strong>：下一层竞态（比如上游组展开死锁）只有外层修好后才会显形。</li>
+</ol>
+<p>一句话总结：<strong>分布式锁和数据库事务是两个互不知情的系统，”拿锁→查重→写入”的正确性只在”数据已对他人可见”这一刻才真正成立——所以锁必须活过 commit。写代码时把这句话变成 <code>afterCompletion</code>，评审时把它变成对每一处 <code>finally { unlock }</code> 的条件反射。</strong></p>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../../05/K8s-CPU%E9%99%90%E6%B5%81%E6%8E%92%E6%9F%A5%E4%B8%8E%E6%B2%BB%E7%90%86%E5%91%BD%E4%BB%A4%E6%89%8B%E5%86%8C/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">K8s CPU 限流排查与治理命令手册</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!-- 输入爆炸特效已在 after-footer 全局挂载 -->
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/">插件开发</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E8%BF%90%E7%BB%B4%E6%89%8B%E5%86%8C/">运维手册</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/AI/" rel="tag">AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Android/" rel="tag">Android</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ArkTS/" rel="tag">ArkTS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C/" rel="tag">C#</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClassLoader/" rel="tag">ClassLoader</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ERP/" rel="tag">ERP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Eureka/" rel="tag">Eureka</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HarmonyOS/" rel="tag">HarmonyOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ/" rel="tag">IntelliJ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ-IDEA/" rel="tag">IntelliJ IDEA</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaAgent/" rel="tag">JavaAgent</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Kubernetes/" rel="tag">Kubernetes</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/OptaPlanner/" rel="tag">OptaPlanner</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PSI/" rel="tag">PSI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PowerShell/" rel="tag">PowerShell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Prometheus/" rel="tag">Prometheus</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Quartz/" rel="tag">Quartz</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" rel="tag">SQL优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SaaS/" rel="tag">SaaS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Samba/" rel="tag">Samba</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WPF/" rel="tag">WPF</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebView/" rel="tag">WebView</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Windows/" rel="tag">Windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BA%A7%E5%93%81/" rel="tag">产品</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag">分布式</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" rel="tag">分布式事务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" rel="tag">分布式锁</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%9B%BE%E8%AE%BA/" rel="tag">图论</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8D/" rel="tag">备份恢复</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B7%A5%E6%8E%A7/" rel="tag">工控</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/" rel="tag">工程效能</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag">性能优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/" rel="tag">性能排查</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" rel="tag">插件开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%99%E7%A8%8B/" rel="tag">教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/" rel="tag">数据同步</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%B7%B7%E5%90%88%E5%BC%80%E5%8F%91/" rel="tag">混合开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">源码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AE%80%E5%8E%86/" rel="tag">简历</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" rel="tag">线程模型</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" rel="tag">踩坑复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E6%8A%80%E8%83%BD/" rel="tag">软技能</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" rel="tag">运维部署</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%99%90%E6%B5%81/" rel="tag">限流</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%9D%A2%E8%AF%95/" rel="tag">面试</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9/" rel="tag">面试考点</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/AI/" style="font-size: 10px;">AI</a> <a href="../../../../tags/Android/" style="font-size: 10px;">Android</a> <a href="../../../../tags/ArkTS/" style="font-size: 10px;">ArkTS</a> <a href="../../../../tags/C/" style="font-size: 10px;">C#</a> <a href="../../../../tags/CI-CD/" style="font-size: 10px;">CI/CD</a> <a href="../../../../tags/CentOS/" style="font-size: 10.77px;">CentOS</a> <a href="../../../../tags/ClassLoader/" style="font-size: 10px;">ClassLoader</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="../../../../tags/ERP/" style="font-size: 10px;">ERP</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/EasyUI/" style="font-size: 10.77px;">EasyUI</a> <a href="../../../../tags/Eureka/" style="font-size: 10px;">Eureka</a> <a href="../../../../tags/GC/" style="font-size: 10.77px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 10.77px;">Git Bash</a> <a href="../../../../tags/GitHub-Actions/" style="font-size: 10px;">GitHub Actions</a> <a href="../../../../tags/Github/" style="font-size: 11.54px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 10.77px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 14.62px;">Hadoop</a> <a href="../../../../tags/HarmonyOS/" style="font-size: 10px;">HarmonyOS</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/HttpClient/" style="font-size: 10.77px;">HttpClient</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/IntelliJ/" style="font-size: 11.54px;">IntelliJ</a> <a href="../../../../tags/IntelliJ-IDEA/" style="font-size: 10.77px;">IntelliJ IDEA</a> <a href="../../../../tags/JVM/" style="font-size: 16.92px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaAgent/" style="font-size: 10px;">JavaAgent</a> <a href="../../../../tags/JavaScript/" style="font-size: 15.38px;">JavaScript</a> <a href="../../../../tags/Kubernetes/" style="font-size: 12.31px;">Kubernetes</a> <a href="../../../../tags/Linux/" style="font-size: 13.08px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 13.85px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 10.77px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 12.31px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 13.08px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 17.69px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10.77px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 10.77px;">Node.js</a> <a href="../../../../tags/OptaPlanner/" style="font-size: 10px;">OptaPlanner</a> <a href="../../../../tags/PSI/" style="font-size: 10px;">PSI</a> <a href="../../../../tags/PowerShell/" style="font-size: 10px;">PowerShell</a> <a href="../../../../tags/Prometheus/" style="font-size: 10px;">Prometheus</a> <a href="../../../../tags/Quartz/" style="font-size: 10px;">Quartz</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 11.54px;">RabbitMQ</a> <a href="../../../../tags/Redis/" style="font-size: 14.62px;">Redis</a> <a href="../../../../tags/SQL/" style="font-size: 13.08px;">SQL</a> <a href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" style="font-size: 10.77px;">SQL优化</a> <a href="../../../../tags/SaaS/" style="font-size: 11.54px;">SaaS</a> <a href="../../../../tags/Samba/" style="font-size: 10px;">Samba</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 10.77px;">Shell</a> <a href="../../../../tags/Spring/" style="font-size: 16.15px;">Spring</a> <a href="../../../../tags/Spring-Cloud/" style="font-size: 10.77px;">Spring Cloud</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WPF/" style="font-size: 10px;">WPF</a> <a href="../../../../tags/WebSocket/" style="font-size: 11.54px;">WebSocket</a> <a href="../../../../tags/WebView/" style="font-size: 10px;">WebView</a> <a href="../../../../tags/Windows/" style="font-size: 10px;">Windows</a> <a href="../../../../tags/XtraBackup/" style="font-size: 11.54px;">XtraBackup</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/Zuul/" style="font-size: 10px;">Zuul</a> <a href="../../../../tags/hexo/" style="font-size: 10.77px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 10.77px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 10.77px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E4%BA%A7%E5%93%81/" style="font-size: 10px;">产品</a> <a href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" style="font-size: 10px;">体验优化</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F/" style="font-size: 10px;">分布式</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">分布式事务</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" style="font-size: 10.77px;">分布式系统</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" style="font-size: 10px;">分布式锁</a> <a href="../../../../tags/%E5%89%8D%E7%AB%AF/" style="font-size: 11.54px;">前端</a> <a href="../../../../tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 10px;">图论</a> <a href="../../../../tags/%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8D/" style="font-size: 10px;">备份恢复</a> <a href="../../../../tags/%E5%A4%8D%E7%9B%98/" style="font-size: 10.77px;">复盘</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" style="font-size: 10.77px;">实战教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B7%A5%E6%8E%A7/" style="font-size: 10px;">工控</a> <a href="../../../../tags/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/" style="font-size: 11.54px;">工程效能</a> <a href="../../../../tags/%E5%B9%B6%E5%8F%91/" style="font-size: 13.08px;">并发</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 16.15px;">微服务</a> <a href="../../../../tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" style="font-size: 10px;">性能优化</a> <a href="../../../../tags/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/" style="font-size: 10.77px;">性能排查</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 16.15px;">排查实战</a> <a href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" style="font-size: 11.54px;">插件开发</a> <a href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" style="font-size: 13.08px;">故障复盘</a> <a href="../../../../tags/%E6%95%99%E7%A8%8B/" style="font-size: 10px;">教程</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/" style="font-size: 10px;">数据同步</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" style="font-size: 10.77px;">数据备份</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 11.54px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 18.46px;">架构</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="../../../../tags/%E6%B7%B7%E5%90%88%E5%BC%80%E5%8F%91/" style="font-size: 10.77px;">混合开发</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">源码解析</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 10.77px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.54px;">竹云</a> <a href="../../../../tags/%E7%AE%80%E5%8E%86/" style="font-size: 10.77px;">简历</a> <a href="../../../../tags/%E7%AE%97%E6%B3%95/" style="font-size: 10.77px;">算法</a> <a href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" style="font-size: 10px;">线程模型</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 11.54px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 10px;">设计模式</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" style="font-size: 10.77px;">踩坑复盘</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" style="font-size: 16.15px;">踩坑实录</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a> <a href="../../../../tags/%E8%BD%AF%E6%8A%80%E8%83%BD/" style="font-size: 11.54px;">软技能</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4/" style="font-size: 11.54px;">运维</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" style="font-size: 10px;">运维部署</a> <a href="../../../../tags/%E9%99%90%E6%B5%81/" style="font-size: 10px;">限流</a> <a href="../../../../tags/%E9%9D%A2%E8%AF%95/" style="font-size: 10px;">面试</a> <a href="../../../../tags/%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9/" style="font-size: 19.23px;">面试考点</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/11/">十一月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/10/">十月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="">先提交，再放锁：从一次并发重复建单聊分布式锁与Spring事务的生命周期错位</a>
+          </li>
+        
+          <li>
+            <a href="../../05/K8s-CPU%E9%99%90%E6%B5%81%E6%8E%92%E6%9F%A5%E4%B8%8E%E6%B2%BB%E7%90%86%E5%91%BD%E4%BB%A4%E6%89%8B%E5%86%8C/">K8s CPU 限流排查与治理命令手册</a>
+          </li>
+        
+          <li>
+            <a href="../../04/%E6%8E%A5%E5%8F%A3%E5%BF%BD%E5%BF%AB%E5%BF%BD%E6%85%A2%E7%9A%84%E5%85%83%E5%87%B6%E6%98%AFCPU%E9%99%90%E6%B5%81%E2%80%94%E2%80%94%E4%B8%80%E6%AC%A1K8s-CFS%E6%8E%92%E6%9F%A5%E5%A4%8D%E7%9B%98/">接口忽快忽慢的元凶是CPU限流——一次K8s CFS排查复盘</a>
+          </li>
+        
+          <li>
+            <a href="../../../10/10/%E4%BB%8E%E4%B8%80%E6%AC%A1%E5%8D%95%E5%8F%B7%E9%87%8D%E5%A4%8D%E4%BA%8B%E6%95%85%EF%BC%8C%E8%81%8A%E9%80%8FRedis%E5%8E%9F%E5%AD%90%E5%8F%91%E5%8F%B7%E4%B8%8E%E9%9D%A2%E8%AF%95%E9%AB%98%E9%A2%91%E8%80%83%E7%82%B9/">从一次单号重复事故，聊透Redis原子发号与面试高频考点</a>
+          </li>
+        
+          <li>
+            <a href="../../../10/09/Nginx%E5%8F%A5%E6%9F%84%E8%80%97%E5%B0%BD%E5%BC%95%E5%8F%91K8s%E6%8E%A2%E9%92%88%E8%AF%AF%E6%9D%80%EF%BC%9A%E4%B8%80%E6%AC%A1%E8%B7%A8%E5%B1%82%E6%95%85%E9%9A%9C%E7%9A%84%E6%8E%92%E6%9F%A5%E5%A4%8D%E7%9B%98/">Nginx句柄耗尽引发K8s探针误杀：一次跨层故障的排查复盘</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script defer src="https://cn.vercount.one/js"></script>
+    <span id="busuanzi_container_site_uv">本站已接待 <span id="busuanzi_value_site_uv"></span> 位访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+<script src="../../../../js/search.js"></script>
+
+
+<script src="../../../../js/load.js"></script>
+
+<!-- 输入爆炸特效：全局生效（搜索框 + 评论区） -->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true;
+  POWERMODE.shake = true;
+  document.body.addEventListener('input', POWERMODE);
+</script>
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>

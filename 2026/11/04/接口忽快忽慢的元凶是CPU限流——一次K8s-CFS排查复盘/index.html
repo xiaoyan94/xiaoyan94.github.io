@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-169911533-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-169911533-1');
+</script>
+
+  
+
+  
+  <title>接口忽快忽慢的元凶是CPU限流——一次K8s CFS排查复盘 | 空城盼故人</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="google-site-verification" content="NOVpqBhVVjZHOamocUf3Grijt7xAK_Engoe_FNrxE3Q" />
+  <meta name="baidu-site-verification" content="HBrapLOndy" />
+  
+  <meta name="keywords" content="许嵩老公" />
+  
+  <meta name="description" content="概述线上一套微服务里的移动端查询接口突然”忽快忽慢”：快的时候几十毫秒返回，慢的时候要等上秒级，而且同一个接口、同样的参数，前后两次请求表现完全不同。服务是双副本部署，监控大盘上宿主机 CPU 长期 90% 以上空闲——看起来谁都不缺资源。  故障现象：同一查询接口延迟呈双峰分布（几十 ms &#x2F; 秒级），双副本中一个 pod load 6+、三十个线程处于运行态，另一个 pod load">
+<meta property="og:type" content="article">
+<meta property="og:title" content="接口忽快忽慢的元凶是CPU限流——一次K8s CFS排查复盘">
+<meta property="og:url" content="https://xiaoyan94.github.io/2026/11/04/%E6%8E%A5%E5%8F%A3%E5%BF%BD%E5%BF%AB%E5%BF%BD%E6%85%A2%E7%9A%84%E5%85%83%E5%87%B6%E6%98%AFCPU%E9%99%90%E6%B5%81%E2%80%94%E2%80%94%E4%B8%80%E6%AC%A1K8s-CFS%E6%8E%92%E6%9F%A5%E5%A4%8D%E7%9B%98/index.html">
+<meta property="og:site_name" content="空城盼故人">
+<meta property="og:description" content="概述线上一套微服务里的移动端查询接口突然”忽快忽慢”：快的时候几十毫秒返回，慢的时候要等上秒级，而且同一个接口、同样的参数，前后两次请求表现完全不同。服务是双副本部署，监控大盘上宿主机 CPU 长期 90% 以上空闲——看起来谁都不缺资源。  故障现象：同一查询接口延迟呈双峰分布（几十 ms &#x2F; 秒级），双副本中一个 pod load 6+、三十个线程处于运行态，另一个 pod load">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-04T05:32:59.000Z">
+<meta property="article:modified_time" content="2026-11-17T09:24:38.137Z">
+<meta property="article:author" content="许嵩老公">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="故障复盘">
+<meta property="article:tag" content="Kubernetes">
+<meta property="article:tag" content="性能排查">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="../../../../atom.xml" title="空城盼故人" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="https://q1.qlogo.cn/g?b=qq&nk=979727728&s=640">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="../../../../css/style.css">
+
+  
+<link rel="stylesheet" href="../../../../css/highlight.css">
+
+  
+<link rel="stylesheet" href="../../../../css/search.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="fullpage" class="mobile-nav-right">
+    <div class="fixed"></div>
+    
+      <div id="wrapper">
+    
+    
+      <header id="header">
+  <div id="nav-toggle" class="nav-toggle"></div>
+  <div class="head-box global-width">
+    <nav class="nav-box nav-right">
+      
+        <a class="nav-item" href="../../../../index.html" title
+        
+        >首页</a>
+      
+        <a class="nav-item" href="../../../../archives" title
+        
+        >归档</a>
+      
+        <a class="nav-item" href="../../../../quick-notes" title
+        
+        >小抄</a>
+      
+        <a class="nav-item" href="../../../../about" title
+        
+        >关于</a>
+      
+      
+  <span class="local-search local-search-google local-search-plugin">
+      <input type="text" placeholder="站内搜索" id="local-search-input" class="local-search-input-cls" style="">
+      <div id="local-search-result" class="local-search-result-cls"></div>
+  </span>
+
+
+    </nav>
+  </div>
+</header>
+      <div id="middlecontent" title class="global-width sidebar-right">
+        <section id="main"><article id="post-接口忽快忽慢的元凶是CPU限流——一次K8s-CFS排查复盘" class="article global-container article-type-post" itemscope itemprop="blogPost">
+  
+    <header class="article-header">
+      
+  
+    <h1 class="article-title" itemprop="name">
+      接口忽快忽慢的元凶是CPU限流——一次K8s CFS排查复盘
+    </h1>
+  
+
+    </header>
+  
+  <div class="article-meta">
+    <a href="" class="article-date">
+  <time datetime="2026-11-04T05:32:59.000Z" itemprop="datePublished">2026-11-04</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a>
+  </div>
+
+    
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/Kubernetes/" rel="tag">Kubernetes</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/" rel="tag">性能排查</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li></ul>
+
+  </div>
+  
+    <span id="busuanzi_container_page_pv">
+      本文总阅读量<span id="busuanzi_value_page_pv"></span>次
+    </span>
+  
+
+  <div class="article-inner">
+    
+    <div class="article-content article-content-cloud" itemprop="articleBody">
+      
+        
+        <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>线上一套微服务里的移动端查询接口突然”忽快忽慢”：快的时候几十毫秒返回，慢的时候要等上秒级，而且<strong>同一个接口、同样的参数</strong>，前后两次请求表现完全不同。服务是双副本部署，监控大盘上宿主机 CPU 长期 90% 以上空闲——看起来谁都不缺资源。</p>
+<ul>
+<li><strong>故障现象</strong>：同一查询接口延迟呈双峰分布（几十 ms &#x2F; 秒级），双副本中一个 pod load 6+、三十个线程处于运行态，另一个 pod load 0.5、全部休眠；</li>
+<li><strong>根因</strong>：Pod 的 CPU limit 只有 <strong>0.4 核</strong>（<code>cpu.cfs_quota_us=40000/100000</code>），繁忙副本在 <strong>38.8%</strong> 的调度周期里打穿 CFS 配额被整体冻结，所有业务线程以 100ms 为台阶周期性停摆；</li>
+<li><strong>关键反直觉点</strong>：该 pod 平均 CPU 用量只占配额的 25%，”平均很闲”与”高频被限流”并不矛盾——<strong>限流看的是峰值，不是均值</strong>。</li>
+</ul>
+<p>调大 limit 后 <code>nr_throttled</code> 归零、接口延迟恢复平稳。这篇复盘记录完整排查路径，以及两个值得单独记录的坑：top 的 <code>TIME+</code> 单位误读（差 60 倍），和容器里没有 jcmd&#x2F;jstat 时的取证替代。文末后记补充同日把排查铺向全集群后的发现：这不是一个服务的病，是整个集群的系统性配额问题。</p>
+<a id="more"></a>
+
+<h2 id="一、现象：直觉会把你带偏的现场"><a href="#一、现象：直觉会把你带偏的现场" class="headerlink" title="一、现象：直觉会把你带偏的现场"></a>一、现象：直觉会把你带偏的现场</h2><p>接到报障时，能拿到的信息是这样的：</p>
+<ul>
+<li>同一个查询接口，时快时慢，没有规律；</li>
+<li>双副本部署，出问题时<strong>只有一个 pod 表现异常</strong>：load 6.6，<code>top -Hp</code> 里三十个 <code>http-nio</code> 业务线程全部 R 态；</li>
+<li>宿主机 CPU 92% idle，内存无压力。</li>
+</ul>
+<p>“接口慢”的常规怀疑方向——SQL 没走索引、下游服务抖动、GC 停顿——都解释不了这个组合里的两个特征：</p>
+<ol>
+<li><strong>同一请求时快时慢</strong>：数据库或下游的问题通常表现为”某段时间全慢”，而不是同一时刻一部分请求快一部分慢；</li>
+<li><strong>两个副本行为撕裂</strong>：同一镜像同一配置，一个忙死一个闲死。</li>
+</ol>
+<p>第一个真正有用的线索藏在 <code>top -Hp</code> 的细节里：三十个线程全是 R 态（可运行），**单个线程的 %CPU 却只有 0.6~2.5%**。线程都”想跑”却没跑起来，CPU 花到哪去了？——没花出去，是被什么挡住了。在容器里，挡住它们的最常见的东西就是 cgroup 的 CPU 配额。</p>
+<h2 id="二、第一现场：cgroup-的-cpu-stat"><a href="#二、第一现场：cgroup-的-cpu-stat" class="headerlink" title="二、第一现场：cgroup 的 cpu.stat"></a>二、第一现场：cgroup 的 cpu.stat</h2><p>两个 pod 各执行一条命令：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cat /sys/fs/cgroup/cpu/cpu.stat</span><br></pre></td></tr></table></figure></div>
+
+<p>返回值对比（cgroup v1 路径）：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>慢 pod</th>
+<th>快 pod</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>nr_periods</td>
+<td>6,959,058</td>
+<td>6,952,914</td>
+</tr>
+<tr>
+<td><strong>nr_throttled</strong></td>
+<td><strong>2,697,487</strong></td>
+<td>96,200</td>
+</tr>
+<tr>
+<td>被限流周期占比</td>
+<td><strong>38.8%</strong></td>
+<td>1.38%</td>
+</tr>
+</tbody></table>
+<p>三个字段的含义：</p>
+<ul>
+<li><code>nr_periods</code>：经历的调度周期数。内核按 <strong>100ms 一个周期（period）</strong> 给设了 CPU limit 的 cgroup 发放 CPU 预算，这里约 695 万个周期 ≈ 服务已运行 8 天；</li>
+<li><code>nr_throttled</code>：预算在周期内被耗尽、<strong>整个 cgroup 被冻结</strong>的周期数；</li>
+<li><code>throttled_time</code>：被冻结的累计时长——注意它是<strong>所有被冻线程等待时长的总和</strong>，不能除以 <code>nr_throttled</code> 反推”单次冻结多久”。一个真实样本：某 Pod 生命周期只有 11 次限流，<code>throttled_time</code> 却累计了 353 秒——因为每次冻结的是全组几百个线程，人人都在”等”。<strong>判读只认 <code>nr_throttled/nr_periods</code> 这一个比率。</strong></li>
+</ul>
+<p>38.8% vs 1.38%——同一 deployment 的两个副本，一个每十个调度周期就有近四个打满配额被冻，一个几乎无感。**”忽快忽慢”和”副本撕裂”两个特征同时有了着落**：请求落到慢 pod 且恰逢冻结窗口就慢，落到快 pod 或未冻结时刻就快。</p>
+<p>再补一刀，确认配额到底是多少：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us /sys/fs/cgroup/cpu/cpu.cfs_period_us</span><br><span class="line"><span class="comment"># 40000</span></span><br><span class="line"><span class="comment"># 100000</span></span><br></pre></td></tr></table></figure></div>
+
+<p>40000µs &#x2F; 100000µs &#x3D; <strong>0.4 核</strong>。对一个跑着 Tomcat 线程池、Redis 订阅、RxJava 调度器和并行 GC 的 JVM 来说，这个额度相当紧张。</p>
+<h2 id="三、机制：0-4-核是怎么把延迟变成”台阶”的"><a href="#三、机制：0-4-核是怎么把延迟变成”台阶”的" class="headerlink" title="三、机制：0.4 核是怎么把延迟变成”台阶”的"></a>三、机制：0.4 核是怎么把延迟变成”台阶”的</h2><p>CFS 配额的工作方式：每个 100ms 周期开始时，cgroup 获得 40ms 的 CPU 时间片预算（0.4 核 × 100ms）。<strong>这个周期内所有线程加起来只能消耗 40ms</strong>，烧完之后——不管周期还剩多少毫秒——该 cgroup 的<strong>全部线程集体冻结</strong>，等下一个周期重新发预算：</p>
+<pre class="mermaid">flowchart LR
+    subgraph CYCLE["一个 100ms 调度周期"]
+        A["配额 40ms CPU"] --> B["JVM 并发线程一齐抢 CPU"]
+        B --> C["预算瞬间耗尽"]
+        C --> D["整组线程冻结至下个周期"]
+    end
+    D --> NEXT["下个周期 排队请求再打穿一轮"]
+    NEXT --> E["请求延迟按 100ms 台阶叠加"]
+    E --> F["落在冻结窗口的请求秒级 未冻的请求几十毫秒"]</pre>
+
+<p>这就解释了最容易困惑的一点：<strong>为什么平均用量只有配额的 25%，却有 38.8% 的周期被限流？</strong></p>
+<p>慢 pod 八天累计 CPU 约 19 小时，折算均值 0.10 核，确实是 0.4 核配额的四分之一。但限流判断发生在每个 100ms 窗口内：JVM 处理请求是几十个线程并行的，一波并发查询加上 GC 的并行线程一齐上，40ms 预算可能在十几毫秒内就被烧光，剩余 80ms 全员冻结。冻结解除后积压的请求再抢新预算，又立刻打穿——<strong>突发负载 + 小配额 &#x3D; 高频限流，跟均值没关系</strong>。</p>
+<p>放到时间轴上看更直观——横轴毫秒，红色即冻结段：</p>
+<pre class="mermaid">gantt
+    title 0.4 核配额下的时间轴示例 横轴毫秒
+    dateFormat X
+    axisFormat %s
+    section 调度周期一
+    并发线程烧光 40ms 预算            :done, a1, 0, 40
+    整组线程冻结                      :crit, a2, 40, 100
+    section 调度周期二
+    排队请求再烧光预算                :done, b1, 100, 140
+    再次冻结                          :crit, b2, 140, 200
+    section 该请求的体感
+    总耗时 200ms 其中真正执行仅 80ms   :c1, 0, 200</pre>
+
+<p>请求侧的体感就是：一条本来 50ms 的查询，运气差时被冻两三个周期，直接变成 300ms+；再叠加排队，秒级也出来了。延迟分布双峰，峰的位置大致是 100ms 的整数倍——这是 CFS 限流的签名。</p>
+<h2 id="四、修复与验证口径"><a href="#四、修复与验证口径" class="headerlink" title="四、修复与验证口径"></a>四、修复与验证口径</h2><p>修复动作本身很朴素：调大 deployment 的 CPU limit 与 request。发布后新 pod 的 <code>cpu.stat</code>：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">nr_periods 10411</span><br><span class="line">nr_throttled 0</span><br><span class="line">throttled_time 0</span><br></pre></td></tr></table></figure></div>
+
+<p>接口延迟明显回落。但这里有两个验收口径要注意，<strong>别在发布后十分钟就宣布胜利</strong>：</p>
+<ol>
+<li><p><strong><code>nr_periods 10411</code> × 100ms ≈ 17 分钟</strong>——新 pod 才刚起，0&#x2F;10411 只说明开局干净。之前那个 pod 也是业务突发时段才打穿配额的，<strong>至少跑满一个业务高峰时段</strong>，确认高峰期 <code>nr_throttled</code> 增量持续为 0，才算稳。可以起个小循环盯着：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> :; <span class="keyword">do</span></span><br><span class="line">  a=$(awk <span class="string">'/nr_throttled/&#123;print $2&#125;'</span> /sys/fs/cgroup/cpu/cpu.stat); sleep 1</span><br><span class="line">  b=$(awk <span class="string">'/nr_throttled/&#123;print $2&#125;'</span> /sys/fs/cgroup/cpu/cpu.stat)</span><br><span class="line">  <span class="built_in">echo</span> <span class="string">"<span class="variable">$(date +%T)</span> +<span class="variable">$((b-a)</span>)"</span></span><br><span class="line"><span class="keyword">done</span></span><br></pre></td></tr></table></figure></div>
+</li>
+<li><p><strong>验收指标是延迟，不是 throttled</strong>：从网关&#x2F;接入层日志拉该接口 p95&#x2F;p99 的前后对比，且要<strong>同钟点窗口</strong>（昨天 14 点段对今天 14 点段），避免流量模式差异污染结论。顺手用 <code>kubectl top pod --containers</code> 看一眼峰值实际用量，给 limit 留 3~5 倍余量。</p>
+</li>
+</ol>
+<p>再往前想一步：这次是 38.8% 才被用户感知撞见，属于”用户先于监控发现问题”。建议给 throttled 周期占比加个告警（比如 &gt;1% 持续 5 分钟），下次这类问题会在用户报障之前冒头。</p>
+<h2 id="五、踩坑实录"><a href="#五、踩坑实录" class="headerlink" title="五、踩坑实录"></a>五、踩坑实录</h2><h3 id="5-1-top-的-TIME-是”分-秒”，不是”时-分”"><a href="#5-1-top-的-TIME-是”分-秒”，不是”时-分”" class="headerlink" title="5.1 top 的 TIME+ 是”分:秒”，不是”时:分”"></a>5.1 top 的 TIME+ 是”分:秒”，不是”时:分”</h3><p>排查中我犯过一个差 60 倍的误读。<code>top -Hp</code> 输出里有个线程累计 CPU 显示为 <code>525:14.37</code>，我第一反应读成了”525 小时”——按服务运行 8 天折算，等于这个线程常年独占 2.7 个核，一度把方向带偏到”某个 RxJava 调度线程在空转烧 CPU”。</p>
+<p>实际上 top 的 <code>TIME+</code> 格式是 <strong>分:秒.厘秒</strong>，分钟数可以超过 60：<code>525:14.37</code> &#x3D; 8 小时 45 分。按正确单位重算，该线程只占 0.045 核，是个正常角色。</p>
+<p>教训值得刻在墙上：<strong>单位核对先于归因</strong>。由误读推出的结论哪怕逻辑再自洽、故事再通顺，也是错的——而且它通常会显得格外”合理”，让你舍不得怀疑它。</p>
+<h3 id="5-2-容器里没有-jcmd-jstat"><a href="#5-2-容器里没有-jcmd-jstat" class="headerlink" title="5.2 容器里没有 jcmd&#x2F;jstat"></a>5.2 容器里没有 jcmd&#x2F;jstat</h3><p>想抓线程栈和 GC 数据时发现镜像里没有 JDK 工具链（JRE 精简镜像的常见情况）。替代方案，全部只依赖 <code>/proc</code> 和信号：</p>
+<div class="highlight-box"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="false"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. JDK 可能装了只是没进 PATH——java 进程在跑，先看它的 bin 目录</span></span><br><span class="line">JB=$(dirname $(readlink -f /proc/&lt;pid&gt;/exe)); ls <span class="variable">$JB</span> | grep -E <span class="string">'jcmd|jstack'</span></span><br><span class="line"><span class="variable">$JB</span>/jstack &lt;pid&gt; | grep -A 25 -i <span class="string">'RxComputation'</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 兜底：SIGQUIT 只触发线程 dump，不会杀进程，输出到进程 stdout</span></span><br><span class="line"><span class="built_in">kill</span> -3 &lt;pid&gt;</span><br><span class="line">kubectl logs &lt;pod&gt; --tail=800 | grep -B2 -A25 -i <span class="string">'线程名'</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 纯 shell 排线程 CPU（字段14+15 = utime+stime，单位 tick，100 tick ≈ 1s）</span></span><br><span class="line"><span class="keyword">for</span> d <span class="keyword">in</span> /proc/&lt;pid&gt;/task/*; <span class="keyword">do</span> awk <span class="string">'&#123;print $14+$15, $2&#125;'</span> <span class="variable">$d</span>/<span class="built_in">stat</span> 2&gt;/dev/null; <span class="keyword">done</span> \</span><br><span class="line">  | sort -rn | head -15</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. 看 JVM 启动参数（堆大小、是否感知容器配额、GC 类型）</span></span><br><span class="line">tr <span class="string">'\0'</span> <span class="string">' '</span> &lt; /proc/&lt;pid&gt;/cmdline; <span class="built_in">echo</span></span><br></pre></td></tr></table></figure></div>
+
+<p>第 4 条在 CPU 限流场景还有额外价值：如果 JVM 没有感知容器配额（老版本 Java 8 未开 <code>UseContainerSupport</code>），GC 会按宿主机核数开并行线程，几十个 GC 线程在 0.4 核配额里一齐转，等于专门为限流添柴——此时补 <code>-XX:ActiveProcessorCount</code> 能显著缓解突发打穿。</p>
+<h2 id="六、小结"><a href="#六、小结" class="headerlink" title="六、小结"></a>六、小结</h2><p>把这次排查压缩成一张决策图，下次遇到同类问题可以直接套：</p>
+<pre class="mermaid">flowchart TD
+    A["容器内接口忽快忽慢"] --> B{"宿主机 CPU 大量空闲"}
+    B -->|"是"| C["读 cgroup cpu.stat"]
+    C --> G{"nr_periods 为 0"}
+    G -->|"是"| H["该容器没有 CPU limit 不会以这种方式被限"]
+    G -->|"否"| D{"nr_throttled 占比明显"}
+    D -->|"是"| E["CFS 配额限流实锤"]
+    D -->|"否"| F["转向 GC 下游 锁等常规排查"]
+    E --> G["核对 cfs_quota_us 与峰值用量"]
+    G --> H["调大 limit 高峰复验 throttled 增量"]
+    H --> I["p95 p99 同钟点前后对比收口"]</pre>
+
+<p>几条沉淀下来的经验：</p>
+<ol>
+<li>**容器内服务”慢但宿主机闲”，第一眼看 <code>cpu.stat</code>**——两个数字（<code>nr_throttled/nr_periods</code>）就能定性，成本极低；</li>
+<li><strong>限流看峰值不看均值</strong>：均值占配额 25% 也能有 38.8% 的周期被打穿，”平均用量离 limit 还很远”不是安全证据；</li>
+<li><strong>几十个线程全 R 态、单线程 %CPU 却极低</strong> &#x3D; 被 cgroup 冻住的典型形态，看到这个组合别再去查业务代码；</li>
+<li><strong><code>TIME+</code> 是分:秒</strong>，读数前先对单位，归因前先对量级；</li>
+<li><strong>验收要过高峰</strong>：刚发布的 pod <code>nr_throttled=0</code> 只是开局干净，跑满业务高峰 + p95&#x2F;p99 同钟点对比才算闭环。</li>
+</ol>
+<p>最后留个尾巴：这次数据里还有一个未追到底的疑点——两个副本之间存在<strong>长连接&#x2F;订阅类的负载倾斜</strong>（后台调度与消息订阅线程的 CPU 是 2.7×&#x2F;2.9×，而 HTTP 处理量只差 1.35×），说明相当一部分长连接粘在了单个 pod 上。配额放宽后它暂时无害，但这是”单 pod 慢”类问题的下一个常见嫌疑，记在这里备查。</p>
+<h2 id="七、后记：从一个接口到整个集群（同日补充）"><a href="#七、后记：从一个接口到整个集群（同日补充）" class="headerlink" title="七、后记：从一个接口到整个集群（同日补充）"></a>七、后记：从一个接口到整个集群（同日补充）</h2><p>单点修完不等于结束。既然 0.4 核配额能造成这么大的动静，其他服务呢？把 cpu.stat 扫描铺到整个命名空间，问题比想象中普遍——<strong>这不是一个服务的病，是整个集群的系统性配置问题</strong>。</p>
+<p>把扫描脚本对所有 Pod 各跑一遍（判读用 <code>nr_throttled/nr_periods</code>，再用 5 分钟差分看”当前”速率，老计数器是生命周期均值会摊平现状）：</p>
+<table>
+<thead>
+<tr>
+<th>服务</th>
+<th>生命周期限流占比</th>
+<th>5 分钟差分（当前）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>调度服务</td>
+<td>4.36%</td>
+<td>37 次&#x2F;分 ≈ 当前 6.2% 周期，<strong>比均值还差</strong></td>
+</tr>
+<tr>
+<td>认证服务</td>
+<td>2.31%</td>
+<td>13 次&#x2F;分 ≈ 2.2%，慢性 98 天</td>
+</tr>
+<tr>
+<td>生产&#x2F;质检等业务服务</td>
+<td>0.7%~1.3%</td>
+<td>3~8 次&#x2F;分</td>
+</tr>
+<tr>
+<td>事务协调器、网关等</td>
+<td>≈0%</td>
+<td>≈0</td>
+</tr>
+</tbody></table>
+<p>三个新事实：</p>
+<ol>
+<li><strong>配额是系统性偏紧的</strong>。查所有服务的 resources：全集群 JVM 清一色 request 200<del>300m &#x2F; limit 0.3</del>0.4 核。出事的移动端服务不是特例，只是流量倾斜把它的突发率先放大到 38.8%，最先被用户撞见——其他服务在各自负载下慢性地被冻。</li>
+<li><strong>没有用量反馈回路</strong>。<code>kubectl top</code> 报 heapster NotFound——metrics-server 根本没装。配额当年是拍脑袋定的，出了问题也只能人肉读 <code>/sys/fs/cgroup</code>。没有可观测性 → 配额瞎定 → 突发被冻 → 用户先于监控发现，这条链才是真正的根因。</li>
+<li><strong>用量实测再次反转认知</strong>。metrics-server 缺失逼出一个替代方案：cgroup 自带的 <code>cpuacct.usage</code>（累计 CPU 纳秒数）差分就是实际用量。实测全集群 20 多个 Pod <strong>合计只用了约 0.4 核</strong>——每服务均值全部不到自身配额的 20%，却仍高频限流。均值数据永远看不见限流。认证服务是最极端的样本：均值最低档（0.02 核）却限流 2.2%，因为 token 签名校验是单请求 CPU 尖锐型负载，突发&#x2F;均值比全集群最高。</li>
+</ol>
+<p>治理动作反而简单：分两波把 limit 调到重点服务 4 核、一般业务 2 核（request 不动——limit 不占调度容量，宿主机长期 90%+ idle，零容量风险），事务协调器、网关这类基础设施划红线不动。调完差分归零收口。</p>
+<p>后记部分同样踩了三个新坑，值得单独记：</p>
+<ol>
+<li><strong>无配额的 cgroup，cpu.stat 全零</strong>。没设 limit 的 Pod 根本不做周期记账，<code>nr_periods</code> 恒为 0——我的扫描脚本用 <code>if(per&gt;0)</code> 过滤”异常”，导致几个无配额 Pod 在两轮扫描里静默消失，一度怀疑 exec 失败或 cgroup v2。全量扫描的判读必须是三档：<strong>有限流 &#x2F; 无限流 &#x2F; 无配额</strong>（<code>per==0</code> 时要显式打标）。</li>
+<li><strong>StatefulSet 不吃 Deployment 那一套</strong>。批量 <code>set resources deploy</code> 清单会天然漏掉 StatefulSet——识别特征是 Pod 名以 <code>-0</code>&#x2F;<code>-1</code> 序号结尾而非随机哈希。有个设备接入服务就是 StatefulSet 且 request&#x2F;limit 双空（BestEffort QoS）：它”从不限流”不是因为健康，是根本没人限它；而 BestEffort 的代价是节点内存压力下最先被驱逐。想动它还得注意老集群 StatefulSet 常配 OnDelete 策略——改完模板不会自动滚动，要手动删 Pod 才生效。</li>
+<li><strong>只写 limit 不写 request 的默认值坑</strong>。k8s 会把缺省的 request 默认成 limit：某服务只补了 <code>--limits=cpu=2</code>，生成的 Pod 实际按 2 核参与调度占位，在 allocatable 紧张的老节点上反而更容易 Pending（滚动时新 Pod 卡了一阵）。资源要写就写全。</li>
+</ol>
+<p>至此，防御建议也升级成两条：给 throttled 周期占比加 <code>&gt;1% 持续 5 分钟</code> 的告警（治理后第一个月正好当验收期）；装 metrics-server 恢复 <code>kubectl top</code>——别让下一次配额调整还是拍脑袋。</p>
+<h2 id="八、延伸：request、limit-与三层-CPU-账本"><a href="#八、延伸：request、limit-与三层-CPU-账本" class="headerlink" title="八、延伸：request、limit 与三层 CPU 账本"></a>八、延伸：request、limit 与三层 CPU 账本</h2><p>正文和后记反复出现同一组概念，值得一次性讲透。同一个 Pod，在 K8s 里同时挂着<strong>三本完全独立的 CPU 账</strong>：</p>
+<ol>
+<li><strong>request 账——调度器的账本</strong>。Pod 创建时调度器按 request 挑节点、节点按 request 扣减可分配容量，扣满了新 Pod 就 Pending（后记里卡 21 分钟的正是这本账满了）；节点内存吃紧时，request 还参与驱逐排序。</li>
+<li><strong>limit 账——内核 CFS 的账本</strong>。运行时的限流只看 limit（本文主角），与 request 无关、与节点忙不闲无关、与”均值用量很低”更无关。</li>
+<li><strong>实际用量——真实世界</strong>。突发形态决定你会不会被 limit 冻住，而它和前两本账的数值之间没有任何推导关系。</li>
+</ol>
+<p>治理后的真实数字最能说明三本账差多远——同一批 Pod：</p>
+<table>
+<thead>
+<tr>
+<th>账本</th>
+<th>数值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>节点 request 占用</td>
+<td>67% &#x2F; 87%（一本快满的账）</td>
+</tr>
+<tr>
+<td>节点 limit 超卖</td>
+<td>340% &#x2F; 365%（纸面数字，实际无碍）</td>
+</tr>
+<tr>
+<td>全集群实际用量</td>
+<td>21 个 Pod 合计约 0.4 核</td>
+</tr>
+</tbody></table>
+<p>最后是”你写了什么配置”与”集群怎么理解”的映射——后记的三个坑全部落在这张图里：</p>
+<pre class="mermaid">flowchart TD
+    A["容器的 resources 配置"] --> B{"写 request 了吗"}
+    B -->|"没写"| C{"写 limit 了吗"}
+    C -->|"都没写"| D["BestEffort 不会被限流 但节点内存吃紧时最先被驱逐"]
+    C -->|"只写 limit"| E["request 默认取 limit 值 调度占位瞬间暴涨"]
+    B -->|"写了"| F{"request 与 limit 的关系"}
+    F -->|"相等"| G["Guaranteed 最高保障 QoS"]
+    F -->|"request 小于 limit"| H["Burstable 按 request 占位 按 limit 限流"]</pre>
+
+<p>三句话收束：<strong>request 决定放不放得下，limit 决定跑不跑得快，突发形态决定用户体验</strong>——三本账各记各的，任何一本看起来”没问题”，都不代表另外两本没事。</p>
+
+          
+      
+    </div>
+    
+    
+      <footer class="article-footer">
+        完
+      </footer>
+    
+  </div>
+  
+    
+<nav id="article-nav">
+  <div class="article-nav-block">
+    
+      <a href="../../05/K8s-CPU%E9%99%90%E6%B5%81%E6%8E%92%E6%9F%A5%E4%B8%8E%E6%B2%BB%E7%90%86%E5%91%BD%E4%BB%A4%E6%89%8B%E5%86%8C/" id="article-nav-newer" class="article-nav-link-wrap">
+        <strong class="article-nav-caption"></strong>
+        <div class="article-nav-title">
+          
+            K8s CPU 限流排查与治理命令手册
+          
+        </div>
+      </a>
+    
+  </div>
+  <div class="article-nav-block">
+    
+      <a href="../../../10/10/%E4%BB%8E%E4%B8%80%E6%AC%A1%E5%8D%95%E5%8F%B7%E9%87%8D%E5%A4%8D%E4%BA%8B%E6%95%85%EF%BC%8C%E8%81%8A%E9%80%8FRedis%E5%8E%9F%E5%AD%90%E5%8F%91%E5%8F%B7%E4%B8%8E%E9%9D%A2%E8%AF%95%E9%AB%98%E9%A2%91%E8%80%83%E7%82%B9/" id="article-nav-older" class="article-nav-link-wrap">
+        <div class="article-nav-title">从一次单号重复事故，聊透Redis原子发号与面试高频考点</div>
+        <strong class="article-nav-caption"></strong>
+      </a>
+    
+  </div>
+</nav>
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css">  -->
+<script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+
+<div id="vcommentsContainer"></div>
+<!-- 输入爆炸特效已在 after-footer 全局挂载 -->
+<!-- valine评论系统 -->
+<script>
+  new Valine({
+      el: '#vcommentsContainer',
+      appId: 'AttjBiS7UwxkxjV1CSrNywoi-gzGzoHsz',
+      appKey: 'F50aWycFFmAPLC8CfSW7rXdP',
+      avatar: 'monsterid',
+      enableQQ: true,
+      placeholder: '昵称处填QQ号自动抓取网名和邮箱哟~'
+  })
+</script>
+
+
+    <!-- <link rel="stylesheet" href="/css/gitment.css"> 
+<script src="/js/gitment.js"></script>
+
+<div id="gitmentContainer"></div>
+
+<script>
+var gitment = new Gitment({
+  owner: '',
+  repo: '',
+  oauth: {
+    client_id: '',
+    client_secret: '',
+  },
+})
+gitment.render('gitmentContainer')
+</script>
+
+ -->
+
+  
+  
+</article>
+</section>
+        <aside id="sidebar">
+  
+    <div class="widget-box">
+  <div class="avatar-box">
+    <img class="avatar" src="https://q1.qlogo.cn/g?b=qq&amp;nk=979727728&amp;s=640" title="图片来自QQ"></img>
+    <h3 class="avatar-name">
+      
+        许嵩老公
+      
+    </h3>
+    <p class="avatar-slogan">
+      深吸一口梦，吹个气球存起来。
+    </p>
+  </div>
+</div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%89%8D%E7%AB%AF%E6%9E%B6%E6%9E%84/">前端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%90%8E%E7%AB%AF%E6%9E%B6%E6%9E%84/">后端架构</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/">工程效能</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/">性能排查</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/">插件开发</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%90%E7%BB%B4/">数据库运维</a></li><li class="category-list-item"><a class="category-list-link" href="../../../../categories/%E8%BF%90%E7%BB%B4%E6%89%8B%E5%86%8C/">运维手册</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/NET/" rel="tag">.NET</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/AI/" rel="tag">AI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Android/" rel="tag">Android</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ArkTS/" rel="tag">ArkTS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/C/" rel="tag">C#</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CI-CD/" rel="tag">CI/CD</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/CentOS/" rel="tag">CentOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ClassLoader/" rel="tag">ClassLoader</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Cookie/" rel="tag">Cookie</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/DevOps/" rel="tag">DevOps</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ERP/" rel="tag">ERP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ES6/" rel="tag">ES6</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyExcel/" rel="tag">EasyExcel</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/EasyUI/" rel="tag">EasyUI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Eureka/" rel="tag">Eureka</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GC/" rel="tag">GC</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Git-Bash/" rel="tag">Git Bash</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/GitHub-Actions/" rel="tag">GitHub Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github/" rel="tag">Github</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Github-Actions/" rel="tag">Github Actions</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HDFS/" rel="tag">HDFS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HTTP/" rel="tag">HTTP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hadoop/" rel="tag">Hadoop</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HarmonyOS/" rel="tag">HarmonyOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Hexo/" rel="tag">Hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/HttpClient/" rel="tag">HttpClient</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Idea/" rel="tag">Idea</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ/" rel="tag">IntelliJ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/IntelliJ-IDEA/" rel="tag">IntelliJ IDEA</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JVM/" rel="tag">JVM</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Java/" rel="tag">Java</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaAgent/" rel="tag">JavaAgent</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/JavaScript/" rel="tag">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Kubernetes/" rel="tag">Kubernetes</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Linux/" rel="tag">Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MES/" rel="tag">MES</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MapReduce/" rel="tag">MapReduce</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Markdown/" rel="tag">Markdown</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Maven/" rel="tag">Maven</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MyBatis/" rel="tag">MyBatis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/MySQL/" rel="tag">MySQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Nginx/" rel="tag">Nginx</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node/" rel="tag">Node</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Node-js/" rel="tag">Node.js</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/OptaPlanner/" rel="tag">OptaPlanner</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PSI/" rel="tag">PSI</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/PowerShell/" rel="tag">PowerShell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Prometheus/" rel="tag">Prometheus</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Quartz/" rel="tag">Quartz</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/RabbitMQ/" rel="tag">RabbitMQ</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Redis/" rel="tag">Redis</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL/" rel="tag">SQL</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" rel="tag">SQL优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SaaS/" rel="tag">SaaS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Samba/" rel="tag">Samba</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Serial-Port/" rel="tag">Serial Port</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Shell/" rel="tag">Shell</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring/" rel="tag">Spring</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Spring-Cloud/" rel="tag">Spring Cloud</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/SpringBoot/" rel="tag">SpringBoot</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/TCP/" rel="tag">TCP</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/VSCode/" rel="tag">VSCode</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Vue/" rel="tag">Vue</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WPF/" rel="tag">WPF</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebSocket/" rel="tag">WebSocket</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/WebView/" rel="tag">WebView</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Windows/" rel="tag">Windows</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/XtraBackup/" rel="tag">XtraBackup</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/YARN/" rel="tag">YARN</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/Zuul/" rel="tag">Zuul</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/hexo/" rel="tag">hexo</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/macOS/" rel="tag">macOS</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/ssh/" rel="tag">ssh</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" rel="tag">中文乱码</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BA%A7%E5%93%81/" rel="tag">产品</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" rel="tag">体验优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag">分布式</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" rel="tag">分布式事务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" rel="tag">分布式锁</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%89%8D%E7%AB%AF/" rel="tag">前端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%9B%BE%E8%AE%BA/" rel="tag">图论</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8D/" rel="tag">备份恢复</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%8D%E7%9B%98/" rel="tag">复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" rel="tag">大数据</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" rel="tag">安装教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" rel="tag">实战教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%AF%86%E9%92%A5/" rel="tag">密钥</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B7%A5%E6%8E%A7/" rel="tag">工控</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/" rel="tag">工程效能</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E5%8F%91/" rel="tag">并发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" rel="tag">并行编程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" rel="tag">微服务</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" rel="tag">性能优化</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/" rel="tag">性能排查</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" rel="tag">排查实战</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" rel="tag">插件开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" rel="tag">故障复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%99%E7%A8%8B/" rel="tag">教程</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/" rel="tag">数据同步</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" rel="tag">数据备份</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" rel="tag">数据迁移</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84/" rel="tag">架构</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" rel="tag">架构设计</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%B7%B7%E5%90%88%E5%BC%80%E5%8F%91/" rel="tag">混合开发</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" rel="tag">源码解析</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" rel="tag">生产运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%94%B5%E8%84%91/" rel="tag">电脑</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AB%B9%E4%BA%91/" rel="tag">竹云</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AE%80%E5%8E%86/" rel="tag">简历</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" rel="tag">线程模型</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E7%BB%88%E7%AB%AF/" rel="tag">终端</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%84%9A%E6%9C%AC/" rel="tag">脚本</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" rel="tag">设计模式</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" rel="tag">踩坑复盘</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" rel="tag">踩坑实录</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AC%E8%BD%BD/" rel="tag">转载</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E4%BB%B6/" rel="tag">软件</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BD%AF%E6%8A%80%E8%83%BD/" rel="tag">软技能</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4/" rel="tag">运维</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" rel="tag">运维部署</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%99%90%E6%B5%81/" rel="tag">限流</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%9D%A2%E8%AF%95/" rel="tag">面试</a></li><li class="tag-list-item"><a class="tag-list-link" href="../../../../tags/%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9/" rel="tag">面试考点</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="../../../../tags/NET/" style="font-size: 10px;">.NET</a> <a href="../../../../tags/AI/" style="font-size: 10px;">AI</a> <a href="../../../../tags/Android/" style="font-size: 10px;">Android</a> <a href="../../../../tags/ArkTS/" style="font-size: 10px;">ArkTS</a> <a href="../../../../tags/C/" style="font-size: 10px;">C#</a> <a href="../../../../tags/CI-CD/" style="font-size: 10px;">CI/CD</a> <a href="../../../../tags/CentOS/" style="font-size: 10.77px;">CentOS</a> <a href="../../../../tags/ClassLoader/" style="font-size: 10px;">ClassLoader</a> <a href="../../../../tags/Cookie/" style="font-size: 10px;">Cookie</a> <a href="../../../../tags/DevOps/" style="font-size: 10px;">DevOps</a> <a href="../../../../tags/ERP/" style="font-size: 10px;">ERP</a> <a href="../../../../tags/ES6/" style="font-size: 10px;">ES6</a> <a href="../../../../tags/EasyExcel/" style="font-size: 10px;">EasyExcel</a> <a href="../../../../tags/EasyUI/" style="font-size: 10.77px;">EasyUI</a> <a href="../../../../tags/Eureka/" style="font-size: 10px;">Eureka</a> <a href="../../../../tags/GC/" style="font-size: 10.77px;">GC</a> <a href="../../../../tags/Git-Bash/" style="font-size: 10.77px;">Git Bash</a> <a href="../../../../tags/GitHub-Actions/" style="font-size: 10px;">GitHub Actions</a> <a href="../../../../tags/Github/" style="font-size: 11.54px;">Github</a> <a href="../../../../tags/Github-Actions/" style="font-size: 10px;">Github Actions</a> <a href="../../../../tags/HDFS/" style="font-size: 10px;">HDFS</a> <a href="../../../../tags/HTTP/" style="font-size: 10.77px;">HTTP</a> <a href="../../../../tags/Hadoop/" style="font-size: 14.62px;">Hadoop</a> <a href="../../../../tags/HarmonyOS/" style="font-size: 10px;">HarmonyOS</a> <a href="../../../../tags/Hexo/" style="font-size: 10px;">Hexo</a> <a href="../../../../tags/HttpClient/" style="font-size: 10.77px;">HttpClient</a> <a href="../../../../tags/Idea/" style="font-size: 10px;">Idea</a> <a href="../../../../tags/IntelliJ/" style="font-size: 11.54px;">IntelliJ</a> <a href="../../../../tags/IntelliJ-IDEA/" style="font-size: 10.77px;">IntelliJ IDEA</a> <a href="../../../../tags/JVM/" style="font-size: 16.92px;">JVM</a> <a href="../../../../tags/Java/" style="font-size: 20px;">Java</a> <a href="../../../../tags/JavaAgent/" style="font-size: 10px;">JavaAgent</a> <a href="../../../../tags/JavaScript/" style="font-size: 15.38px;">JavaScript</a> <a href="../../../../tags/Kubernetes/" style="font-size: 12.31px;">Kubernetes</a> <a href="../../../../tags/Linux/" style="font-size: 13.08px;">Linux</a> <a href="../../../../tags/MES/" style="font-size: 13.85px;">MES</a> <a href="../../../../tags/MapReduce/" style="font-size: 10.77px;">MapReduce</a> <a href="../../../../tags/Markdown/" style="font-size: 10px;">Markdown</a> <a href="../../../../tags/Maven/" style="font-size: 12.31px;">Maven</a> <a href="../../../../tags/MyBatis/" style="font-size: 13.08px;">MyBatis</a> <a href="../../../../tags/MySQL/" style="font-size: 17.69px;">MySQL</a> <a href="../../../../tags/Nginx/" style="font-size: 10.77px;">Nginx</a> <a href="../../../../tags/Node/" style="font-size: 10px;">Node</a> <a href="../../../../tags/Node-js/" style="font-size: 10.77px;">Node.js</a> <a href="../../../../tags/OptaPlanner/" style="font-size: 10px;">OptaPlanner</a> <a href="../../../../tags/PSI/" style="font-size: 10px;">PSI</a> <a href="../../../../tags/PowerShell/" style="font-size: 10px;">PowerShell</a> <a href="../../../../tags/Prometheus/" style="font-size: 10px;">Prometheus</a> <a href="../../../../tags/Quartz/" style="font-size: 10px;">Quartz</a> <a href="../../../../tags/RabbitMQ/" style="font-size: 11.54px;">RabbitMQ</a> <a href="../../../../tags/Redis/" style="font-size: 14.62px;">Redis</a> <a href="../../../../tags/SQL/" style="font-size: 13.08px;">SQL</a> <a href="../../../../tags/SQL%E4%BC%98%E5%8C%96/" style="font-size: 10.77px;">SQL优化</a> <a href="../../../../tags/SaaS/" style="font-size: 11.54px;">SaaS</a> <a href="../../../../tags/Samba/" style="font-size: 10px;">Samba</a> <a href="../../../../tags/Serial-Port/" style="font-size: 10px;">Serial Port</a> <a href="../../../../tags/Shell/" style="font-size: 10.77px;">Shell</a> <a href="../../../../tags/Spring/" style="font-size: 16.15px;">Spring</a> <a href="../../../../tags/Spring-Cloud/" style="font-size: 10.77px;">Spring Cloud</a> <a href="../../../../tags/SpringBoot/" style="font-size: 10px;">SpringBoot</a> <a href="../../../../tags/TCP/" style="font-size: 10px;">TCP</a> <a href="../../../../tags/VSCode/" style="font-size: 10px;">VSCode</a> <a href="../../../../tags/Vue/" style="font-size: 10px;">Vue</a> <a href="../../../../tags/WPF/" style="font-size: 10px;">WPF</a> <a href="../../../../tags/WebSocket/" style="font-size: 11.54px;">WebSocket</a> <a href="../../../../tags/WebView/" style="font-size: 10px;">WebView</a> <a href="../../../../tags/Windows/" style="font-size: 10px;">Windows</a> <a href="../../../../tags/XtraBackup/" style="font-size: 11.54px;">XtraBackup</a> <a href="../../../../tags/YARN/" style="font-size: 10px;">YARN</a> <a href="../../../../tags/Zuul/" style="font-size: 10px;">Zuul</a> <a href="../../../../tags/hexo/" style="font-size: 10.77px;">hexo</a> <a href="../../../../tags/macOS/" style="font-size: 10.77px;">macOS</a> <a href="../../../../tags/ssh/" style="font-size: 10.77px;">ssh</a> <a href="../../../../tags/%E4%B8%AD%E6%96%87%E4%B9%B1%E7%A0%81/" style="font-size: 10px;">中文乱码</a> <a href="../../../../tags/%E4%BA%A7%E5%93%81/" style="font-size: 10px;">产品</a> <a href="../../../../tags/%E4%BD%93%E9%AA%8C%E4%BC%98%E5%8C%96/" style="font-size: 10px;">体验优化</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F/" style="font-size: 10px;">分布式</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">分布式事务</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" style="font-size: 10.77px;">分布式系统</a> <a href="../../../../tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" style="font-size: 10px;">分布式锁</a> <a href="../../../../tags/%E5%89%8D%E7%AB%AF/" style="font-size: 11.54px;">前端</a> <a href="../../../../tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 10px;">图论</a> <a href="../../../../tags/%E5%A4%87%E4%BB%BD%E6%81%A2%E5%A4%8D/" style="font-size: 10px;">备份恢复</a> <a href="../../../../tags/%E5%A4%8D%E7%9B%98/" style="font-size: 10.77px;">复盘</a> <a href="../../../../tags/%E5%A4%A7%E6%95%B0%E6%8D%AE/" style="font-size: 10px;">大数据</a> <a href="../../../../tags/%E5%AE%89%E8%A3%85%E6%95%99%E7%A8%8B/" style="font-size: 10px;">安装教程</a> <a href="../../../../tags/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/" style="font-size: 10.77px;">实战教程</a> <a href="../../../../tags/%E5%AF%86%E9%92%A5/" style="font-size: 10px;">密钥</a> <a href="../../../../tags/%E5%B7%A5%E6%8E%A7/" style="font-size: 10px;">工控</a> <a href="../../../../tags/%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD/" style="font-size: 11.54px;">工程效能</a> <a href="../../../../tags/%E5%B9%B6%E5%8F%91/" style="font-size: 13.08px;">并发</a> <a href="../../../../tags/%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B/" style="font-size: 10px;">并行编程</a> <a href="../../../../tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" style="font-size: 16.15px;">微服务</a> <a href="../../../../tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" style="font-size: 10px;">性能优化</a> <a href="../../../../tags/%E6%80%A7%E8%83%BD%E6%8E%92%E6%9F%A5/" style="font-size: 10.77px;">性能排查</a> <a href="../../../../tags/%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98/" style="font-size: 16.15px;">排查实战</a> <a href="../../../../tags/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/" style="font-size: 11.54px;">插件开发</a> <a href="../../../../tags/%E6%95%85%E9%9A%9C%E5%A4%8D%E7%9B%98/" style="font-size: 13.08px;">故障复盘</a> <a href="../../../../tags/%E6%95%99%E7%A8%8B/" style="font-size: 10px;">教程</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/" style="font-size: 10px;">数据同步</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/" style="font-size: 10.77px;">数据备份</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 11.54px;">数据库</a> <a href="../../../../tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/" style="font-size: 10px;">数据迁移</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84/" style="font-size: 18.46px;">架构</a> <a href="../../../../tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" style="font-size: 10px;">架构设计</a> <a href="../../../../tags/%E6%B7%B7%E5%90%88%E5%BC%80%E5%8F%91/" style="font-size: 10.77px;">混合开发</a> <a href="../../../../tags/%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90/" style="font-size: 10px;">源码解析</a> <a href="../../../../tags/%E7%94%9F%E4%BA%A7%E8%BF%90%E7%BB%B4/" style="font-size: 10px;">生产运维</a> <a href="../../../../tags/%E7%94%B5%E8%84%91/" style="font-size: 10.77px;">电脑</a> <a href="../../../../tags/%E7%AB%B9%E4%BA%91/" style="font-size: 11.54px;">竹云</a> <a href="../../../../tags/%E7%AE%80%E5%8E%86/" style="font-size: 10.77px;">简历</a> <a href="../../../../tags/%E7%AE%97%E6%B3%95/" style="font-size: 10.77px;">算法</a> <a href="../../../../tags/%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B/" style="font-size: 10px;">线程模型</a> <a href="../../../../tags/%E7%BB%88%E7%AB%AF/" style="font-size: 11.54px;">终端</a> <a href="../../../../tags/%E8%84%9A%E6%9C%AC/" style="font-size: 10px;">脚本</a> <a href="../../../../tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" style="font-size: 10px;">设计模式</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%A4%8D%E7%9B%98/" style="font-size: 10.77px;">踩坑复盘</a> <a href="../../../../tags/%E8%B8%A9%E5%9D%91%E5%AE%9E%E5%BD%95/" style="font-size: 16.15px;">踩坑实录</a> <a href="../../../../tags/%E8%BD%AC%E8%BD%BD/" style="font-size: 10px;">转载</a> <a href="../../../../tags/%E8%BD%AF%E4%BB%B6/" style="font-size: 10px;">软件</a> <a href="../../../../tags/%E8%BD%AF%E6%8A%80%E8%83%BD/" style="font-size: 11.54px;">软技能</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4/" style="font-size: 11.54px;">运维</a> <a href="../../../../tags/%E8%BF%90%E7%BB%B4%E9%83%A8%E7%BD%B2/" style="font-size: 10px;">运维部署</a> <a href="../../../../tags/%E9%99%90%E6%B5%81/" style="font-size: 10px;">限流</a> <a href="../../../../tags/%E9%9D%A2%E8%AF%95/" style="font-size: 10px;">面试</a> <a href="../../../../tags/%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9/" style="font-size: 19.23px;">面试考点</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/11/">十一月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/10/">十月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/09/">九月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2026/08/">八月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/05/">五月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/03/">三月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2025/02/">二月 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/02/">二月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2023/01/">一月 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/11/">十一月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/09/">九月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2022/08/">八月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/12/">十二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/02/">二月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/08/">八月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/07/">七月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="../../../../archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-box">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="../../17/%E5%85%88%E6%8F%90%E4%BA%A4%EF%BC%8C%E5%86%8D%E6%94%BE%E9%94%81%EF%BC%9A%E4%BB%8E%E4%B8%80%E6%AC%A1%E5%B9%B6%E5%8F%91%E9%87%8D%E5%A4%8D%E5%BB%BA%E5%8D%95%E8%81%8A%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E4%B8%8ESpring%E4%BA%8B%E5%8A%A1%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E9%94%99%E4%BD%8D/">先提交，再放锁：从一次并发重复建单聊分布式锁与Spring事务的生命周期错位</a>
+          </li>
+        
+          <li>
+            <a href="../../05/K8s-CPU%E9%99%90%E6%B5%81%E6%8E%92%E6%9F%A5%E4%B8%8E%E6%B2%BB%E7%90%86%E5%91%BD%E4%BB%A4%E6%89%8B%E5%86%8C/">K8s CPU 限流排查与治理命令手册</a>
+          </li>
+        
+          <li>
+            <a href="">接口忽快忽慢的元凶是CPU限流——一次K8s CFS排查复盘</a>
+          </li>
+        
+          <li>
+            <a href="../../../10/10/%E4%BB%8E%E4%B8%80%E6%AC%A1%E5%8D%95%E5%8F%B7%E9%87%8D%E5%A4%8D%E4%BA%8B%E6%95%85%EF%BC%8C%E8%81%8A%E9%80%8FRedis%E5%8E%9F%E5%AD%90%E5%8F%91%E5%8F%B7%E4%B8%8E%E9%9D%A2%E8%AF%95%E9%AB%98%E9%A2%91%E8%80%83%E7%82%B9/">从一次单号重复事故，聊透Redis原子发号与面试高频考点</a>
+          </li>
+        
+          <li>
+            <a href="../../../10/09/Nginx%E5%8F%A5%E6%9F%84%E8%80%97%E5%B0%BD%E5%BC%95%E5%8F%91K8s%E6%8E%A2%E9%92%88%E8%AF%AF%E6%9D%80%EF%BC%9A%E4%B8%80%E6%AC%A1%E8%B7%A8%E5%B1%82%E6%95%85%E9%9A%9C%E7%9A%84%E6%8E%92%E6%9F%A5%E5%A4%8D%E7%9B%98/">Nginx句柄耗尽引发K8s探针误杀：一次跨层故障的排查复盘</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+      <div class="widget-box">
+    <h3 class="widget-title">友链</h3>
+    <div class="widget">
+      
+        <!-- <a style="display: block;" href="../../../../https:/xiaoyan94.github.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xiaoyan94.github.io/" title target='_blank'
+        >Github Pages</a>
+      
+        <!-- <a style="display: block;" href="../../../../https:/xy94.gitee.io/" title target='_blank' -->
+        <a style="display: block;" href="https://xy94.gitee.io/" title target='_blank'
+        >Gitee Pages</a>
+      
+    </div>
+  </div>
+
+  
+ 
+  
+</aside>
+      </div>
+      <footer id="footer">
+  <div class="foot-box global-width center">
+    &copy; 2026 许嵩老公 &nbsp;&nbsp;
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    &nbsp;|&nbsp;主题 <a href="https://github.com/yiluyanxia/hexo-theme-antiquity" target="_blank" rel="noopener">antiquity</a>
+    <br>
+    <script defer src="https://cn.vercount.one/js"></script>
+    <span id="busuanzi_container_site_uv">本站已接待 <span id="busuanzi_value_site_uv"></span> 位访客</span>
+    
+  </div>
+  
+  <!--引入文字点击特效-->
+  <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+  
+<script src="../../../../js/dianji.js"></script>
+
+</footer>
+
+<!--添加回到顶部按钮-->
+<style>
+/* 小猫置顶 */
+/* 自定义回到顶部样式 */
+.cd-top {
+  position: fixed;
+  right: 25px;
+  top: -900px;
+  z-index: 99;
+  width: 70px;
+  height: 900px;
+  /* background: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/scroll.png) no-repeat center; */
+  background: url(/images/scroll.png) no-repeat center;
+  background-size: contain;
+  -webkit-transition: all .5s ease-in-out;
+  transition: all .5s ease-in-out;
+  /* cursor: url(https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/cursor/No_Disponible.cur), auto; */
+  cursor: url(/images/cursor/No_Disponible.cur), auto;
+  opacity: 1
+}
+
+.cd-top.cd-is-visible {
+  opacity: 1;
+  top: -326px
+}
+
+.cd-top.cd-fade-out {
+  opacity: 1
+}
+
+.cd-top:hover {
+  opacity: 1
+}
+
+.cd-top span {
+  display: none;
+  color: #000;
+  position: absolute;
+  bottom: 0;
+  height: 20px;
+  width: 50px;
+  text-align: center
+}
+
+@media screen and (max-width:860px) {
+  .cd-top {
+      display: none;
+      height: 60px;
+      width: 50px
+  }
+  .cd-top span {
+      height: 10px;
+      width: 50px
+  }
+}
+
+#moblieGoTop {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 99;
+  border: 0;
+  outline: 0;
+  background-color: #fff;
+  color: #404040;
+  cursor: pointer;
+  padding: 15px;
+  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, .12), 0 2px 2px 0 rgba(0, 0, 0, .24);
+  transition: box-shadow .2s ease
+}
+#moblieGoTop:hover {
+  background-color: #fff;
+  opacity: .8
+}
+.changeSkin-gear {
+  position: fixed;
+  bottom: 0;
+  left: auto;
+  right: 5px;
+  width: auto;
+  height: auto;
+  z-index: 99;
+  white-space: nowrap;
+  padding: 10px 10px;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0
+}
+</style>
+
+<!-- 添加小猫置顶 -->
+<a class="cd-top faa-float animated cd-is-visible cd-fade-out" style="top: -500px;"></a>
+<button id="moblieGoTop" title="Go to top" style="display: none;font-size: xx-large;"><i class="fa fa-chevron-up" aria-hidden="true"></i>🔝</button>
+
+<!-- <div class="scroll "> <i class="fa fa-arrow-up" style="margin-left: 4px;"></i>
+Top⬆️
+<span class="scrollpercent" style="margin-left: -2px;"></span>
+<span style="margin-right: 4px; margin-left: -4px;">%</span>
+</div> -->
+
+<!-- https://www.huangpinke.com/2018/08/24/add-back-to-top-button.html -->
+      <script src="https://code.jquery.com/jquery-2.0.3.min.js"></script>
+<script>
+if (!window.jQuery) {
+var script = document.createElement('script');
+script.src = "/js/jquery-2.0.3.min.js";
+document.body.write(script);
+}
+</script>
+
+  
+<link rel="stylesheet" href="../../../../fancybox/jquery.fancybox.css">
+
+  
+<script src="../../../../fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="../../../../js/script.js"></script>
+
+
+<script src="../../../../js/search.js"></script>
+
+
+<script src="../../../../js/load.js"></script>
+
+<!-- 输入爆炸特效：全局生效（搜索框 + 评论区） -->
+
+<script src="../../../../js/shuru.js"></script>
+
+<script>
+  POWERMODE.colorful = true;
+  POWERMODE.shake = true;
+  document.body.addEventListener('input', POWERMODE);
+</script>
+
+
+
+<script>
+  (function(){
+      var bp = document.createElement('script');
+      bp.src = '//push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+  })();
+  </script>
+
+<!-- mermaid图 -->
+
+  <script src='https://unpkg.com/mermaid@9.4.3/dist/mermaid.min.js'></script>
+  <script>
+    if (window.mermaid) {
+      mermaid.initialize({theme: 'forest'});
+    }
+  </script>
+
+    </div>
+    <nav id="mobile-nav" class="mobile-nav-box">
+  <div class="mobile-nav-img mobile-nav-top"></div>
+  
+    <a href="../../../../index.html" class="mobile-nav-link">首页</a>
+  
+    <a href="../../../../archives" class="mobile-nav-link">归档</a>
+  
+    <a href="../../../../quick-notes" class="mobile-nav-link">小抄</a>
+  
+    <a href="../../../../about" class="mobile-nav-link">关于</a>
+  
+  <div class="mobile-nav-img  mobile-nav-bottom"></div>
+</nav>    
+  </div>
+</body>
+
+</html>
